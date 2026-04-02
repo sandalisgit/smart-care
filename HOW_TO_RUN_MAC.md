@@ -45,16 +45,20 @@ cd smart-care
 ```
 
 ### 5. Set up the database (run IN ORDER)
-```bash
-/opt/homebrew/opt/mysql@8.0/bin/mysql -u root < database/SMARTCARE_COMPLETE_DATABASE.sql
 
-/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -e \
+> Each command will prompt: `Enter password:` — type your MySQL root password and press Enter.
+> If MySQL was freshly installed and you never set a password, just press Enter (blank).
+
+```bash
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -p < database/SMARTCARE_COMPLETE_DATABASE.sql
+
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -p -e \
   "CREATE USER IF NOT EXISTS 'hospital_user'@'localhost' IDENTIFIED BY 'Hospital@2026'; \
    GRANT ALL PRIVILEGES ON hospital_erp.* TO 'hospital_user'@'localhost'; \
    FLUSH PRIVILEGES;"
 
-/opt/homebrew/opt/mysql@8.0/bin/mysql -u root hospital_erp < src/main/webapp/WEB-INF/db_additions.sql
-/opt/homebrew/opt/mysql@8.0/bin/mysql -u root hospital_erp < src/main/webapp/WEB-INF/auth_fix_patch.sql
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -p hospital_erp < src/main/webapp/WEB-INF/db_additions.sql
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -p hospital_erp < src/main/webapp/WEB-INF/auth_fix_patch.sql
 ```
 
 ### 6. Build
@@ -139,7 +143,7 @@ tail -f /opt/homebrew/Cellar/tomcat@10/*/libexec/logs/localhost.$(date +%Y-%m-%d
 
 ### Connect to MySQL
 ```bash
-/opt/homebrew/opt/mysql@8.0/bin/mysql -u root hospital_erp
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -p hospital_erp
 ```
 
 ---
@@ -170,6 +174,26 @@ Then browse to `http://localhost:8090/smart-care/`
 brew services list | grep mysql     # should show "started"
 brew services start mysql@8.0       # start it if stopped
 ```
+
+### Access denied for root (using password: NO)
+Your MySQL root account has a password. Add `-p` to every `mysql` command — it will prompt you to enter it:
+```bash
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -p < database/SMARTCARE_COMPLETE_DATABASE.sql
+```
+If you've forgotten the root password, reset it:
+```bash
+brew services stop mysql@8.0
+/opt/homebrew/opt/mysql@8.0/bin/mysqld_safe --skip-grant-tables &
+sleep 3
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root
+```
+Then inside MySQL:
+```sql
+FLUSH PRIVILEGES;
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'YourNewPassword';
+EXIT;
+```
+Then: `brew services restart mysql@8.0`
 
 ### MFA code always rejected
 - Your Mac and phone clocks must be in sync
