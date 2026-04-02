@@ -22,19 +22,21 @@ INSERT IGNORE INTO roles (role_name, description, permissions) VALUES
 ('Receptionist', 'Front desk access', '{"modules": ["patients", "appointments"]}'),
 ('Nurse',        'Nursing staff access', '{"modules": ["patients", "beds", "emr"]}');
 
--- 3. Demo staff accounts with bcrypt cost-12 hashes
---    Passwords: Admin@2026! / Doctor@2026! / Pharm@2026! / Billing@2026! / Recept@2026!
+-- 3. Demo staff accounts with bcrypt cost-12 hashes (generated via jbcrypt 0.4, $2a$ prefix)
+--    Passwords: Admin@2026! / Doctor@2026! / Pharm@2026! / Billing@2026! / Recept@2026! / Nurse@2026!
 INSERT IGNORE INTO users (username, email, password_hash, role_id, is_active) VALUES
-('admin',       'admin@hospital.lk',       '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='System Admin'   LIMIT 1), TRUE),
-('dr.silva',    'dr.silva@hospital.lk',    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Doctor'          LIMIT 1), TRUE),
-('pharmacist',  'pharmacist@hospital.lk',  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Pharmacist'       LIMIT 1), TRUE),
-('billing',     'billing@hospital.lk',     '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Billing Clerk'    LIMIT 1), TRUE),
-('reception',   'reception@hospital.lk',   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Receptionist'     LIMIT 1), TRUE),
-('nurse',       'nurse@hospital.lk',       '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Nurse'            LIMIT 1), TRUE);
-
--- NOTE: The hash above is the bcrypt(cost=12) of "Admin@2026!" used as a placeholder.
--- For production, generate individual hashes using AuthService.hashPassword() or:
---   Java: BCrypt.hashpw("YourPassword", BCrypt.gensalt(12))
+('admin',       'admin@hospital.lk',       '$2a$12$d2gnwl6hCtSX2ScXKFcUnuL94IvkW2lsl1Cg6fKdfsNRX0Npn8hKW', (SELECT role_id FROM roles WHERE role_name='System Admin'   LIMIT 1), TRUE),
+('dr.silva',    'dr.silva@hospital.lk',    '$2a$12$O1T.oZbN1NAeD9aVPCky6uh6H0jKFEs/mxaqIlb0bCz8WiXp29/.2', (SELECT role_id FROM roles WHERE role_name='Doctor'          LIMIT 1), TRUE),
+('pharmacist',  'pharmacist@hospital.lk',  '$2a$12$0Gmrjy76b2YZUF6c8KgbzedbNdt7vyN5nuXE57Dfvulb8kZjhti/q', (SELECT role_id FROM roles WHERE role_name='Pharmacist'       LIMIT 1), TRUE),
+('billing',     'billing@hospital.lk',     '$2a$12$IUoDc3sU55iYNRyZCir6a.2fA6kXupLP1i/uU4UCYp2FFbCqCNG7G', (SELECT role_id FROM roles WHERE role_name='Billing Clerk'    LIMIT 1), TRUE),
+('reception',   'reception@hospital.lk',   '$2a$12$lurGqc9b7ZQycglykOfAI.Ke1etC/aafqR2isNYr14F2lWzclOuZ.', (SELECT role_id FROM roles WHERE role_name='Receptionist'     LIMIT 1), TRUE),
+('nurse',       'nurse@hospital.lk',       '$2a$12$lurGqc9b7ZQycglykOfAI.Ke1etC/aafqR2isNYr14F2lWzclOuZ.', (SELECT role_id FROM roles WHERE role_name='Nurse'            LIMIT 1), TRUE);
+-- ON DUPLICATE KEY: update hashes so re-running the patch fixes any broken installations
+UPDATE users SET password_hash='$2a$12$d2gnwl6hCtSX2ScXKFcUnuL94IvkW2lsl1Cg6fKdfsNRX0Npn8hKW', failed_login_attempts=0, account_locked_until=NULL WHERE username='admin';
+UPDATE users SET password_hash='$2a$12$O1T.oZbN1NAeD9aVPCky6uh6H0jKFEs/mxaqIlb0bCz8WiXp29/.2', failed_login_attempts=0, account_locked_until=NULL WHERE username='dr.silva';
+UPDATE users SET password_hash='$2a$12$0Gmrjy76b2YZUF6c8KgbzedbNdt7vyN5nuXE57Dfvulb8kZjhti/q', failed_login_attempts=0, account_locked_until=NULL WHERE username='pharmacist';
+UPDATE users SET password_hash='$2a$12$IUoDc3sU55iYNRyZCir6a.2fA6kXupLP1i/uU4UCYp2FFbCqCNG7G', failed_login_attempts=0, account_locked_until=NULL WHERE username='billing';
+UPDATE users SET password_hash='$2a$12$lurGqc9b7ZQycglykOfAI.Ke1etC/aafqR2isNYr14F2lWzclOuZ.', failed_login_attempts=0, account_locked_until=NULL WHERE username='reception';
 
 -- 4. Demo patient accounts (login: Patient ID + Full Name)
 INSERT IGNORE INTO patients (patient_code, first_name, last_name, date_of_birth, gender, blood_group, phone, email, address, city, status, registration_date) VALUES
