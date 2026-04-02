@@ -3,43 +3,74 @@
 
 ---
 
-## Prerequisites — Install These First
+## Mac (Homebrew) — Quickest Setup
+
+If you're on a Mac with [Homebrew](https://brew.sh) installed, run these commands in order:
+
+```bash
+# 1. Install all required tools
+brew install --cask temurin@17
+brew install maven
+brew install mysql@8.0
+brew install tomcat@10
+
+# 2. Set Java 17 as default (add to ~/.zshrc to make permanent)
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+
+# 3. Start MySQL
+brew services start mysql@8.0
+
+# 4. Clone the repo
+git clone https://github.com/sandalisgit/smart-care.git
+cd smart-care
+
+# 5. Load the database (run IN ORDER)
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root < database/SMARTCARE_COMPLETE_DATABASE.sql
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root -e "CREATE USER IF NOT EXISTS 'hospital_user'@'localhost' IDENTIFIED BY 'Hospital@2026'; GRANT ALL PRIVILEGES ON hospital_erp.* TO 'hospital_user'@'localhost'; FLUSH PRIVILEGES;"
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root hospital_erp < src/main/webapp/WEB-INF/db_additions.sql
+/opt/homebrew/opt/mysql@8.0/bin/mysql -u root hospital_erp < src/main/webapp/WEB-INF/auth_fix_patch.sql
+
+# 6. Build
+mvn clean package -DskipTests
+
+# 7. Deploy and start Tomcat
+cp target/smart-care.war /opt/homebrew/opt/tomcat@10/libexec/webapps/
+brew services start tomcat@10
+```
+
+Then open: **http://localhost:8080/smart-care/**
+
+---
+
+## Windows / Linux — Manual Setup
+
+### Prerequisites — Install These First
 
 | Software | Version | Download |
 |---|---|---|
-| Java JDK | 17 or higher | https://adoptium.net/temurin/releases |
+| Java JDK | 17 | https://adoptium.net/temurin/releases |
 | Apache Tomcat | 10.1.x | https://tomcat.apache.org/download-10.cgi |
 | MySQL Server | 8.0.x | https://dev.mysql.com/downloads/mysql |
 | Maven | 3.9.x | https://maven.apache.org/download.cgi |
-| VS Code | Latest | https://code.visualstudio.com |
+| Git | Latest | https://git-scm.com |
 
-### VS Code Extensions (install these 4)
-Open VS Code → Extensions (Ctrl+Shift+X) → search and install:
+> **Important:** Use **Java 17** specifically. Java 21+ may work but is untested.
 
-1. **Extension Pack for Java** — by Microsoft (`vscjava.vscode-java-pack`)
-2. **Community Server Connectors** — by Red Hat (Tomcat support)
-3. **Maven for Java** — by Microsoft
-4. **MySQL Shell for VS Code** — by Oracle (optional, for DB management)
+### Step 1 — Clone the Repository
 
----
-
-## Step 1 — Extract the Project
-
-Unzip `SmartCare_Fixed.zip` to a folder, e.g.:
-- Windows: `C:\Projects\SmartCare_Fixed\`
-- Mac/Linux: `~/Projects/SmartCare_Fixed/`
+```bash
+git clone https://github.com/sandalisgit/smart-care.git
+cd smart-care
+```
 
 ---
 
-## Step 2 — Set Up MySQL Database
+### Step 2 — Set Up MySQL Database
 
-### 2a. Start MySQL and log in
+#### 2a. Start MySQL and create the database user
 ```bash
 mysql -u root -p
 ```
-Enter your MySQL root password.
-
-### 2b. Create the database user
 ```sql
 CREATE USER 'hospital_user'@'localhost' IDENTIFIED BY 'Hospital@2026';
 GRANT ALL PRIVILEGES ON hospital_erp.* TO 'hospital_user'@'localhost';
@@ -47,20 +78,19 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-### 2c. Run the SQL scripts IN ORDER
+#### 2b. Run the SQL scripts IN ORDER
 ```bash
 mysql -u root -p < database/SMARTCARE_COMPLETE_DATABASE.sql
 mysql -u root -p hospital_erp < src/main/webapp/WEB-INF/db_additions.sql
 mysql -u root -p hospital_erp < src/main/webapp/WEB-INF/auth_fix_patch.sql
 ```
 
-> **Windows alternative:** Open MySQL Workbench, connect to your server, then run each `.sql` file via File → Open SQL Script → Execute.
+> **Windows alternative:** Open MySQL Workbench → File → Open SQL Script → run each file.
 
-### 2d. Verify the database loaded
+#### 2c. Verify the database loaded
 ```sql
 mysql -u hospital_user -p hospital_erp
-SHOW TABLES;
--- You should see: patients, users, roles, appointments, emr_records, etc.
+SHOW TABLES;          -- should show 55+ tables
 SELECT COUNT(*) FROM patients;   -- should show 200
 SELECT COUNT(*) FROM users;      -- should show 150+
 EXIT;
@@ -68,33 +98,71 @@ EXIT;
 
 ---
 
-## Step 3 — Open Project in VS Code
+### Step 3 — Configure JAVA_HOME
 
-1. Open VS Code
-2. **File → Open Folder** → select the `SmartCare_Fixed` folder
-3. VS Code will detect it as a Maven project automatically
-4. Wait for Java indexing to complete (watch the status bar at the bottom — it shows "Java: Indexing..." then goes away)
-5. If prompted "Do you trust this workspace?" → click **Yes, I trust the authors**
+Make sure `JAVA_HOME` points to Java 17:
+
+```bash
+# Mac/Linux — add to ~/.zshrc or ~/.bashrc
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)   # Mac only
+# or
+export JAVA_HOME=/path/to/jdk-17
+
+# Windows — set System Environment Variable
+JAVA_HOME = C:\Program Files\Eclipse Adoptium\jdk-17.x.x
+```
+
+Verify: `java -version` should show `17.x.x`
 
 ---
 
-## Step 4 — Configure Database Connection
+### Step 4 — Build the Project
 
-Open this file in VS Code:
-```
-src/main/java/com/smartcare/util/DBConnection.java
-```
-
-Check these values match your MySQL setup:
-```java
-String host   = "localhost";
-String port   = "3306";
-String dbName = "hospital_erp";
-String user   = "hospital_user";
-String pass   = "Hospital@2026";
+```bash
+mvn clean package -DskipTests
 ```
 
-Change them if your MySQL uses a different port or password.
+You should see `BUILD SUCCESS` and a file `target/smart-care.war` created.
+
+---
+
+### Step 5 — Deploy to Tomcat
+
+Copy the WAR into Tomcat's webapps folder:
+
+```bash
+# Mac (Homebrew)
+cp target/smart-care.war /opt/homebrew/opt/tomcat@10/libexec/webapps/
+
+# Linux / manual install — replace with your Tomcat path
+cp target/smart-care.war /opt/tomcat/webapps/
+
+# Windows — replace with your Tomcat path
+copy target\smart-care.war C:\tomcat\webapps\
+```
+
+Then start Tomcat:
+
+```bash
+# Mac (Homebrew)
+brew services start tomcat@10
+
+# Linux / manual
+$CATALINA_HOME/bin/startup.sh
+
+# Windows
+%CATALINA_HOME%\bin\startup.bat
+```
+
+Wait for the log line: `INFO: Server startup in [XXXX] milliseconds`
+
+---
+
+### Step 6 — Open the Application
+
+```
+http://localhost:8080/smart-care/
+```
 
 ---
 
