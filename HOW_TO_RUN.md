@@ -1,9 +1,247 @@
-# Smart Care — Complete Setup & Run Guide
+# Smart Care — Setup & Run Guide (Windows / Linux)
 ## CSG3101 Group 21 | Edith Crown University 2026
+
+> **On a Mac?** See [HOW_TO_RUN_MAC.md](HOW_TO_RUN_MAC.md) for a simpler Homebrew-based setup.
 
 ---
 
-## Mac (Homebrew) — Quickest Setup
+## Prerequisites — Install These First
+
+| Software | Version | Download |
+|---|---|---|
+| Java JDK | **17** | https://adoptium.net/temurin/releases |
+| Apache Tomcat | 10.1.x | https://tomcat.apache.org/download-10.cgi |
+| MySQL Server | 8.0.x | https://dev.mysql.com/downloads/mysql |
+| Maven | 3.9.x | https://maven.apache.org/download.cgi |
+| Git | Latest | https://git-scm.com |
+
+> **Important:** Use **Java 17** specifically. The project is compiled targeting Java 17.
+
+---
+
+## Step 1 — Clone the Repository
+
+```bash
+git clone https://github.com/sandalisgit/smart-care.git
+cd smart-care
+```
+
+---
+
+## Step 2 — Set JAVA_HOME to Java 17
+
+**Windows** — set as a System Environment Variable:
+```
+JAVA_HOME = C:\Program Files\Eclipse Adoptium\jdk-17.x.x
+```
+Then add `%JAVA_HOME%\bin` to your `PATH`.
+
+**Linux:**
+```bash
+export JAVA_HOME=/usr/lib/jvm/temurin-17   # adjust path to your install
+echo 'export JAVA_HOME=/usr/lib/jvm/temurin-17' >> ~/.bashrc
+```
+
+Verify: `java -version` must show `17.x.x`
+
+---
+
+## Step 3 — Set Up MySQL Database
+
+### 3a. Start MySQL and log in
+```bash
+mysql -u root -p
+```
+
+### 3b. Create the database user
+```sql
+CREATE USER 'hospital_user'@'localhost' IDENTIFIED BY 'Hospital@2026';
+GRANT ALL PRIVILEGES ON hospital_erp.* TO 'hospital_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### 3c. Run the SQL scripts IN ORDER
+```bash
+mysql -u root -p < database/SMARTCARE_COMPLETE_DATABASE.sql
+mysql -u root -p hospital_erp < src/main/webapp/WEB-INF/db_additions.sql
+mysql -u root -p hospital_erp < src/main/webapp/WEB-INF/auth_fix_patch.sql
+```
+
+> **Windows alternative:** Open MySQL Workbench → File → Open SQL Script → run each file in order.
+
+### 3d. Verify the database loaded
+```sql
+mysql -u hospital_user -p hospital_erp
+SHOW TABLES;                    -- should show 55+ tables
+SELECT COUNT(*) FROM patients;  -- should show 200
+SELECT COUNT(*) FROM users;     -- should show 150+
+EXIT;
+```
+
+---
+
+## Step 4 — Build the Project
+
+```bash
+mvn clean package -DskipTests
+```
+
+First run takes 2–5 minutes (downloads dependencies). You should see:
+```
+BUILD SUCCESS
+```
+This creates `target/smart-care.war`.
+
+---
+
+## Step 5 — Deploy to Tomcat
+
+Copy the WAR into Tomcat's webapps folder:
+
+```bash
+# Linux
+cp target/smart-care.war /opt/tomcat/webapps/
+
+# Windows (adjust path to your Tomcat install)
+copy target\smart-care.war C:\tomcat\webapps\
+```
+
+Start Tomcat:
+
+```bash
+# Linux
+$CATALINA_HOME/bin/startup.sh
+
+# Windows
+%CATALINA_HOME%\bin\startup.bat
+```
+
+Wait until you see in the console:
+```
+INFO: Server startup in [XXXX] milliseconds
+```
+
+---
+
+## Step 6 — Open the Application
+
+```
+http://localhost:8080/smart-care/
+```
+
+---
+
+## Login Credentials
+
+### Staff Login
+| Role | Username | Password | MFA Required |
+|---|---|---|---|
+| System Admin | `admin` | `Admin@2026!` | Yes (TOTP app) |
+| Doctor | `dr.silva` | `Doctor@2026!` | Yes (TOTP app) |
+| Pharmacist | `pharmacist` | `Pharm@2026!` | No |
+| Billing Clerk | `billing` | `Billing@2026!` | Yes (TOTP app) |
+| Receptionist | `reception` | `Recept@2026!` | No |
+
+### Patient Login (`/pages/auth/patient-login.html`)
+Patient login uses **Patient ID + Full Name** — no password.
+
+| Patient ID | Full Name |
+|---|---|
+| PAT000001 | Saman Silva |
+| PAT000002 | Dilini Fernando |
+| PAT000003 | Kasun Perera |
+| PAT000004 | Nimali Rajapaksa |
+| PAT000005 | Tharindu Bandara |
+
+### MFA First-Time Setup (Admin / Doctor / Billing)
+1. Log in with username + password
+2. You are redirected to the MFA setup page
+3. Install **Google Authenticator** or **Microsoft Authenticator** on your phone
+4. Scan the QR code shown on screen
+5. Enter the 6-digit code from your app
+
+---
+
+## Sidebar Navigation
+
+| Module | Sub-pages |
+|---|---|
+| Patient Management | Patients · Register Patient · Search · Reports |
+| Appointments | Book · Search/Filter · Today's Schedule · Reports |
+| EMR | Patient Records · New Entry · Documents · Reports |
+| Pharmacy | Inventory · Dispense · Orders · Reports |
+| Billing | Invoices · Payments · Insurance Claims · Reports |
+| Bed & Ward | Ward Overview · Admit · Transfers · Discharge · Reports |
+| Staff & HR | Staff Profiles · Create Profile · Scheduling · Attendance · Leave · Reports |
+| Security & Audit | Audit Log · User Mgmt · RBAC Roles · Anomaly Alerts · HIPAA Report |
+
+---
+
+## Troubleshooting
+
+### Port 8080 already in use
+Edit Tomcat's `conf/server.xml`:
+```xml
+<Connector port="8090" ...
+```
+Then browse to `http://localhost:8090/smart-care/`
+
+### Cannot connect to database
+- Check MySQL is running: `mysqladmin -u root -p status`
+- Confirm the JDBC URL in `src/main/java/com/smartcare/util/DBConnection.java` matches your setup
+- Confirm `hospital_user` exists: `SELECT user FROM mysql.user;`
+
+### 404 on all pages
+- The WAR must be deployed as context path `/smart-care`
+- Check `http://localhost:8080/manager/html` — look for `smart-care` showing "running"
+
+### MFA code always rejected
+- TOTP is time-based — your phone clock must be synced
+- Phone: Settings → Date & Time → Set Automatically → ON
+- Codes refresh every 30 seconds — wait for a fresh code if near the boundary
+
+### Java compilation errors
+- Run `java -version` — must show `17.x.x`
+- Run `mvn -version` — must show Java version 17
+
+### Rebuild after making changes
+```bash
+mvn clean package -DskipTests
+```
+Then restart Tomcat.
+
+---
+
+## Project Structure
+
+```
+smart-care/
+├── database/
+│   └── SMARTCARE_COMPLETE_DATABASE.sql    ← Main DB schema + 10,000+ seed records
+├── src/
+│   └── main/
+│       ├── java/com/smartcare/
+│       │   ├── filter/AuthFilter.java     ← JWT session validation
+│       │   ├── security/AuthService.java  ← Login, MFA, patient auth
+│       │   ├── security/EncryptionService.java ← AES-256-GCM patient data encryption
+│       │   ├── servlet/AuthServlet.java   ← /api/auth/* endpoints
+│       │   ├── dao/                       ← Database access objects
+│       │   ├── ai/                        ← AI models (no-show, anomaly detection)
+│       │   └── util/DBConnection.java     ← HikariCP connection pool
+│       └── webapp/
+│           ├── index.html                 ← Staff login page
+│           ├── css/app.css                ← Master design system
+│           ├── js/app.js                  ← API client, Auth, Toast
+│           ├── js/sidebar.js              ← Two-column sidebar renderer
+│           ├── pages/                     ← All module HTML pages
+│           └── WEB-INF/
+│               ├── web.xml                ← Servlet config
+│               ├── db_additions.sql       ← MFA + AI tables
+│               └── auth_fix_patch.sql     ← Demo accounts (correct bcrypt hashes)
+└── pom.xml                                ← Maven dependencies
+```
+
 
 If you're on a Mac with [Homebrew](https://brew.sh) installed, run these commands in order:
 
