@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Staff Management</title>
+<link rel="stylesheet" href="../../css/app.css">
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-breadcrumb">Staff & HR</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+    <div class="page-body">
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('employees')">👔 Employees</button>
+        <button class="tab-btn" onclick="switchTab('leaves')">🏖️ Leave Requests</button>
+        <button class="tab-btn" onclick="switchTab('attendance')">⏰ Attendance</button>
+      </div>
+
+      <!-- EMPLOYEES TAB -->
+      <div id="tab-employees" class="tab-pane active">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex gap-2">
+            <select id="type-filter" class="form-control" style="width:180px" onchange="loadEmployees()">
+              <option value="">All Types</option>
+              <option>Doctor</option><option>Nurse</option><option>Technician</option>
+              <option>Administrative</option><option>Support</option><option>Management</option>
+            </select>
+            <select id="status-filter" class="form-control" style="width:150px" onchange="loadEmployees()">
+              <option value="">All Status</option>
+              <option>Active</option><option>On Leave</option><option>Suspended</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Employee Directory</h3><span id="emp-count" class="text-muted text-sm"></span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Job Title</th><th>Department</th><th>Specialization</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="emp-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEAVES TAB -->
+      <div id="tab-leaves" class="tab-pane">
+        <div class="card">
+          <div class="card-header"><h3>🏖️ Pending Leave Requests</h3>
+            <button class="btn btn-sm btn-secondary" onclick="loadLeaves()">🔄 Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Requested</th><th>Actions</th></tr></thead>
+              <tbody id="leave-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Submit Leave Request -->
+        <div class="card" style="margin-top:16px;max-width:600px">
+          <div class="card-header"><h3>📝 Submit Leave Request</h3></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Employee ID</label>
+                <input type="number" id="leave-emp-id" class="form-control" placeholder="Your employee ID">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Leave Type</label>
+                <select id="leave-type" class="form-control">
+                  <option>Sick</option><option>Casual</option><option>Annual</option>
+                  <option>Maternity</option><option>Paternity</option><option>Unpaid</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Start Date</label>
+                <input type="date" id="leave-start" class="form-control">
+              </div>
+              <div class="form-group">
+                <label class="form-label">End Date</label>
+                <input type="date" id="leave-end" class="form-control">
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">Reason</label>
+                <input type="text" id="leave-reason" class="form-control">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="submitLeave()">Submit Request</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE TAB -->
+      <div id="tab-attendance" class="tab-pane">
+        <div class="card" style="max-width:500px;margin-bottom:16px">
+          <div class="card-header"><h3>⏰ Attendance Check-In/Out</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Employee ID</label>
+              <input type="number" id="att-emp-id" class="form-control">
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-success" onclick="doCheckIn()">✅ Check In</button>
+              <button class="btn btn-secondary" onclick="doCheckOut()">🚪 Check Out</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Attendance Report</h3>
+            <div class="flex gap-2">
+              <input type="number" id="att-view-id" class="form-control" style="width:120px" placeholder="Emp ID">
+              <input type="date" id="att-from" class="form-control" style="width:150px">
+              <input type="date" id="att-to" class="form-control" style="width:150px">
+              <button class="btn btn-primary btn-sm" onclick="loadAttendance()">View</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th></tr></thead>
+              <tbody id="att-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+Auth.requireAuth();
+Sidebar.render('staff', 'staff-profiles');
+
+async function loadEmployees() {
+  const type = document.getElementById('type-filter').value;
+  const status = document.getElementById('status-filter').value;
+  let url = '/staff/employees';
+  const params = [];
+  if (type) params.push(`type=${encodeURIComponent(type)}`);
+  if (status) params.push(`status=${encodeURIComponent(status)}`);
+  if (params.length) url += '?' + params.join('&');
+
+  const res = await API.get(url);
+  if (!res?.success) return;
+  document.getElementById('emp-count').textContent = `${res.data.length} employee(s)`;
+
+  renderTable('emp-tbody', res.data, [
+    { key: 'employee_code', render: r => `<strong>${r.employee_code}</strong>` },
+    { key: 'full_name' },
+    { key: 'employee_type' },
+    { key: 'job_title', render: r => r.job_title || '—' },
+    { key: 'department_name', render: r => r.department_name || '—' },
+    { key: 'specialization', render: r => r.specialization ? `<span class="badge badge-teal">${r.specialization}</span>` : '—' },
+    { key: 'phone', render: r => r.phone || '—' },
+    { key: 'status', render: r => statusBadge(r.status) },
+    { key: 'action', render: r => `<button class="btn btn-sm btn-secondary" onclick="alert('Profile view for ${r.full_name}')">👁 View</button>` }
+  ]);
+}
+
+async function loadLeaves() {
+  const res = await API.get('/staff/leaves/pending');
+  if (!res?.success) return;
+  renderTable('leave-tbody', res.data, [
+    { key: 'employee_name' },
+    { key: 'leave_type' },
+    { key: 'start_date', render: r => fmtDate(r.start_date) },
+    { key: 'end_date', render: r => fmtDate(r.end_date) },
+    { key: 'total_days' },
+    { key: 'reason', render: r => r.reason ? r.reason.substring(0,40) : '—' },
+    { key: 'created_at', render: r => fmtDate(r.created_at) },
+    { key: 'actions', render: r => `
+      <div class="flex gap-2">
+        <button class="btn btn-sm btn-success" onclick="approveLeave(${r.leave_id},true)">✅ Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="approveLeave(${r.leave_id},false)">✕ Reject</button>
+      </div>` }
+  ]);
+}
+
+async function approveLeave(leaveId, approved) {
+  const empId = parseInt(prompt('Enter your Employee ID to confirm:'));
+  if (!empId) return;
+  const res = await API.put(`/staff/leaves/${leaveId}/approve`, { approved, approvedByEmployeeId: empId });
+  if (res?.success) { Toast.success(`Leave ${approved ? 'approved' : 'rejected'}`); loadLeaves(); }
+  else Toast.error(res?.error || 'Failed');
+}
+
+async function submitLeave() {
+  const empId = document.getElementById('leave-emp-id').value;
+  const start = document.getElementById('leave-start').value;
+  const end = document.getElementById('leave-end').value;
+  if (!empId || !start || !end) { Toast.error('All fields required'); return; }
+
+  const res = await API.post('/staff/leaves', {
+    employeeId: parseInt(empId), leaveType: document.getElementById('leave-type').value,
+    startDate: start, endDate: end, reason: document.getElementById('leave-reason').value
+  });
+  if (res?.success) { Toast.success('Leave request submitted'); loadLeaves(); }
+  else Toast.error(res?.error || 'Submission failed');
+}
+
+async function doCheckIn() {
+  const empId = document.getElementById('att-emp-id').value;
+  if (!empId) { Toast.error('Enter employee ID'); return; }
+  const res = await API.post('/staff/attendance/check-in', { employeeId: parseInt(empId) });
+  if (res?.success) Toast.success('Checked in at ' + new Date().toLocaleTimeString());
+  else Toast.error(res?.error || 'Check-in failed');
+}
+
+async function doCheckOut() {
+  const empId = document.getElementById('att-emp-id').value;
+  if (!empId) { Toast.error('Enter employee ID'); return; }
+  const res = await API.post('/staff/attendance/check-out', { employeeId: parseInt(empId) });
+  if (res?.success) Toast.success('Checked out at ' + new Date().toLocaleTimeString());
+  else Toast.error(res?.error || 'Check-out failed');
+}
+
+async function loadAttendance() {
+  const empId = document.getElementById('att-view-id').value;
+  const from = document.getElementById('att-from').value;
+  const to = document.getElementById('att-to').value;
+  if (!empId || !from || !to) { Toast.error('Enter employee ID and date range'); return; }
+  const res = await API.get(`/staff/employees/${empId}/attendance?from=${from}&to=${to}`);
+  if (!res?.success) return;
+  renderTable('att-tbody', res.data, [
+    { key: 'date', render: r => fmtDate(r.date) },
+    { key: 'check_in_time', render: r => r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString() : '—' },
+    { key: 'check_out_time', render: r => r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString() : '—' },
+    { key: 'hours_worked', render: r => r.hours_worked || '—' },
+    { key: 'status', render: r => statusBadge(r.status) }
+  ]);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(name)));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+  if (name === 'leaves') loadLeaves();
+}
+
+// Set default date range for attendance
+const today = new Date().toISOString().split('T')[0];
+const monthAgo = new Date(Date.now() - 30*86400*1000).toISOString().split('T')[0];
+document.getElementById('att-from').value = monthAgo;
+document.getElementById('att-to').value = today;
+
+loadEmployees();
+</script>
+</body>
+</html>

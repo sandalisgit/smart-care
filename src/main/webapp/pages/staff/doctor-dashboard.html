@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Doctor Portal</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .portal-header { background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:white; padding:16px 24px; border-radius:var(--radius); margin-bottom:16px; }
+  .portal-header .greeting { font-size:20px;font-weight:700; }
+  .portal-header .sub { font-size:12px;opacity:0.85;margin-top:4px; }
+  .ai-alert { padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:13px;display:flex;gap:10px;align-items:flex-start; }
+  .ai-alert.high   { background:#f8d7da;border-left:4px solid var(--danger); }
+  .ai-alert.medium { background:#fff3cd;border-left:4px solid var(--warning); }
+  .ai-alert.info   { background:var(--teal-light);border-left:4px solid var(--teal); }
+  .ai-summary { background:#f0fdf4;border:1px solid #c3e6cb;border-radius:8px;padding:12px;font-size:12px;color:#155724;margin-top:12px; }
+  .schedule-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border); }
+  .schedule-time { font-size:15px;font-weight:700;color:var(--teal);min-width:55px; }
+  .bed-map-mini { display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;padding:12px; }
+  .bed-mini { border-radius:6px;padding:6px;text-align:center;font-size:11px;font-weight:600; }
+  .bed-stable   { background:#d4edda;color:#155724; }
+  .bed-critical { background:#f8d7da;color:#721c24; }
+  .bed-monitor  { background:#fff3cd;color:#856404; }
+  .bed-empty    { background:#e2e3e5;color:#6c757d; }
+  .action-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+  .action-btn { background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;text-decoration:none;display:block; }
+  .action-btn:hover { background:rgba(255,255,255,0.25); }
+  .profile-form { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+  .day-sched { display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px; }
+  .day-label { font-weight:700;min-width:36px;color:var(--teal); }
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <!-- SIDEBAR — Doctor Portal -->
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-breadcrumb" id="panel-title">Doctor Dashboard</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+
+    <!-- ===== HOME DASHBOARD ===== -->
+    <div id="panel-home" class="page-body">
+      <div class="portal-header">
+        <div class="greeting" id="doc-greeting">Good morning, Doctor</div>
+        <div class="sub" id="doc-sub">Loading...</div>
+        <div class="action-grid" style="margin-top:14px">
+          <a class="action-btn" href="../emr/records.html" style="color:white">📋 New EMR Entry</a>
+          <a class="action-btn" href="#" onclick="showPanel('appts');return false" style="color:white">📅 Full Schedule</a>
+          <a class="action-btn" href="#" onclick="showPanel('ward');return false" style="color:white">🛏 Ward Rounds</a>
+          <a class="action-btn" href="#" onclick="showPanel('patients');return false" style="color:white">👤 My Patients</a>
+          <a class="action-btn" href="../pharmacy/dashboard.html" style="color:white">💊 Drug Alerts</a>
+          <a class="action-btn" href="#" onclick="showPanel('emr');return false" style="color:white">🔬 Lab Results</a>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" id="doc-kpis">
+        <div class="kpi-card"><div class="kpi-icon">📅</div><div><div class="kpi-value" id="kpi-today-appts">—</div><div class="kpi-label">Today's Appointments</div></div></div>
+        <div class="kpi-card orange"><div class="kpi-icon">🛏</div><div><div class="kpi-value" id="kpi-admitted">—</div><div class="kpi-label">Admitted Patients</div></div></div>
+        <div class="kpi-card red"><div class="kpi-icon">⚠️</div><div><div class="kpi-value" id="kpi-pending-emr">—</div><div class="kpi-label">Pending EMR Entries</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon">🧪</div><div><div class="kpi-value" id="kpi-lab-results">—</div><div class="kpi-label">New Lab Results</div></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- AI ALERTS -->
+        <div class="card">
+          <div class="card-header"><h3>🤖 AI Clinical Alerts</h3><span class="badge badge-danger" id="alert-count">0</span></div>
+          <div class="card-body" id="ai-alerts-panel">
+            <div class="text-muted text-sm">Loading alerts...</div>
+          </div>
+        </div>
+
+        <!-- TODAY'S SCHEDULE PREVIEW -->
+        <div class="card">
+          <div class="card-header"><h3>📅 Today's Schedule</h3>
+            <button class="btn btn-sm btn-secondary" onclick="showPanel('appts')">View All →</button>
+          </div>
+          <div class="card-body" id="schedule-preview" style="padding:8px 12px">
+            <div class="text-muted text-sm">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MY PATIENTS ===== -->
+    <div id="panel-patients" class="page-body hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div class="search-bar" style="flex:1;max-width:400px">
+          <input id="pt-search" class="form-control" placeholder="Search by name or patient ID...">
+        </div>
+        <div class="flex gap-2" style="margin-left:12px">
+          <select id="pt-status-filter" class="form-control" style="width:150px">
+            <option value="">All Statuses</option>
+            <option value="admitted">Admitted</option>
+            <option value="today">Today's Appointments</option>
+          </select>
+          <button class="btn btn-secondary btn-sm">📤 Export</button>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div style="display:flex;gap:12px;margin-bottom:16px">
+        <div class="badge badge-info" style="padding:6px 14px;font-size:13px" id="pt-today-count">— Today's Appts</div>
+        <div class="badge badge-warning" style="padding:6px 14px;font-size:13px" id="pt-admitted-count">— Admitted</div>
+        <div class="badge badge-danger" style="padding:6px 14px;font-size:13px" id="pt-pending-count">— Pending EMR</div>
+        <div class="badge badge-danger" style="padding:6px 14px;font-size:13px">— Critical</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Today's Patients</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Time</th><th>Patient</th><th>Patient ID</th><th>Visit Type</th><th>Ward/Room</th><th>AI Risk</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="my-patients-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admitted patients section -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><h3>🛏 My Admitted Patients</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Patient</th><th>Diagnosis</th><th>Ward/Bed</th><th>LOS (days)</th><th>Condition</th><th>Actions</th></tr></thead>
+            <tbody id="admitted-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== APPOINTMENTS ===== -->
+    <div id="panel-appts" class="page-body hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex gap-2">
+          <input type="date" id="appt-date-filter" class="form-control" style="width:160px">
+          <select id="appt-type-filter" class="form-control" style="width:150px">
+            <option value="">All Types</option>
+            <option>Consultation</option><option>Follow-up</option><option>Emergency</option>
+          </select>
+        </div>
+        <div id="appt-day-stats" class="flex gap-2"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📅 My Appointment Schedule</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Time</th><th>Patient</th><th>Type</th><th>Room</th><th>Duration</th><th>Notes</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="appts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EMR ===== -->
+    <div id="panel-emr" class="page-body hidden">
+      <div class="search-bar" style="max-width:400px;margin-bottom:16px">
+        <input id="emr-patient-search" class="form-control" placeholder="Search patient for EMR..." oninput="searchEMRPatient(this.value)">
+      </div>
+      <div id="emr-patient-results" style="margin-bottom:12px"></div>
+      <div class="card">
+        <div class="card-header"><h3>📋 Pending EMR Entries</h3>
+          <a href="../emr/records.html" class="btn btn-sm btn-primary">➕ New Entry</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Patient</th><th>Last Visit</th><th>Pending Since</th><th>Action</th></tr></thead>
+            <tbody id="emr-pending-tbody">
+              <tr><td colspan="4" class="text-center text-muted" style="padding:16px">All EMR entries complete ✅</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lab results needing review -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><h3>🔬 Recent Lab Results</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Patient</th><th>Test</th><th>Result</th><th>Normal Range</th><th>Date</th><th>Flag</th></tr></thead>
+            <tbody id="lab-results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WARD ===== -->
+    <div id="panel-ward" class="page-body hidden">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+        <div class="kpi-card"><div class="kpi-icon">🛏</div><div><div class="kpi-value" id="ward-total">—</div><div class="kpi-label">Total Admitted</div></div></div>
+        <div class="kpi-card red"><div class="kpi-icon">🚨</div><div><div class="kpi-value" id="ward-critical">—</div><div class="kpi-label">Critical</div></div></div>
+        <div class="kpi-card orange"><div class="kpi-icon">⏳</div><div><div class="kpi-value" id="ward-avg-los">—</div><div class="kpi-label">Avg. LOS (days)</div></div></div>
+        <div class="kpi-card green"><div class="kpi-icon">✅</div><div><div class="kpi-value" id="ward-stable">—</div><div class="kpi-label">Stable</div></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-header"><h3>🛏 Admitted Patients</h3>
+            <button class="btn btn-sm btn-primary" onclick="window.location.href='../beds/ward.html'">Full Bed Map</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Patient</th><th>Diagnosis</th><th>Ward/Bed</th><th>LOS</th><th>Condition</th><th>Action</th></tr></thead>
+              <tbody id="ward-admitted-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Live mini bed map -->
+        <div class="card">
+          <div class="card-header"><h3>🗺 Live Bed Map</h3></div>
+          <div id="ward-bed-map"></div>
+          <div style="padding:12px;display:flex;gap:10px;font-size:11px">
+            <span style="background:#d4edda;padding:2px 8px;border-radius:4px">Stable</span>
+            <span style="background:#f8d7da;padding:2px 8px;border-radius:4px">Critical</span>
+            <span style="background:#fff3cd;padding:2px 8px;border-radius:4px">Monitoring</span>
+            <span style="background:#e2e3e5;padding:2px 8px;border-radius:4px">Empty</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE ===== -->
+    <div id="panel-profile" class="page-body hidden">
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:16px">
+        <!-- Profile card -->
+        <div class="card" style="height:fit-content">
+          <div class="card-body" style="text-align:center">
+            <div style="font-size:64px">👨‍⚕️</div>
+            <div id="prof-name" style="font-size:18px;font-weight:700;margin-top:8px"></div>
+            <div id="prof-title" class="badge badge-teal" style="margin-top:6px"></div>
+            <div id="prof-reg" class="text-muted text-sm" style="margin-top:6px"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;font-size:12px">
+              <div style="background:var(--light);border-radius:8px;padding:8px"><div class="fw-bold" id="prof-appts-today">—</div><div class="text-muted">Today</div></div>
+              <div style="background:var(--light);border-radius:8px;padding:8px"><div class="fw-bold" id="prof-patients-seen">—</div><div class="text-muted">Seen</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Edit profile form -->
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h3>Personal Information</h3>
+              <button class="btn btn-sm btn-primary" onclick="saveProfile()">💾 Save Changes</button>
+            </div>
+            <div class="card-body">
+              <div class="profile-form">
+                <div class="form-group"><label class="form-label">First Name</label><input id="pf-fname" class="form-control"></div>
+                <div class="form-group"><label class="form-label">Last Name</label><input id="pf-lname" class="form-control"></div>
+                <div class="form-group"><label class="form-label">Doctor ID (Read Only)</label><input id="pf-docid" class="form-control" readonly style="background:var(--light)"></div>
+                <div class="form-group"><label class="form-label">Specialization</label><input id="pf-spec" class="form-control"></div>
+                <div class="form-group"><label class="form-label">SLMC Registration No.</label><input id="pf-slmc" class="form-control"></div>
+                <div class="form-group"><label class="form-label">Years of Experience</label><input id="pf-exp" type="number" class="form-control"></div>
+                <div class="form-group"><label class="form-label">Email Address</label><input id="pf-email" type="email" class="form-control"></div>
+                <div class="form-group"><label class="form-label">Mobile Number</label><input id="pf-phone" class="form-control"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Availability schedule -->
+          <div class="card">
+            <div class="card-header"><h3>📅 Availability Schedule</h3>
+              <button class="btn btn-sm btn-primary" onclick="saveSchedule()">💾 Save Schedule</button>
+            </div>
+            <div class="card-body" id="schedule-editor">
+              <p class="text-muted text-sm">Loading schedule...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+const user = Auth.getUser();
+let doctorId = user.doctorId || parseInt(localStorage.getItem('sc_doctor_id')) || 1;
+
+function showPanel(name) {
+  document.querySelectorAll('[id^="panel-"]').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name)?.classList.remove('hidden');
+  document.getElementById('nav-' + name)?.classList.add('active');
+  const titles = { home:'Doctor Dashboard', patients:'My Patients', appts:'Appointments', emr:'EMR / Medical Records', ward:'Ward Management', profile:'My Profile' };
+  document.getElementById('panel-title').textContent = titles[name] || 'Doctor Portal';
+  if (name === 'patients') loadMyPatients();
+  if (name === 'appts')    loadMyAppts();
+  if (name === 'ward')     loadWardPanel();
+  if (name === 'profile')  loadProfile();
+  if (name === 'emr')      loadEMRPanel();
+  return false;
+}
+
+Auth.requireAuth();
+Sidebar.render('dashboard', '');
+
+async function loadHome() {
+  // Doctor greeting
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('doc-greeting').textContent = greet + ', Dr. ' + (user.username || 'Doctor');
+  const today = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('doc-sub').textContent = `Today is ${today}`;
+
+  // Dashboard stats
+  const dashRes = await API.get(`/staff/employees/${doctorId}/dashboard`);
+  if (dashRes?.success) {
+    document.getElementById('kpi-today-appts').textContent = dashRes.data.appointments_today ?? '—';
+    document.getElementById('kpi-admitted').textContent = dashRes.data.current_inpatients ?? '—';
+    document.getElementById('kpi-pending-emr').textContent = '0';
+    document.getElementById('kpi-lab-results').textContent = dashRes.data.recent_lab_results ?? '—';
+    document.getElementById('pt-today-count').textContent = (dashRes.data.appointments_today ?? '—') + ' Today\'s Appts';
+    document.getElementById('pt-admitted-count').textContent = (dashRes.data.current_inpatients ?? '—') + ' Admitted';
+  }
+
+  // Today's schedule preview
+  const queueRes = await API.get(`/appointments/today?doctorId=${doctorId}`);
+  if (queueRes?.success) {
+    const preview = document.getElementById('schedule-preview');
+    if (!queueRes.data.length) {
+      preview.innerHTML = '<p class="text-muted text-sm">No appointments today</p>';
+    } else {
+      preview.innerHTML = queueRes.data.slice(0, 5).map(a => `
+        <div class="schedule-row">
+          <div class="schedule-time">${String(a.appointment_time).substring(0,5)}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px">${a.patient_name}</div>
+            <div style="font-size:11px;color:var(--gray)">${a.appointment_type} — ${a.reason || '—'}</div>
+          </div>
+          ${statusBadge(a.status)}
+        </div>
+      `).join('') + (queueRes.data.length > 5 ? `<div class="text-muted text-sm" style="padding:8px 0">+ ${queueRes.data.length-5} more</div>` : '');
+    }
+  }
+
+  // AI Anomaly alerts for this doctor (drug interactions, no-show risks)
+  const alertPanel = document.getElementById('ai-alerts-panel');
+  const alertsRes = await API.get('/security/anomalies?limit=5');
+  let alerts = [];
+
+  // Add no-show risk warnings from today's appointments
+  if (queueRes?.success) {
+    queueRes.data.forEach(a => {
+      if (a.no_show_risk > 0.65) {
+        alerts.push({ type: 'high', msg: `No-show predicted — ${a.patient_name} at ${String(a.appointment_time).substring(0,5)} (${Math.round(a.no_show_risk*100)}% risk)` });
+      }
+    });
+  }
+  alerts.push({ type: 'info', msg: 'AI Daily Summary generated at 08:00 — based on EMR history, appointment data & pharmacy stock' });
+
+  document.getElementById('alert-count').textContent = alerts.filter(a => a.type === 'high').length;
+  alertPanel.innerHTML = alerts.length ? alerts.map(a => `
+    <div class="ai-alert ${a.type}">
+      <span>${a.type === 'high' ? '🔴' : a.type === 'medium' ? '🟡' : 'ℹ️'}</span>
+      <span>${a.msg}</span>
+    </div>
+  `).join('') : '<p class="text-muted text-sm">No active AI alerts ✅</p>';
+}
+
+async function loadMyPatients() {
+  const res = await API.get(`/appointments/today?doctorId=${doctorId}`);
+  if (!res?.success) return;
+  renderTable('my-patients-tbody', res.data, [
+    { key: 'appointment_time', render: r => `<strong>${String(r.appointment_time||'').substring(0,5)}</strong>` },
+    { key: 'patient_name', render: r => `<a href="../patients/profile.html?id=${r.patient_id||''}" style="color:var(--teal)">${r.patient_name}</a>` },
+    { key: 'patient_code' },
+    { key: 'appointment_type' },
+    { key: 'ward', render: () => 'OPD' },
+    { key: 'no_show_risk', render: r => r.no_show_risk > 0 ? `<span class="${r.no_show_risk > 0.65 ? 'risk-high' : 'risk-low'}">🤖 ${Math.round((r.no_show_risk||0)*100)}%</span>` : '—' },
+    { key: 'status', render: r => statusBadge(r.status) },
+    { key: 'actions', render: r => `
+      <div class="flex gap-1">
+        <a href="../emr/records.html?patientId=${r.patient_id}" class="btn btn-sm btn-primary">📋 EMR</a>
+        <button class="btn btn-sm btn-secondary" onclick="updateApptStatus(${r.appointment_id},'Completed')">✅</button>
+      </div>` }
+  ]);
+
+  // Admitted patients
+  const admRes = await API.get('/beds/admissions');
+  if (admRes?.success) {
+    const myAdmitted = admRes.data.filter(a => a.doctor_name?.includes(user.username?.split('.')[0] || ''));
+    document.getElementById('pt-admitted-count').textContent = myAdmitted.length + ' Admitted';
+    renderTable('admitted-tbody', admRes.data.slice(0,10), [
+      { key: 'patient_name', render: r => `<a href="../patients/profile.html?id=${r.patient_id}" style="color:var(--teal)">${r.patient_name}</a>` },
+      { key: 'primary_diagnosis', render: r => (r.primary_diagnosis||'—').substring(0,40) },
+      { key: 'ward_name', render: r => `${r.ward_name} — ${r.bed_number}` },
+      { key: 'days_admitted', render: r => `${r.days_admitted}d` },
+      { key: 'status', render: r => statusBadge(r.status) },
+      { key: 'action', render: r => `<button class="btn btn-sm btn-secondary" onclick="dischargePatient(${r.admission_id})">🚪 Discharge</button>` }
+    ]);
+  }
+}
+
+async function loadMyAppts() {
+  const dateVal = document.getElementById('appt-date-filter').value || new Date().toISOString().split('T')[0];
+  const res = await API.get(`/appointments/calendar?doctorId=${doctorId}&year=${dateVal.split('-')[0]}&month=${parseInt(dateVal.split('-')[1])}`);
+  if (!res?.success) return;
+
+  const stats = {};
+  res.data.forEach(a => { stats[a.status] = (stats[a.status]||0)+1; });
+  document.getElementById('appt-day-stats').innerHTML = Object.entries(stats).map(([s,c]) =>
+    `<span class="badge ${s==='Completed'?'badge-success':s==='Cancelled'?'badge-gray':'badge-info'}">${c} ${s}</span>`
+  ).join('');
+
+  renderTable('appts-tbody', res.data, [
+    { key: 'appointment_time', render: r => `<strong>${String(r.appointment_time||'').substring(0,5)}</strong>` },
+    { key: 'patient_name', render: r => `<strong>${r.patient_name}</strong><div style="font-size:11px;color:var(--gray)">${r.patient_code}</div>` },
+    { key: 'appointment_type' },
+    { key: 'room', render: () => 'OPD' },
+    { key: 'duration', render: () => '30 min' },
+    { key: 'reason', render: r => r.reason ? r.reason.substring(0,30) : '—' },
+    { key: 'status', render: r => statusBadge(r.status) },
+    { key: 'actions', render: r => `
+      <div class="flex gap-1">
+        <button class="btn btn-sm btn-secondary" onclick="updateApptStatus(${r.appointment_id},'Completed')">View</button>
+        <button class="btn btn-sm btn-secondary" onclick="updateApptStatus(${r.appointment_id},'Cancelled')">Cancel</button>
+      </div>` }
+  ]);
+}
+
+async function updateApptStatus(apptId, status) {
+  const res = await API.put(`/appointments/${apptId}/status`, { status });
+  if (res?.success) { Toast.success('Status updated to ' + status); loadMyAppts(); }
+  else Toast.error(res?.error || 'Failed');
+}
+
+async function loadWardPanel() {
+  const res = await API.get('/beds/admissions');
+  if (!res?.success) return;
+
+  const total = res.data.length;
+  document.getElementById('ward-total').textContent = total;
+  document.getElementById('ward-critical').textContent = '—';
+  document.getElementById('ward-avg-los').textContent = total > 0 ?
+    (res.data.reduce((a,r) => a + (r.days_admitted||0), 0) / total).toFixed(1) : '0';
+  document.getElementById('ward-stable').textContent = total;
+
+  renderTable('ward-admitted-tbody', res.data, [
+    { key: 'patient_name' },
+    { key: 'primary_diagnosis', render: r => (r.primary_diagnosis||'—').substring(0,35) },
+    { key: 'ward_name', render: r => `${r.ward_name} — Bed ${r.bed_number}` },
+    { key: 'days_admitted', render: r => `${r.days_admitted}d` },
+    { key: 'status', render: () => statusBadge('Admitted') },
+    { key: 'action', render: r => `<button class="btn btn-sm btn-danger" onclick="doDischarge(${r.admission_id})">Discharge</button>` }
+  ]);
+
+  // Mini bed map
+  const wardRes = await API.get('/beds/wards');
+  if (!wardRes?.success) return;
+  const mapHtml = wardRes.data.slice(0,3).map(w => `
+    <div style="padding:8px 12px;border-bottom:1px solid var(--border)">
+      <div style="font-weight:700;font-size:12px;margin-bottom:6px">${w.ward_name}</div>
+      <div class="bed-map-mini">
+        ${Array.from({length: Math.min(w.total_beds, 8)}, (_, i) => {
+          const isOcc = i < (w.total_beds - w.available_beds);
+          return `<div class="bed-mini ${isOcc ? 'bed-stable' : 'bed-empty'}">${String(i+1).padStart(2,'0')}</div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('ward-bed-map').innerHTML = mapHtml;
+}
+
+async function doDischarge(admId) {
+  const summary = prompt('Discharge summary:');
+  if (summary === null) return;
+  const res = await API.put(`/beds/discharge/${admId}`, { dischargeSummary: summary });
+  if (res?.success) { Toast.success('Patient discharged'); loadWardPanel(); }
+  else Toast.error(res?.error);
+}
+
+async function loadEMRPanel() {
+  const res = await API.get(`/appointments/today?doctorId=${doctorId}`);
+  if (!res?.success) return;
+  // Show incomplete ones
+  const pending = res.data.filter(a => a.status !== 'Completed' && a.status !== 'Cancelled');
+  document.getElementById('pt-pending-count').textContent = pending.length + ' Pending EMR';
+
+  // Lab results
+  const labRes = await API.get(`/emr/lab-orders/pending`);
+  if (labRes?.success) {
+    renderTable('lab-results-tbody', labRes.data.slice(0, 10), [
+      { key: 'patient_name' },
+      { key: 'test_name' },
+      { key: 'test_result', render: r => r.test_result || '—' },
+      { key: 'normal_range', render: r => r.normal_range || '—' },
+      { key: 'result_date', render: r => fmtDate(r.result_date || r.test_date) },
+      { key: 'status', render: r => statusBadge(r.status) }
+    ]);
+  }
+}
+
+async function loadProfile() {
+  const user = Auth.getUser();
+  document.getElementById('prof-name').textContent = 'Dr. ' + (user.username || 'Doctor');
+  document.getElementById('prof-title').textContent = 'Senior Doctor';
+  document.getElementById('prof-reg').textContent = 'SLMC Reg: SLMC/2012/0000';
+  document.getElementById('pf-docid').value = 'DOC-' + doctorId;
+  document.getElementById('pf-spec').value = 'General Medicine';
+
+  // Schedule editor
+  const schedRes = await API.get(`/staff/employees/${doctorId}/schedule`);
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const schedule = schedRes?.success ? schedRes.data : [];
+  const editor = document.getElementById('schedule-editor');
+  editor.innerHTML = days.map(day => {
+    const existing = schedule.find(s => s.day_of_week === day);
+    return `
+      <div class="day-sched">
+        <div class="day-label">${day.substring(0,3)}</div>
+        <input type="time" id="sch-start-${day}" class="form-control" style="width:110px" value="${existing?.start_time?.substring(0,5) || '09:00'}">
+        <span style="font-size:12px;color:var(--gray)">to</span>
+        <input type="time" id="sch-end-${day}" class="form-control" style="width:110px" value="${existing?.end_time?.substring(0,5) || '17:00'}">
+        <span style="font-size:12px;color:var(--gray)">Max</span>
+        <input type="number" id="sch-max-${day}" class="form-control" style="width:70px" value="${existing?.max_appointments || 20}">
+        <span style="font-size:12px;color:var(--gray)">appts</span>
+      </div>
+    `;
+  }).join('');
+}
+
+async function saveSchedule() {
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  for (const day of days) {
+    const start = document.getElementById('sch-start-'+day)?.value;
+    const end = document.getElementById('sch-end-'+day)?.value;
+    const max = document.getElementById('sch-max-'+day)?.value;
+    if (start && end) {
+      await API.post('/staff/schedule', { doctorId, dayOfWeek: day, startTime: start, endTime: end, maxAppointments: parseInt(max)||20 });
+    }
+  }
+  Toast.success('Schedule saved');
+}
+
+function saveProfile() { Toast.success('Profile saved (demo mode)'); }
+
+const searchEMRPatient = debounce(async q => {
+  if (q.length < 2) return;
+  const res = await API.get(`/patients?q=${encodeURIComponent(q)}&limit=4`);
+  if (!res?.success) return;
+  document.getElementById('emr-patient-results').innerHTML = res.data.map(p => `
+    <a href="../emr/records.html?patientId=${p.patientId}"
+       style="display:block;padding:8px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:4px;text-decoration:none;color:var(--dark);font-size:13px;transition:all 0.15s"
+       onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
+      <strong>${p.firstName} ${p.lastName}</strong>
+      <span style="color:var(--gray);margin-left:8px">${p.patientCode}</span>
+      → New EMR Entry
+    </a>
+  `).join('');
+}, 300);
+
+// Set today's date in appointment filter
+document.getElementById('appt-date-filter').value = new Date().toISOString().split('T')[0];
+
+loadHome();
+</script>
+</body>
+</html>

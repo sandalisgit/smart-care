@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Patient Portal</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .patient-portal .sidebar { background: linear-gradient(180deg, #0E8A95 0%, #18AEBA 100%); }
+  .patient-portal .nav-item { color: rgba(255,255,255,0.8); }
+  .portal-welcome { background: linear-gradient(135deg,var(--teal),#0f4f5a); color:white; border-radius:var(--radius); padding:20px 24px; margin-bottom:20px; }
+  .qr-box { background:white;border-radius:8px;padding:12px;display:inline-block;text-align:center;margin-top:8px; }
+  .quick-action { background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;text-decoration:none;display:block;color:var(--dark); }
+  .quick-action:hover { border-color:var(--teal);background:var(--teal-light);transform:translateY(-2px);box-shadow:var(--shadow); }
+  .quick-action .qa-icon { font-size:28px;margin-bottom:8px; }
+  .quick-action .qa-label { font-weight:600;font-size:13px; }
+  .quick-action .qa-sub { font-size:11px;color:var(--gray);margin-top:2px; }
+  .record-row { display:flex;gap:12px;padding:12px;border-bottom:1px solid var(--border);align-items:flex-start; }
+  .record-date { font-size:12px;color:var(--gray);min-width:90px; }
+  .bill-summary { background:var(--teal-light);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px; }
+  .bill-stat label { font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:0.5px; }
+  .bill-stat .val { font-size:20px;font-weight:700;color:var(--dark);margin-top:2px; }
+</style>
+</head>
+<body class="patient-portal">
+<div class="app-layout">
+  <!-- Patient Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo"><div style="font-size:40px">🏥</div><h1>SMART <span>CARE</span></h1><div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px">Patient Portal</div></div>
+    <div class="nav-section">
+      <a class="nav-item active" id="nav-home" href="#" onclick="showTab('home');return false"><span class="icon">🏠</span> Home</a>
+      <a class="nav-item" id="nav-appointments" href="#" onclick="showTab('appointments');return false"><span class="icon">📅</span> Appointments</a>
+      <a class="nav-item" id="nav-records" href="#" onclick="showTab('records');return false"><span class="icon">📋</span> My Records</a>
+      <a class="nav-item" id="nav-bills" href="#" onclick="showTab('bills');return false"><span class="icon">💳</span> Bills</a>
+      <a class="nav-item" id="nav-profile-tab" href="#" onclick="showTab('profile-tab');return false"><span class="icon">👤</span> Profile</a>
+    </div>
+    <div style="padding:16px;margin-top:auto">
+      <button class="btn btn-secondary btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2)">Logout</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="portal-title">Patient Portal</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+
+    <!-- ===== HOME ===== -->
+    <div id="tab-home" class="page-body">
+      <div class="portal-welcome">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:22px;font-weight:700" id="welcome-name">Good morning!</div>
+            <div id="welcome-meta" style="font-size:13px;opacity:0.85;margin-top:6px"></div>
+            <div style="margin-top:12px;display:flex;gap:10px">
+              <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="showTab('appointments')">📅 Book Appointment</button>
+              <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="showTab('records')">📋 My Records</button>
+            </div>
+          </div>
+          <!-- QR Code (FR-09) -->
+          <div class="qr-box" id="qr-container">
+            <div style="width:80px;height:80px;background:var(--dark);display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:28px;color:white">QR</div>
+            <div style="font-size:10px;color:var(--gray);margin-top:4px" id="qr-label">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+        <a class="quick-action" href="#" onclick="showTab('appointments');return false">
+          <div class="qa-icon">📅</div>
+          <div class="qa-label">Book Appointment</div>
+          <div class="qa-sub">Find available doctors & slots</div>
+        </a>
+        <a class="quick-action" href="#" onclick="showTab('records');return false">
+          <div class="qa-icon">📋</div>
+          <div class="qa-label">My Records</div>
+          <div class="qa-sub">View diagnoses & prescriptions</div>
+        </a>
+        <a class="quick-action" href="#" onclick="showTab('bills');return false">
+          <div class="qa-icon">💳</div>
+          <div class="qa-label">My Bills</div>
+          <div class="qa-sub">View & pay outstanding bills</div>
+        </a>
+        <a class="quick-action" href="#" onclick="showTab('profile-tab');return false">
+          <div class="qa-icon">👤</div>
+          <div class="qa-label">My Profile</div>
+          <div class="qa-sub">Update contact information</div>
+        </a>
+      </div>
+
+      <!-- Upcoming appointments -->
+      <div class="card">
+        <div class="card-header"><h3>📅 Upcoming Appointments</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Time</th><th>Doctor</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody id="home-appts-tbody">
+              <tr><td colspan="5" class="text-center text-muted" style="padding:16px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== APPOINTMENTS ===== -->
+    <div id="tab-appointments" class="page-body hidden">
+      <!-- AI suggestion banner -->
+      <div class="alert alert-info" id="ai-suggestion" style="margin-bottom:16px"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Book new appointment -->
+        <div class="card">
+          <div class="card-header"><h3>📅 Book New Appointment</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Select Doctor / Specialization</label>
+              <select id="book-spec" class="form-control" onchange="loadDoctorOptions(this.value)">
+                <option value="">All Specializations</option>
+                <option>Cardiology</option><option>Pediatrics</option><option>General Surgery</option>
+                <option>Internal Medicine</option><option>Dermatology</option><option>Neurology</option>
+              </select>
+            </div>
+            <div id="doctor-options" style="display:grid;gap:8px;margin-bottom:12px"></div>
+            <div class="form-group">
+              <label class="form-label">Preferred Date</label>
+              <input type="date" id="book-date" class="form-control" onchange="loadPatientSlots()">
+            </div>
+            <div id="patient-slots" style="margin-bottom:12px"></div>
+            <div class="form-group">
+              <label class="form-label">Reason for Visit</label>
+              <input type="text" id="book-reason" class="form-control" placeholder="Brief reason...">
+            </div>
+            <button class="btn btn-primary w-full" onclick="bookPatientAppointment()">📅 Confirm Booking</button>
+          </div>
+        </div>
+
+        <!-- My appointments list -->
+        <div class="card">
+          <div class="card-header"><h3>My Appointments</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Doctor</th><th>Type</th><th>Status</th></tr></thead>
+              <tbody id="patient-appts-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MY RECORDS (FR-03, FR-04, FR-30) ===== -->
+    <div id="tab-records" class="page-body hidden">
+      <div class="alert alert-info" style="margin-bottom:16px">
+        🔒 <strong>Read-only</strong> — You can view your records but only your doctor can edit them
+        <button class="btn btn-sm btn-secondary" style="margin-left:12px" onclick="downloadPDF()">📄 Download Full Report (PDF)</button>
+      </div>
+
+      <!-- Tab bar inside records -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchRecordsTab('diagnoses')">🩺 Diagnoses</button>
+        <button class="tab-btn" onclick="switchRecordsTab('prescriptions')">💊 Prescriptions</button>
+        <button class="tab-btn" onclick="switchRecordsTab('lab')">🔬 Lab Results</button>
+      </div>
+
+      <div id="records-diagnoses" class="tab-pane active">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Diagnosis</th><th>Doctor</th><th>Follow-up</th></tr></thead>
+              <tbody id="diag-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div id="records-prescriptions" class="tab-pane">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+              <tbody id="rx-view-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div id="records-lab" class="tab-pane">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Test</th><th>Result</th><th>Normal Range</th><th>Status</th></tr></thead>
+              <tbody id="lab-view-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BILLS (FR-03) ===== -->
+    <div id="tab-bills" class="page-body hidden">
+      <div class="bill-summary" id="bill-summary-panel">
+        <div class="bill-stat"><label>Total Paid (All Time)</label><div class="val" id="bs-paid">—</div></div>
+        <div class="bill-stat"><label>Insurance Covered</label><div class="val" id="bs-insurance">—</div></div>
+        <div class="bill-stat"><label>Outstanding Balance</label><div class="val" id="bs-outstanding" style="color:var(--danger)">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>💳 Payment History</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Invoice ID</th><th>Date</th><th>Description</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+            <tbody id="patient-bills-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE (FR-07) ===== -->
+    <div id="tab-profile-tab" class="page-body hidden">
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:16px">
+        <div class="card" style="height:fit-content">
+          <div class="card-body" style="text-align:center">
+            <div style="font-size:64px">👤</div>
+            <div id="pp-name" style="font-size:18px;font-weight:700;margin-top:8px"></div>
+            <div id="pp-code" class="badge badge-teal" style="margin-top:6px"></div>
+            <div id="pp-since" class="text-muted text-sm" style="margin-top:6px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>✏️ Edit Profile</h3>
+            <button class="btn btn-primary btn-sm" onclick="savePatientProfile()">💾 Save Changes</button>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label">First Name</label><input id="pp-fname" class="form-control"></div>
+              <div class="form-group"><label class="form-label">Last Name</label><input id="pp-lname" class="form-control"></div>
+              <div class="form-group"><label class="form-label">Phone</label><input id="pp-phone" class="form-control"></div>
+              <div class="form-group"><label class="form-label">Email</label><input id="pp-email" type="email" class="form-control"></div>
+              <div class="form-group form-full"><label class="form-label">Address</label><input id="pp-address" class="form-control"></div>
+              <div class="form-group"><label class="form-label">Emergency Contact Name</label><input id="pp-ec-name" class="form-control"></div>
+              <div class="form-group"><label class="form-label">Emergency Contact Phone</label><input id="pp-ec-phone" class="form-control"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+// Patient portal — loaded when patient logs in
+// In real system, patientId comes from session
+const user = Auth.getUser();
+let patientData = null;
+let selectedDoctorId = null, selectedSlot = null;
+
+// FR-09: Generate QR code using canvas
+function generateQRCode(patientCode) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 80; canvas.height = 80;
+  const ctx = canvas.getContext('2d');
+  // Simple pattern to represent QR (real implementation uses qrcode.js library)
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,80,80);
+  ctx.fillStyle = '#fff';
+  // Border
+  ctx.fillRect(4,4,24,24); ctx.fillRect(52,4,24,24); ctx.fillRect(4,52,24,24);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(8,8,16,16); ctx.fillRect(56,8,16,16); ctx.fillRect(8,56,16,16);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(12,12,8,8); ctx.fillRect(60,12,8,8); ctx.fillRect(12,60,8,8);
+  // Data pattern
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) {
+    if (Math.random() > 0.5) { ctx.fillStyle = '#000'; ctx.fillRect(32+i*5, 32+j*5, 4, 4); }
+  }
+  ctx.fillStyle = '#000';
+  for (let i = 0; i < 16; i++) if (Math.random()>0.5) ctx.fillRect(32+i*3, 4, 2, 2);
+  return canvas.toDataURL();
+}
+
+Auth.requirePatient();
+async function loadPortal() {
+  // Try to load from session — use dummy patient ID 1 for demo
+  const patId = user.patientId || 1;
+  const res = await API.get(`/patients/${patId}`);
+  if (!res?.success) {
+    document.getElementById('welcome-name').textContent = 'Welcome to Smart Care Patient Portal';
+    return;
+  }
+  patientData = res.data.patient;
+
+  const p = patientData;
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('welcome-name').textContent = `${greet}, ${p.firstName}!`;
+  document.getElementById('welcome-meta').textContent =
+    `Patient ID: ${p.patientCode}  |  Last visit: —  |  Next appointment: see Appointments tab`;
+
+  // QR code (FR-09)
+  const qrImg = document.createElement('img');
+  qrImg.src = generateQRCode(p.patientCode);
+  qrImg.style.cssText = 'width:80px;height:80px;border-radius:4px';
+  document.getElementById('qr-container').innerHTML = '';
+  document.getElementById('qr-container').appendChild(qrImg);
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:10px;color:var(--gray);margin-top:4px;font-weight:700';
+  lbl.textContent = p.patientCode;
+  document.getElementById('qr-container').appendChild(lbl);
+
+  // Profile tab
+  document.getElementById('pp-name').textContent = `${p.firstName} ${p.lastName}`;
+  document.getElementById('pp-code').textContent = p.patientCode;
+  document.getElementById('pp-since').textContent = 'Member since: ' + fmtDate(p.registrationDate);
+  document.getElementById('pp-fname').value = p.firstName;
+  document.getElementById('pp-lname').value = p.lastName;
+  document.getElementById('pp-phone').value = p.phone || '';
+  document.getElementById('pp-email').value = p.email || '';
+  document.getElementById('pp-address').value = p.address || '';
+  document.getElementById('pp-ec-name').value = p.emergencyContactName || '';
+  document.getElementById('pp-ec-phone').value = p.emergencyContactPhone || '';
+
+  loadHomeAppointments(patId);
+  loadAISuggestion(p);
+}
+
+async function loadHomeAppointments(patId) {
+  const res = await API.get(`/patients/${patId}/history`);
+  if (!res?.success) return;
+  renderTable('home-appts-tbody', (res.data.appointments || []).slice(0, 5), [
+    { key: 'appointment_date', render: r => fmtDate(r.appointment_date) },
+    { key: 'appointment_time', render: r => String(r.appointment_time||'').substring(0,5) },
+    { key: 'doctor_name' },
+    { key: 'appointment_type' },
+    { key: 'status', render: r => statusBadge(r.status) }
+  ]);
+}
+
+function loadAISuggestion(patient) {
+  const conditions = patient.chronicConditions || '';
+  let msg = '🤖 AI Suggestion: ';
+  if (conditions.includes('Diabetes')) {
+    msg += 'Based on your diabetes management, consider booking a follow-up with an Endocrinologist. Optimal slots are usually mid-morning.';
+  } else if (conditions.includes('Hypertension')) {
+    msg += 'Based on your hypertension history, a cardiology check-up every 6 months is recommended.';
+  } else {
+    msg += 'Based on your health profile, a General Medicine consultation is recommended. Book a convenient slot below.';
+  }
+  document.getElementById('ai-suggestion').textContent = msg;
+}
+
+async function loadDoctorOptions(spec) {
+  const url = spec ? `/appointments/doctors?specialization=${encodeURIComponent(spec)}` : '/appointments/doctors';
+  const res = await API.get(url);
+  if (!res?.success) return;
+  document.getElementById('doctor-options').innerHTML = res.data.slice(0,4).map(d => `
+    <div onclick="selectBookDoctor(${d.doctor_id}, '${d.doctor_name}', this)"
+         style="padding:10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.15s;font-size:13px"
+         id="book-doc-${d.doctor_id}">
+      <strong>${d.doctor_name}</strong>
+      <span class="badge badge-teal" style="margin-left:8px">${d.specialization}</span>
+      <div style="font-size:11px;color:var(--gray);margin-top:2px">Fee: ${fmtCurrency(d.consultation_fee)} · ⭐ ${d.average_rating?.toFixed(1) || '—'}</div>
+      ${d.doctor_id === selectedDoctorId ? '<div style="color:var(--teal);font-size:11px;margin-top:2px">Selected ✓</div>' : '<div style="font-size:11px;color:var(--gray)">✅ Available</div>'}
+    </div>
+  `).join('');
+}
+
+function selectBookDoctor(id, name, el) {
+  selectedDoctorId = id;
+  document.querySelectorAll('[id^="book-doc-"]').forEach(e => e.style.borderColor = 'var(--border)');
+  el.style.borderColor = 'var(--teal)';
+  el.style.background = 'var(--teal-light)';
+  if (document.getElementById('book-date').value) loadPatientSlots();
+}
+
+async function loadPatientSlots() {
+  if (!selectedDoctorId) return;
+  const date = document.getElementById('book-date').value;
+  if (!date) return;
+  const res = await API.get(`/appointments/slots?doctorId=${selectedDoctorId}&date=${date}`);
+  if (!res?.success) return;
+  const el = document.getElementById('patient-slots');
+  if (!res.data.length) { el.innerHTML = '<div class="alert alert-warning">No slots available this day</div>'; return; }
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px">` +
+    res.data.map(s => `<button class="slot-btn btn btn-secondary btn-sm" onclick="selectedSlot='${s}';document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">${s}</button>`).join('') +
+    `</div>`;
+}
+
+async function bookPatientAppointment() {
+  if (!selectedDoctorId || !selectedSlot) { Toast.error('Select a doctor, date and time slot'); return; }
+  const patId = patientData?.patientId || 1;
+  const res = await API.post('/appointments', {
+    patientId: patId, doctorId: selectedDoctorId,
+    date: document.getElementById('book-date').value,
+    time: selectedSlot, appointmentType: 'Consultation',
+    reason: document.getElementById('book-reason').value
+  });
+  if (res?.success) {
+    Toast.success('Appointment booked! Confirmation details saved.');
+    loadHomeAppointments(patId);
+    showTab('home');
+  } else Toast.error(res?.error || 'Booking failed');
+}
+
+async function loadRecordsTab(patId) {
+  const emrRes = await API.get(`/emr/records/${patId}`);
+  if (emrRes?.success) {
+    renderTable('diag-tbody', emrRes.data, [
+      { key: 'record_date', render: r => fmtDate(r.record_date) },
+      { key: 'diagnosis', render: r => `<strong>${r.diagnosis || '—'}</strong>` },
+      { key: 'doctor_name' },
+      { key: 'follow_up_date', render: r => r.follow_up_date ? fmtDate(r.follow_up_date) : '—' }
+    ]);
+  }
+  const labRes = await API.get(`/emr/lab-orders/patient/${patId}`);
+  if (labRes?.success) {
+    renderTable('lab-view-tbody', labRes.data, [
+      { key: 'test_date', render: r => fmtDate(r.test_date) },
+      { key: 'test_name' },
+      { key: 'test_result', render: r => r.test_result || 'Pending' },
+      { key: 'normal_range', render: r => r.normal_range || '—' },
+      { key: 'status', render: r => statusBadge(r.status) }
+    ]);
+  }
+}
+
+async function loadBillsTab(patId) {
+  const res = await API.get(`/billing/patient/${patId}`);
+  if (!res?.success) return;
+  const totalPaid = res.data.reduce((a,b) => a + parseFloat(b.paid_amount||0), 0);
+  const outstanding = res.data.reduce((a,b) => a + parseFloat(b.balance_amount||0), 0);
+  document.getElementById('bs-paid').textContent = fmtCurrency(totalPaid);
+  document.getElementById('bs-insurance').textContent = 'LKR 0.00';
+  document.getElementById('bs-outstanding').textContent = fmtCurrency(outstanding);
+  if (outstanding <= 0) document.getElementById('bs-outstanding').style.color = 'var(--success)';
+
+  renderTable('patient-bills-tbody', res.data, [
+    { key: 'bill_number', render: r => `<strong>${r.bill_number}</strong>` },
+    { key: 'bill_date', render: r => fmtDate(r.bill_date) },
+    { key: 'description', render: () => 'Medical Services' },
+    { key: 'total_amount', render: r => fmtCurrency(r.total_amount) },
+    { key: 'paid_amount', render: r => fmtCurrency(r.paid_amount) },
+    { key: 'balance_amount', render: r => `<span class="${r.balance_amount > 0 ? 'text-danger' : 'text-success'}">${fmtCurrency(r.balance_amount)}</span>` },
+    { key: 'status', render: r => statusBadge(r.status) }
+  ]);
+}
+
+function downloadPDF() {
+  Toast.info('Generating PDF report... (FR-04)');
+  window.open(`/smart-care/api/patients/${patientData?.patientId || 1}/report`, '_blank');
+}
+
+async function savePatientProfile() {
+  if (!patientData) return;
+  const res = await API.put(`/patients/${patientData.patientId}`, {
+    ...patientData,
+    firstName: document.getElementById('pp-fname').value,
+    lastName: document.getElementById('pp-lname').value,
+    phone: document.getElementById('pp-phone').value,
+    email: document.getElementById('pp-email').value,
+    address: document.getElementById('pp-address').value,
+    emergencyContactName: document.getElementById('pp-ec-name').value,
+    emergencyContactPhone: document.getElementById('pp-ec-phone').value
+  });
+  if (res?.success) Toast.success('Profile updated successfully');
+  else Toast.error(res?.error || 'Update failed');
+}
+
+function showTab(name) {
+  document.querySelectorAll('[id^="tab-"]').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name)?.classList.remove('hidden');
+  document.getElementById('nav-' + name)?.classList.add('active');
+
+  const titles = { home:'Patient Portal', appointments:'My Appointments', records:'My Medical Records', bills:'My Bills & Payments', 'profile-tab':'My Profile & Settings' };
+  document.getElementById('portal-title').textContent = titles[name] || 'Patient Portal';
+
+  const patId = patientData?.patientId || 1;
+  if (name === 'records') loadRecordsTab(patId);
+  if (name === 'bills') loadBillsTab(patId);
+  if (name === 'appointments') {
+    loadDoctorOptions('');
+    document.getElementById('book-date').min = new Date().toISOString().split('T')[0];
+    const res2 = API.get(`/patients/${patId}/history`).then(r => {
+      if (r?.success) renderTable('patient-appts-tbody', (r.data.appointments||[]).slice(0,10), [
+        { key: 'appointment_date', render: r => fmtDate(r.appointment_date) },
+        { key: 'doctor_name' },
+        { key: 'appointment_type' },
+        { key: 'status', render: r => statusBadge(r.status) }
+      ]);
+    });
+  }
+}
+
+function switchRecordsTab(name) {
+  document.querySelectorAll('#tab-records .tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(name)));
+  document.querySelectorAll('#tab-records .tab-pane').forEach(p => p.classList.toggle('active', p.id === 'records-' + name));
+}
+
+// Add slot-btn CSS dynamically
+const styleEl = document.createElement('style');
+styleEl.textContent = '.slot-btn.selected{background:var(--teal);color:white;border-color:var(--teal);}';
+document.head.appendChild(styleEl);
+
+loadPortal();
+</script>
+</body>
+</html>

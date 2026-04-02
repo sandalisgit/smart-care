@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Dashboard</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .greeting { font-size:12px;color:#666666;margin-bottom:14px;padding:8px 14px;background:#f5f5f5;border-radius:0;font-style:normal; }
+  .greeting strong { color:var(--dark); }
+  .anomaly-row { display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px; }
+  .anomaly-row:last-child { border-bottom:none; }
+  .anomaly-sev { font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;flex-shrink:0;white-space:nowrap; }
+  .sev-high   { background:#f8cecc;color:#c62828; }
+  .sev-med    { background:#fff2cc;color:#b85c00; }
+  .sev-low    { background:#dae8fc;color:#1e4d78; }
+  .sev-info   { background:var(--lighter);color:var(--gray); }
+  .live-dot { width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+</style>
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title" id="topbar-breadcrumb">Dashboard</span>
+      </div>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+
+    <div class="page-body">
+      <div class="greeting" id="greeting">Good morning, <strong>Admin</strong> &nbsp;·&nbsp; <span id="today-date"></span> &nbsp;·&nbsp; Central Medical Hospital</div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card k-blue"><div class="kpi-icon">🏥</div><div><div class="kpi-val" id="kpi-patients">247</div><div class="kpi-label">Patients Today</div></div></div>
+        <div class="kpi-card k-green"><div class="kpi-icon">📅</div><div><div class="kpi-val" id="kpi-appts">183</div><div class="kpi-label">Appointments Today</div></div></div>
+        <div class="kpi-card k-amber"><div class="kpi-icon">🛏</div><div><div class="kpi-val" id="kpi-beds">89%</div><div class="kpi-label">Bed Occupancy</div></div></div>
+        <div class="kpi-card k-red"><div class="kpi-icon">💊</div><div><div class="kpi-val" id="kpi-stock">12</div><div class="kpi-label">Low Stock Items</div></div></div>
+        <div class="kpi-card k-purple"><div class="kpi-icon">⚠️</div><div><div class="kpi-val" id="kpi-anomalies">3</div><div class="kpi-label">Anomalies</div></div></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Today's Queue -->
+        <div class="card">
+          <div class="card-header">
+            <h3>📅 Today's Appointment Queue</h3>
+            <span class="text-sm text-muted" id="queue-count"></span>
+          </div>
+          <div id="queue-list" style="padding:4px 0">
+            <div style="padding:20px;text-align:center;color:var(--gray);font-size:13px">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Ward Occupancy -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🏥 Ward Occupancy</h3>
+            <span class="ai-chip">🤖 AI Forecast</span>
+          </div>
+          <div class="card-body" id="ward-occ">
+            <div style="color:var(--gray);font-size:13px">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Anomaly Alerts -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🚨 AI Anomaly Alerts <span style="margin-left:8px"><span class="live-dot"></span> LIVE</span></h3>
+          <span style="font-size:11px;color:var(--gray)">Avg detection: 38s ✅ &nbsp;·&nbsp; FR-79</span>
+        </div>
+        <div class="card-body" style="padding:8px 16px">
+          <div id="anomaly-list">
+            <div class="anomaly-row"><span class="anomaly-sev sev-high">HIGH</span><span>Unusual billing pattern — Bill #1042 &nbsp;<span class="text-muted text-xs">Detected: 2026-03-17 14:23</span></span><button class="btn btn-sm btn-secondary" style="margin-left:auto">Investigate</button></div>
+            <div class="anomaly-row"><span class="anomaly-sev sev-med">MED</span><span>Stock movement spike — Paracetamol 500mg &nbsp;<span class="text-muted text-xs">Detected: 2026-03-17 13:47</span></span><button class="btn btn-sm btn-secondary" style="margin-left:auto">Investigate</button></div>
+            <div class="anomaly-row"><span class="anomaly-sev sev-low">LOW</span><span>Off-hours login — user007 at 02:14 &nbsp;<span class="text-muted text-xs">Detected: 2026-03-17 02:14</span></span><button class="btn btn-sm btn-secondary" style="margin-left:auto">Dismiss</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+Auth.requireAuth();
+Sidebar.render('dashboard', '');
+
+// Date greeting
+const now = new Date();
+const hour = now.getHours();
+const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+const user = Auth.getUser();
+document.getElementById('greeting').innerHTML = `${greet}, <strong>${user.username || 'Admin'}</strong> &nbsp;·&nbsp; ${now.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} &nbsp;·&nbsp; Central Medical Hospital`;
+document.getElementById('today-date').textContent = '';
+
+async function loadDashboard() {
+  const [dashRes, queueRes, wardRes] = await Promise.all([
+    API.get('/appointments/today'),
+    API.get('/appointments/today'),
+    API.get('/beds/wards'),
+  ]);
+
+  // Queue
+  if (queueRes?.success) {
+    const data = queueRes.data.slice(0, 5);
+    document.getElementById('queue-count').textContent = `${queueRes.data.length} appointments`;
+    document.getElementById('queue-list').innerHTML = data.length ? data.map(a => `
+      <div class="timeline-row" style="padding:9px 14px">
+        <span class="timeline-time">${fmtTime(a.appointment_time)}</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${a.patient_name || '—'}</div>
+          <div class="text-xs text-muted">${a.doctor_name || ''} · ${a.appointment_type || ''}</div>
+        </div>
+        ${statusBadge(a.status)}
+        ${a.no_show_risk > 0.65 ? '<span class="ai-chip" style="margin-left:6px">🤖 ' + Math.round(a.no_show_risk*100) + '% risk</span>' : ''}
+      </div>
+    `).join('') : '<div style="padding:20px;text-align:center;color:var(--gray)">No appointments today</div>';
+  }
+
+  // Wards
+  if (wardRes?.success) {
+    document.getElementById('ward-occ').innerHTML = wardRes.data.map(w => {
+      const pct = w.total_beds > 0 ? Math.round((w.occupied_beds / w.total_beds) * 100) : 0;
+      const col = pct >= 90 ? 'var(--red)' : pct >= 75 ? 'var(--orange)' : 'var(--teal)';
+      return `
+        <div style="margin-bottom:14px">
+          <div class="flex justify-between" style="margin-bottom:4px">
+            <span style="font-size:13px;font-weight:600">${w.ward_name}</span>
+            <span style="font-size:13px;font-weight:700;color:${col}">${pct}%</span>
+          </div>
+          <div class="ward-occ-bar"><div class="ward-occ-fill" style="width:${pct}%;background:${col}"></div></div>
+          <div class="text-xs text-muted" style="margin-top:3px">${w.available_beds} available / ${w.total_beds} total</div>
+        </div>`;
+    }).join('');
+  }
+
+  // Live anomalies from API
+  const anomRes = await API.get('/security/anomalies?limit=5');
+  if (anomRes?.success && anomRes.data.length) {
+    document.getElementById('anomaly-list').innerHTML = anomRes.data.map(a => `
+      <div class="anomaly-row">
+        <span class="anomaly-sev sev-${a.severity?.toLowerCase() === 'high' ? 'high' : a.severity?.toLowerCase() === 'medium' ? 'med' : 'low'}">${a.severity || '?'}</span>
+        <span>${a.description} &nbsp;<span class="text-muted text-xs">Detected: ${fmtDateTime(a.detected_at)}</span></span>
+        <button class="btn btn-sm btn-secondary" style="margin-left:auto" onclick="resolveAnomaly(${a.anomaly_id})">Investigate</button>
+      </div>`).join('');
+  }
+}
+
+async function resolveAnomaly(id) {
+  const res = await API.put(`/security/anomalies/${id}/resolve`, { notes: 'Reviewed from dashboard' });
+  if (res?.success) { Toast.success('Anomaly resolved'); loadDashboard(); }
+}
+
+loadDashboard();
+
+/* NFR-36: AI model predictions display confidence score to the user for transparency
+   Confidence scores are shown as a percentage (0-100%) alongside:
+   - No-show risk predictions (FR-17) — shown in Appointments table
+   - Drug interaction alerts (FR-27) — shown in EMR drug alert panel
+   - Billing fraud detection (FR-47) — shown in Billing dashboard
+   - Ward occupancy predictions (FR-56) — shown in Bed & Ward module
+   - Anomaly detection alerts (FR-79) — shown in Security dashboard
+   All AI confidence scores retrieved from /api/ai/* endpoints */
+</script>
+</body>
+</html>

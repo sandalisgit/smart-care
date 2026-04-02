@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Security Dashboard</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .severity-Critical { color:#721c24;font-weight:700; }
+  .severity-High     { color:var(--danger);font-weight:600; }
+  .severity-Medium   { color:var(--warning);font-weight:600; }
+  .severity-Low      { color:var(--gray); }
+  .hipaa-item { padding:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px; }
+  .hipaa-item:last-child { border-bottom:none; }
+  .status-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+  .dot-IMPLEMENTED { background:var(--success); }
+  .dot-PARTIAL { background:var(--warning); }
+  .dot-NOT_IMPLEMENTED { background:var(--danger); }
+</style>
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-breadcrumb">Security & Audit</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+    <div class="page-body">
+
+      <!-- Quick actions -->
+      <div class="flex gap-3 mb-4">
+        <button class="btn btn-secondary" onclick="verifyChain()">🔗 Verify Audit Chain</button>
+        <button class="btn btn-secondary" onclick="loadHipaaReport()">📋 HIPAA Report</button>
+        <button class="btn btn-secondary" onclick="loadSessions()">👥 Active Sessions</button>
+        <button class="btn btn-danger btn-sm" onclick="refreshAll()">🔄 Refresh All</button>
+      </div>
+
+      <!-- Chain verification result -->
+      <div id="chain-result" class="hidden" style="margin-bottom:16px"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+        <!-- Anomaly Alerts -->
+        <div class="card">
+          <div class="card-header">
+            <h3>⚠️ AI Anomaly Alerts</h3>
+            <span id="anomaly-count" class="badge badge-danger">—</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Type</th><th>Severity</th><th>Description</th><th>Detected</th><th>Action</th></tr></thead>
+              <tbody id="anomaly-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Active Sessions -->
+        <div class="card">
+          <div class="card-header">
+            <h3>👥 Active Sessions</h3>
+            <button class="btn btn-sm btn-secondary" onclick="loadSessions()">Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Role</th><th>IP</th><th>Age (min)</th><th>Action</th></tr></thead>
+              <tbody id="sessions-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Audit Log -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <h3>📋 Audit Log (SHA-256 Hash Chained)</h3>
+          <div class="flex gap-2">
+            <input type="text" id="audit-filter" class="form-control" style="width:180px" placeholder="Filter by action...">
+            <button class="btn btn-sm btn-secondary" onclick="loadAuditLog()">Load</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>User</th><th>Action</th><th>Table</th><th>Record</th><th>IP</th><th>Time</th></tr></thead>
+            <tbody id="audit-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- HIPAA Report Panel -->
+      <div id="hipaa-panel" class="card hidden">
+        <div class="card-header">
+          <h3>📋 HIPAA 45 CFR § 164.312 Compliance Report</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="hipaa-score" class="badge badge-success" style="font-size:14px"></span>
+            <button class="btn btn-sm btn-secondary" onclick="document.getElementById('hipaa-panel').classList.add('hidden')">Hide</button>
+          </div>
+        </div>
+        <div id="hipaa-controls"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+Auth.requireAuth();
+Sidebar.render('security', 'security-audit');
+
+async function loadAnomalies() {
+  const res = await API.get('/security/anomalies?limit=20');
+  if (!res?.success) return;
+  document.getElementById('anomaly-count').textContent = res.data.length;
+
+  renderTable('anomaly-tbody', res.data, [
+    { key: 'anomaly_type' },
+    { key: 'severity', render: r => `<span class="severity-${r.severity}">${r.severity}</span>` },
+    { key: 'description', render: r => `<span title="${r.description}">${r.description.substring(0,60)}...</span>` },
+    { key: 'detected_at', render: r => fmtDateTime(r.detected_at) },
+    { key: 'action', render: r => `<button class="btn btn-sm btn-success" onclick="resolveAnomaly(${r.anomaly_id})">✅ Resolve</button>` }
+  ]);
+}
+
+async function resolveAnomaly(id) {
+  const notes = prompt('Resolution notes:');
+  if (notes === null) return;
+  const res = await API.put(`/security/anomalies/${id}/resolve`, { notes });
+  if (res?.success) {
+    Toast.success('Anomaly resolved');
+    loadAnomalies();
+  } else {
+    Toast.error(res?.error || 'Failed to resolve');
+  }
+}
+
+async function loadSessions() {
+  const res = await API.get('/security/sessions');
+  if (!res?.success) return;
+
+  renderTable('sessions-tbody', res.data, [
+    { key: 'username', render: r => `<strong>${r.username}</strong>` },
+    { key: 'role' },
+    { key: 'ipAddress' },
+    { key: 'sessionAgeMinutes', render: r => `${r.sessionAgeMinutes} min` },
+    { key: 'action', render: r => {
+      const user = Auth.getUser();
+      if (r.username === user.username) return '<span class="text-muted text-sm">Current</span>';
+      return `<button class="btn btn-sm btn-danger" onclick="forceLogout('${r.fullToken}','${r.username}')">Force Out</button>`;
+    }}
+  ]);
+}
+
+async function forceLogout(token, username) {
+  if (!confirm(`Force logout user: ${username}?`)) return;
+  const res = await API.delete(`/security/sessions/${token}`);
+  if (res?.success) {
+    Toast.success(`${username} has been logged out`);
+    loadSessions();
+  } else {
+    Toast.error(res?.error || 'Failed');
+  }
+}
+
+async function loadAuditLog() {
+  const res = await API.get('/security/audit-log?limit=100');
+  if (!res?.success) return;
+
+  let data = res.data;
+  const filter = document.getElementById('audit-filter').value.toLowerCase();
+  if (filter) data = data.filter(r => r.action_type?.toLowerCase().includes(filter));
+
+  renderTable('audit-tbody', data, [
+    { key: 'audit_id' },
+    { key: 'username', render: r => r.username || `User#${r.user_id}` },
+    { key: 'action_type', render: r => `<code style="font-size:11px;background:var(--light);padding:2px 6px;border-radius:4px">${r.action_type}</code>` },
+    { key: 'table_name', render: r => r.table_name || '—' },
+    { key: 'record_id', render: r => r.record_id || '—' },
+    { key: 'ip_address', render: r => r.ip_address || '—' },
+    { key: 'created_at', render: r => fmtDateTime(r.created_at) }
+  ]);
+}
+
+async function verifyChain() {
+  const res = await API.get('/security/chain-verify');
+  if (!res?.success) return;
+  const el = document.getElementById('chain-result');
+  el.classList.remove('hidden');
+  el.className = `alert ${res.data.chainIntact ? 'alert-success' : 'alert-danger'}`;
+  el.innerHTML = `
+    <strong>${res.data.chainIntact ? '✅ Audit Chain Intact' : '❌ Tamper Detected!'}</strong>
+    — ${res.data.status}
+    ${!res.data.chainIntact ? `<br><strong>${res.data.tamperedRecords} tampered record(s) found. Report immediately.</strong>` : ''}
+  `;
+}
+
+async function loadHipaaReport() {
+  const res = await API.get('/security/hipaa-report');
+  if (!res?.success) return;
+
+  const panel = document.getElementById('hipaa-panel');
+  panel.classList.remove('hidden');
+  document.getElementById('hipaa-score').textContent = `${res.data.summary.compliancePercentage}% Compliant`;
+
+  document.getElementById('hipaa-controls').innerHTML = res.data.controls.map(c => `
+    <div class="hipaa-item">
+      <div class="status-dot dot-${c.status.replace(' ','_')}"></div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--gray)">${c.reference}</div>
+        <div style="font-weight:600;font-size:13px">${c.name}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">${c.implementation}</div>
+      </div>
+      <span class="badge ${c.status === 'IMPLEMENTED' ? 'badge-success' : 'badge-warning'}">${c.status}</span>
+    </div>
+  `).join('');
+}
+
+function refreshAll() {
+  loadAnomalies();
+  loadSessions();
+  loadAuditLog();
+}
+
+// Init
+loadAnomalies();
+loadSessions();
+loadAuditLog();
+</script>
+</body>
+</html>

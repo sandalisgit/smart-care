@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Staff Sign In</title>
+<link rel="stylesheet" href="css/app.css">
+<style>
+  .left-features { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
+  .left-feature { display: flex; align-items: flex-start; gap: 12px; }
+  .left-feature .icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .left-feature h4 { font-size: 14px; font-weight: 700; color: white; }
+  .left-feature p  { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+  .error-box { background: var(--red-light); border: 1px solid #F5C6CB; color: #721C24; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 16px; display: none; }
+  .forgot-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 12px; }
+  .remember-me { display: flex; align-items: center; gap: 6px; color: var(--gray); cursor: pointer; }
+  .remember-me input { accent-color: var(--teal); }
+  .demo-creds { background: var(--teal-light); border: 1px solid var(--teal-mid); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 18px; font-size: 12px; }
+  .demo-creds h4 { font-weight: 700; color: var(--teal-darker); margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .cred-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--teal-mid); font-size: 11px; }
+  .cred-row:last-child { border-bottom: none; }
+  .cred-role { color: var(--teal-darker); font-weight: 600; min-width: 110px; }
+  .cred-info { font-family: monospace; color: var(--mid); flex: 1; }
+  .cred-use { background: var(--teal); color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 10px; cursor: pointer; font-weight: 600; }
+  .cred-use:hover { background: var(--teal-dark); }
+</style>
+</head>
+<body>
+<div class="auth-layout">
+  <div class="auth-left">
+    <div class="brand">
+      <h1><span class="t">Smart</span><span class="o">Care</span></h1>
+      <p>AI-Powered Hospital ERP System</p>
+    </div>
+    <div class="tagline">Your health,<br><em>in your hands</em></div>
+    <p class="desc">An AI-powered Hospital ERP system integrating patient care, hospital operations, and security into a single intelligent platform.</p>
+    <div class="left-features">
+      <div class="left-feature"><div class="icon">🤖</div><div><h4>AI-Powered Insights</h4><p>No-show prediction, drug interaction alerts, anomaly detection</p></div></div>
+      <div class="left-feature"><div class="icon">🔐</div><div><h4>HIPAA Compliant</h4><p>AES-256-GCM encryption, SHA-256 audit chaining, TLS 1.3</p></div></div>
+      <div class="left-feature"><div class="icon">🏥</div><div><h4>8 Integrated Modules</h4><p>Patients, Appointments, EMR, Pharmacy, Billing, Beds, Staff, Security</p></div></div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <h2 class="auth-card-title">Staff Sign In</h2>
+    <p class="auth-card-sub">Enter your staff credentials to access Smart Care</p>
+
+    <div class="demo-creds">
+      <h4>Demo Staff Credentials — click Use to fill</h4>
+      <div class="cred-row"><span class="cred-role">System Admin</span><span class="cred-info">admin / Admin@2026!</span><button class="cred-use" onclick="fillCreds('admin','Admin@2026!')">Use</button></div>
+      <div class="cred-row"><span class="cred-role">Doctor</span><span class="cred-info">dr.silva / Doctor@2026!</span><button class="cred-use" onclick="fillCreds('dr.silva','Doctor@2026!')">Use</button></div>
+      <div class="cred-row"><span class="cred-role">Pharmacist</span><span class="cred-info">pharmacist / Pharm@2026!</span><button class="cred-use" onclick="fillCreds('pharmacist','Pharm@2026!')">Use</button></div>
+      <div class="cred-row"><span class="cred-role">Billing Clerk</span><span class="cred-info">billing / Billing@2026!</span><button class="cred-use" onclick="fillCreds('billing','Billing@2026!')">Use</button></div>
+      <div class="cred-row"><span class="cred-role">Receptionist</span><span class="cred-info">reception / Recept@2026!</span><button class="cred-use" onclick="fillCreds('reception','Recept@2026!')">Use</button></div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <div class="form-group">
+      <label class="form-label">Username <span class="req">*</span></label>
+      <input id="inp-username" type="text" class="form-control" placeholder="Staff username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password <span class="req">*</span></label>
+      <div style="position:relative">
+        <input id="inp-password" type="password" class="form-control" placeholder="••••••••••••" autocomplete="current-password">
+        <button type="button" onclick="togglePwd()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gray);font-size:14px;cursor:pointer">👁</button>
+      </div>
+    </div>
+    <div class="forgot-row">
+      <label class="remember-me"><input type="checkbox" id="remember-me"> Remember me</label>
+      <a href="#" style="color:var(--teal);font-weight:600;font-size:12px">Forgot password?</a>
+    </div>
+
+    <button id="signin-btn" class="btn btn-primary btn-full btn-lg" onclick="doLogin()">🔒 Sign In</button>
+    <hr class="auth-divider">
+    <p style="text-align:center;font-size:13px;color:var(--gray)">
+      Are you a patient? <a href="pages/auth/patient-login.html" style="color:var(--orange);font-weight:700">Patient Login →</a>
+    </p>
+    <div class="auth-footer" style="margin-top:24px">
+      <div class="security-badge" style="justify-content:center">
+        <div class="dot"></div>
+        <span>TLS 1.3 Encrypted &nbsp;·&nbsp; bcrypt Password Hashing (cost 12)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+if (Auth.isLoggedIn()) { const u = Auth.getUser(); redirectByRole(u.role); }
+
+function fillCreds(u, p) {
+  document.getElementById('inp-username').value = u;
+  document.getElementById('inp-password').value = p;
+  document.getElementById('error-box').style.display = 'none';
+}
+
+function togglePwd() {
+  const inp = document.getElementById('inp-password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+document.getElementById('inp-password').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('inp-username').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('inp-password').focus(); });
+
+async function doLogin() {
+  const username = document.getElementById('inp-username').value.trim();
+  const password = document.getElementById('inp-password').value;
+  const errorBox = document.getElementById('error-box');
+  errorBox.style.display = 'none';
+  if (!username || !password) { errorBox.textContent = 'Please enter your username and password.'; errorBox.style.display = 'block'; return; }
+  setLoading('signin-btn', true, 'Signing in...');
+  const res = await API.post('/auth/login', { username, password });
+  setLoading('signin-btn', false, '🔒 Sign In');
+  if (!res) return;
+  if (res.success) {
+    // ✅ FIX: Check MFA FIRST before setting any session
+    if (res.data.requiresMfa || res.data.requiresMfaSetup) {
+      // MFA not done yet — store only the temp token and basic user info (NO real session)
+      sessionStorage.setItem('sc_mfa_token', res.data.tempToken);
+      sessionStorage.setItem('sc_mfa_user', JSON.stringify({
+        username: res.data.username,
+        userId: res.data.userId,
+        role: res.data.role
+      }));
+      // Tell mfa.html which tab to show: 'verify' = already enrolled, 'setup' = first time
+      sessionStorage.setItem('sc_mfa_mode', res.data.requiresMfa ? 'verify' : 'setup');
+      window.location.href = 'pages/auth/mfa.html';
+    } else {
+      // ✅ No MFA needed — safe to create a real session now
+      const user = { username: res.data.username, userId: res.data.userId, role: res.data.role, permissions: res.data.permissions };
+      Auth.setSession(res.data.token, user);
+      redirectByRole(res.data.role);
+    }
+  } else {
+    errorBox.textContent = res.error || 'Invalid username or password.';
+    errorBox.style.display = 'block';
+  }
+}
+
+function redirectByRole(role) {
+  const routes = {
+    'System Admin':   'pages/admin/dashboard.html',
+    'Hospital Admin': 'pages/admin/dashboard.html',
+    'Doctor':         'pages/staff/doctor-dashboard.html',
+    'Nurse':          'pages/beds/ward.html',
+    'Pharmacist':     'pages/pharmacy/dashboard.html',
+    'Billing Clerk':  'pages/billing/dashboard.html',
+    'HR Manager':     'pages/staff/employees.html',
+    'Receptionist':   'pages/appointments/book.html',
+  };
+  window.location.href = routes[role] || 'pages/admin/dashboard.html';
+}
+</script>
+</body>
+</html>

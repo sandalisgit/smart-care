@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Billing</title>
+<link rel="stylesheet" href="../../css/app.css">
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-breadcrumb">Billing</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+    <div class="page-body">
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card green"><div class="kpi-icon">💵</div><div><div class="kpi-value" id="kpi-rev">—</div><div class="kpi-label">Today's Revenue</div></div></div>
+        <div class="kpi-card red"><div class="kpi-icon">⏳</div><div><div class="kpi-value" id="kpi-out">—</div><div class="kpi-label">Outstanding</div></div></div>
+        <div class="kpi-card orange"><div class="kpi-icon">🔔</div><div><div class="kpi-value" id="kpi-overdue">—</div><div class="kpi-label">Overdue Bills</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon">📄</div><div><div class="kpi-value" id="kpi-today">—</div><div class="kpi-label">Bills Today</div></div></div>
+      </div>
+
+      <!-- Outstanding Bills -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <h3>⏳ Outstanding Bills</h3>
+          <button class="btn btn-sm btn-secondary" onclick="loadOutstanding()">🔄 Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bill No.</th><th>Patient</th><th>Phone</th><th>Total</th><th>Balance</th><th>Due Date</th><th>Days Overdue</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="outstanding-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="modal-payment" class="modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>💰 Record Payment</h3>
+      <button onclick="Modal.close('modal-payment')" class="btn btn-secondary btn-sm">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="payment-bill-summary" style="background:var(--light);border-radius:8px;padding:12px;margin-bottom:12px"></div>
+      <input type="hidden" id="payment-bill-id">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Amount (LKR) <span class="required">*</span></label>
+          <input type="number" id="pay-amount" class="form-control" step="0.01" min="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Method</label>
+          <select id="pay-method" class="form-control">
+            <option>Cash</option><option>Credit Card</option><option>Debit Card</option>
+            <option>Bank Transfer</option><option>Insurance</option><option>Mobile Payment</option>
+          </select>
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Transaction Reference</label>
+          <input type="text" id="pay-ref" class="form-control" placeholder="Receipt/transaction number">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('modal-payment')">Cancel</button>
+      <button id="pay-submit-btn" class="btn btn-primary" onclick="submitPayment()">💰 Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+Auth.requireAuth();
+Sidebar.render('billing', 'billing-invoices');
+
+async function loadStats() {
+  const res = await API.get('/billing/dashboard');
+  if (res?.success) {
+    document.getElementById('kpi-rev').textContent = fmtCurrency(res.data.revenue_today);
+    document.getElementById('kpi-out').textContent = fmtCurrency(res.data.total_outstanding);
+    document.getElementById('kpi-overdue').textContent = res.data.overdue_count ?? '—';
+    document.getElementById('kpi-today').textContent = res.data.total_bills_today ?? '—';
+  }
+}
+
+async function loadOutstanding() {
+  const res = await API.get('/billing/outstanding');
+  if (!res?.success) return;
+  renderTable('outstanding-tbody', res.data, [
+    { key: 'bill_number', render: r => `<strong>${r.bill_number}</strong>` },
+    { key: 'patient_name' },
+    { key: 'patient_phone' },
+    { key: 'total_amount', render: r => fmtCurrency(r.total_amount) },
+    { key: 'balance_amount', render: r => `<strong class="text-danger">${fmtCurrency(r.balance_amount)}</strong>` },
+    { key: 'due_date', render: r => fmtDate(r.due_date) },
+    { key: 'days_overdue', render: r => r.days_overdue > 0 ? `<span class="text-danger">${r.days_overdue}d</span>` : '<span class="text-success">On time</span>' },
+    { key: 'status', render: r => statusBadge(r.status) },
+    { key: 'action', render: r => `<button class="btn btn-sm btn-primary" onclick="openPayment(${r.bill_id},'${r.bill_number}',${r.balance_amount})">💰 Pay</button>` }
+  ]);
+}
+
+function openPayment(billId, billNumber, balance) {
+  document.getElementById('payment-bill-id').value = billId;
+  document.getElementById('payment-bill-summary').innerHTML =
+    `<strong>Bill:</strong> ${billNumber} &nbsp;|&nbsp; <strong>Balance Due:</strong> <span class="text-danger fw-bold">${fmtCurrency(balance)}</span>`;
+  document.getElementById('pay-amount').max = balance;
+  document.getElementById('pay-amount').value = balance;
+  Modal.open('modal-payment');
+}
+
+async function submitPayment() {
+  const btn = document.getElementById('pay-submit-btn');
+  const billId = document.getElementById('payment-bill-id').value;
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  if (!amount || amount <= 0) { Toast.error('Enter a valid amount'); return; }
+
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+  const res = await API.post('/billing/payments', {
+    billId: parseInt(billId),
+    amount,
+    paymentMethod: document.getElementById('pay-method').value,
+    reference: document.getElementById('pay-ref').value
+  });
+
+  btn.disabled = false; btn.textContent = '💰 Record Payment';
+
+  if (res?.success) {
+    Toast.success(`Payment of ${fmtCurrency(amount)} recorded`);
+    Modal.close('modal-payment');
+    loadStats();
+    loadOutstanding();
+  } else {
+    Toast.error(res?.error || 'Payment failed');
+  }
+}
+
+loadStats();
+loadOutstanding();
+</script>
+</body>
+</html>

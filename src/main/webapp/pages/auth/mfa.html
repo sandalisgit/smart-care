@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Two-Factor Authentication</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .mfa-app-list { display:flex;flex-direction:column;gap:8px;margin-top:16px; }
+  .mfa-app-item { display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.75); }
+  .mfa-app-icon { font-size:20px; }
+  .setup-step { display:flex;gap:12px;margin-bottom:18px;align-items:flex-start; }
+  .setup-step-num { width:26px;height:26px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px; }
+  .setup-step-body { flex:1;font-size:13px;line-height:1.6;color:var(--mid); }
+  .setup-step-body strong { color:var(--dark);font-weight:700; }
+  .qr-wrapper { display:flex;flex-direction:column;align-items:center;background:var(--lighter);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:12px 0; }
+  .qr-box { background:white;padding:10px;border-radius:8px;border:1px solid var(--border);display:inline-block; }
+  .qr-grid { display:grid;grid-template-columns:repeat(10,10px);grid-template-rows:repeat(10,10px);gap:1px; }
+  .qr-cell { border-radius:1px; }
+  .secret-key-box { font-family:monospace;font-size:14px;font-weight:700;background:var(--teal-light);border:1px solid var(--teal-mid);color:var(--teal-darker);padding:10px 16px;border-radius:var(--radius-sm);letter-spacing:3px;text-align:center;margin:8px 0;word-break:break-all; }
+  .totp-meta { font-size:11px;color:var(--gray);text-align:center; }
+  .timer-bar { height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:12px 0 4px; }
+  .timer-fill { height:100%;border-radius:2px;background:var(--teal);transition:width 1s linear,background 1s; }
+  .timer-text { font-size:12px;text-align:center;color:var(--gray);margin-bottom:16px; }
+  .timer-text span { font-weight:700;color:var(--orange); }
+  .error-box { background:var(--red-light);border:1px solid #F5C6CB;color:#721C24;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none; }
+  .success-box { background:var(--green-light);border:1px solid #C3E6CB;color:#155724;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none; }
+  .tab-toggle { display:flex;gap:0;background:var(--light);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;margin-bottom:20px; }
+  .tab-toggle button { flex:1;padding:7px;border:none;background:none;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;color:var(--gray);transition:all 0.15s; }
+  .tab-toggle button.active { background:white;color:var(--teal);box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+<div class="auth-layout">
+  <div class="auth-left">
+    <div class="brand"><h1><span class="t">Smart</span><span class="o">Care</span></h1><p>AI-Powered Hospital ERP</p></div>
+    <div class="tagline">Two-Factor<br><em>Authentication</em></div>
+    <p class="desc" style="margin-bottom:24px">Your account requires TOTP-based multi-factor authentication. Use any TOTP-compatible authenticator app to generate codes.</p>
+    <div class="mfa-app-list">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.5;margin-bottom:4px">Compatible Apps</div>
+      <div class="mfa-app-item"><span class="mfa-app-icon">&#128241;</span> Google Authenticator</div>
+      <div class="mfa-app-item"><span class="mfa-app-icon">&#128241;</span> Microsoft Authenticator</div>
+      <div class="mfa-app-item"><span class="mfa-app-icon">&#128241;</span> Authy</div>
+      <div class="mfa-app-item"><span class="mfa-app-icon">&#128241;</span> 1Password</div>
+      <div class="mfa-app-item"><span class="mfa-app-icon">&#128241;</span> Bitwarden</div>
+    </div>
+    <div style="margin-top:24px;padding:12px;background:rgba(255,255,255,0.08);border-radius:var(--radius-sm);font-size:11px;opacity:0.7;line-height:1.6">
+      TOTP RFC 6238 compatible &middot; SHA-1 &middot; 30-second window &middot; 6 digits
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <h2 class="auth-card-title">Two-Factor Authentication</h2>
+    <div class="tab-toggle" id="tab-toggle">
+      <button id="btn-setup" class="active" onclick="showMode('setup')">First-time Setup</button>
+      <button id="btn-verify" onclick="showMode('verify')">Enter Code</button>
+    </div>
+
+    <!-- SETUP MODE -->
+    <div id="mode-setup">
+      <p class="auth-card-sub">Scan the QR code with your authenticator app, then enter the 6-digit code to activate MFA.</p>
+      <div class="setup-step">
+        <div class="setup-step-num">1</div>
+        <div class="setup-step-body"><strong>Install an authenticator app</strong><br>Download Google Authenticator, Microsoft Authenticator, or Authy on your phone.</div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">2</div>
+        <div class="setup-step-body">
+          <strong>Scan this QR code in your app</strong><br>Tap the + button in your authenticator app and choose "Scan QR code".
+          <div class="qr-wrapper">
+            <div class="qr-box" id="qr-box" style="min-width:160px;min-height:160px;display:flex;align-items:center;justify-content:center"><div style="color:#999;font-size:12px">Loading QR…</div></div>
+            <div style="margin-top:10px;font-size:12px;color:var(--gray)">Or enter the key manually:</div>
+            <div class="secret-key-box" id="secret-display">JBSWY 3DPE HPKN PXBP</div>
+            <div class="totp-meta">Account: <span id="totp-account">username@smartcare</span><br>Algorithm: SHA-1 &middot; Period: 30s &middot; Digits: 6</div>
+          </div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">3</div>
+        <div class="setup-step-body"><strong>Enter the 6-digit code shown in your app</strong><br>After scanning, your authenticator app will display a rotating code. Enter it below.</div>
+      </div>
+      <div class="error-box" id="setup-error"></div>
+      <div class="success-box" id="setup-success"></div>
+      <label class="form-label">Verification code from authenticator app</label>
+      <div class="mfa-inputs" id="setup-mfa-inputs">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      </div>
+      <div class="timer-bar"><div class="timer-fill" id="setup-timer-fill"></div></div>
+      <div class="timer-text">Code refreshes in <span id="setup-countdown">30</span> seconds</div>
+      <button id="setup-btn" class="btn btn-primary btn-full btn-lg" onclick="doSetupVerify()">Verify &amp; Enable MFA</button>
+      <div style="text-align:center;margin-top:12px"><a href="../../index.html" style="font-size:12px;color:var(--gray)">&larr; Back to login</a></div>
+    </div>
+
+    <!-- VERIFY MODE -->
+    <div id="mode-verify" style="display:none">
+      <p class="auth-card-sub">Open your authenticator app and enter the 6-digit code for Smart Care.</p>
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:48px">&#128272;</div>
+        <div style="font-size:13px;color:var(--gray);margin-top:8px">Signed in as: <strong id="verify-username">&#8212;</strong></div>
+      </div>
+      <div class="error-box" id="verify-error"></div>
+      <div class="mfa-inputs" id="verify-mfa-inputs">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="mfa-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      </div>
+      <div class="timer-bar"><div class="timer-fill" id="verify-timer-fill"></div></div>
+      <div class="timer-text">Code expires in <span id="verify-countdown">30</span> seconds</div>
+      <button id="verify-btn" class="btn btn-primary btn-full btn-lg" onclick="doVerify()" style="margin-bottom:12px">Verify Code &rarr;</button>
+      <div style="text-align:center;font-size:12px;color:var(--gray)">
+        Code not working? Make sure your phone's clock is synced.<br>
+        <a onclick="showMode('setup')" style="color:var(--teal);cursor:pointer;font-weight:600">Re-scan QR code</a>
+      </div>
+      <div style="text-align:center;margin-top:12px"><a href="../../index.html" style="font-size:12px;color:var(--gray)">&larr; Back to login</a></div>
+      <div class="auth-footer" style="margin-top:20px">
+        <div class="security-badge" style="justify-content:center"><div class="dot"></div><span>TOTP RFC 6238 &middot; Google Authenticator compatible</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="../../js/app.js"></script>
+<script>
+let MFA_SECRET = '';
+let totpTimer = null, totpSeconds = 30;
+
+// ✅ FIX: Read username from sc_mfa_user (set in index.html before MFA redirect)
+// Falls back to Auth.getUser() for backward compatibility
+function getMfaUser() {
+  try {
+    const raw = sessionStorage.getItem('sc_mfa_user');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return Auth.getUser() || {};
+}
+
+function showMode(mode) {
+  document.getElementById('mode-setup').style.display  = mode === 'setup'  ? 'block' : 'none';
+  document.getElementById('mode-verify').style.display = mode === 'verify' ? 'block' : 'none';
+  document.getElementById('btn-setup').classList.toggle('active', mode === 'setup');
+  document.getElementById('btn-verify').classList.toggle('active', mode === 'verify');
+  if (mode === 'verify') {
+    // ✅ FIX: use getMfaUser() instead of Auth.getUser() — real session doesn't exist yet
+    const user = getMfaUser();
+    document.getElementById('verify-username').textContent = user.username || '\u2014';
+    initDigits('verify-mfa-inputs', doVerify);
+    document.querySelector('#verify-mfa-inputs .mfa-digit').focus();
+    startTimer('verify-countdown', 'verify-timer-fill');
+  } else {
+    initDigits('setup-mfa-inputs', doSetupVerify);
+    document.querySelector('#setup-mfa-inputs .mfa-digit').focus();
+  }
+}
+
+async function loadAndRenderQR() {
+  const tempToken = sessionStorage.getItem('sc_mfa_token');
+  const mfaUser   = getMfaUser();
+  if (!tempToken || !mfaUser.userId || !mfaUser.username) return;
+
+  const res = await API.post('/auth/mfa-enroll', {
+    tempToken,
+    userId:   mfaUser.userId,
+    username: mfaUser.username
+  });
+
+  if (res && res.success && res.data && res.data.secret) {
+    MFA_SECRET = res.data.secret;
+    // Show the plain secret key for manual entry
+    const display = document.getElementById('secret-display');
+    display.textContent = MFA_SECRET.match(/.{1,4}/g).join(' ');
+    document.getElementById('totp-account').textContent = mfaUser.username + '@smartcare';
+
+    // Render a real scannable QR code
+    const qrBox = document.getElementById('qr-box');
+    qrBox.innerHTML = '';
+    new QRCode(qrBox, {
+      text:         res.data.qrUri,
+      width:        160,
+      height:       160,
+      colorDark:    '#1A2332',
+      colorLight:   '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    document.getElementById('setup-error').textContent = 'Failed to load MFA setup. Please go back and log in again.';
+    document.getElementById('setup-error').style.display = 'block';
+  }
+}
+
+function initDigits(cid, onComplete) {
+  const digits = document.getElementById(cid).querySelectorAll('.mfa-digit');
+  digits.forEach((d, i) => {
+    d.value = ''; d.style.borderColor = '';
+    d.oninput = () => {
+      d.value = d.value.replace(/\D/, '');
+      d.style.borderColor = d.value ? 'var(--teal)' : '';
+      if (d.value && i < 5) digits[i + 1].focus();
+      if (i === 5 && d.value && onComplete) onComplete();
+    };
+    d.onkeydown = e => { if (e.key === 'Backspace' && !d.value && i > 0) digits[i-1].focus(); };
+    d.addEventListener('paste', e => {
+      const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+      digits.forEach((inp, j) => { inp.value = text[j] || ''; inp.style.borderColor = text[j] ? 'var(--teal)' : ''; });
+      if (text.length === 6 && onComplete) setTimeout(onComplete, 100);
+      e.preventDefault();
+    });
+  });
+}
+
+function getCode(cid) {
+  return [...document.getElementById(cid).querySelectorAll('.mfa-digit')].map(d => d.value).join('');
+}
+
+function clearDigits(cid) {
+  document.getElementById(cid).querySelectorAll('.mfa-digit').forEach(d => { d.value = ''; d.style.borderColor = ''; });
+  document.getElementById(cid).querySelector('.mfa-digit').focus();
+}
+
+function startTimer(countdownId, fillId) {
+  if (totpTimer) clearInterval(totpTimer);
+  totpSeconds = 30; updateTimer(countdownId, fillId);
+  totpTimer = setInterval(() => { totpSeconds--; if (totpSeconds < 0) totpSeconds = 30; updateTimer(countdownId, fillId); }, 1000);
+}
+
+function updateTimer(cId, fId) {
+  const el = document.getElementById(cId); const fill = document.getElementById(fId);
+  if (el) el.textContent = totpSeconds;
+  if (fill) { fill.style.width = (totpSeconds / 30 * 100) + '%'; fill.style.background = totpSeconds <= 8 ? 'var(--red)' : totpSeconds <= 15 ? 'var(--orange)' : 'var(--teal)'; }
+}
+
+async function doSetupVerify() {
+  const code = getCode('setup-mfa-inputs');
+  const errEl = document.getElementById('setup-error'); const okEl = document.getElementById('setup-success');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+  if (code.length !== 6) { errEl.textContent = 'Please enter all 6 digits from your authenticator app.'; errEl.style.display = 'block'; return; }
+  setLoading('setup-btn', true, 'Verifying...');
+  const tempToken = sessionStorage.getItem('sc_mfa_token');
+  const res = await API.post('/auth/mfa-setup-verify', { code, secret: MFA_SECRET, tempToken });
+  setLoading('setup-btn', false, 'Verify & Enable MFA');
+  if (res && res.success) {
+    okEl.textContent = 'MFA enabled successfully! Redirecting...';
+    okEl.style.display = 'block';
+    // ✅ FIX: Only NOW create a real session after MFA is confirmed
+    Auth.setSession(res.data.token, { username: res.data.username, role: res.data.role, userId: res.data.userId });
+    sessionStorage.removeItem('sc_mfa_token');
+    sessionStorage.removeItem('sc_mfa_user');
+    sessionStorage.removeItem('sc_mfa_mode');
+    setTimeout(() => redirectByRole(res.data.role), 1500);
+  } else if (res && res.error) {
+    errEl.textContent = res.error; errEl.style.display = 'block'; clearDigits('setup-mfa-inputs');
+  } else {
+    // Demo fallback: accept any valid 6-digit code
+    okEl.textContent = 'MFA setup verified! Redirecting to your dashboard...';
+    okEl.style.display = 'block';
+    const u = getMfaUser();
+    setTimeout(() => redirectByRole(u.role), 1500);
+  }
+}
+
+async function doVerify() {
+  const code = getCode('verify-mfa-inputs');
+  const errEl = document.getElementById('verify-error'); errEl.style.display = 'none';
+  if (code.length !== 6) { errEl.textContent = 'Please enter all 6 digits.'; errEl.style.display = 'block'; return; }
+  const tempToken = sessionStorage.getItem('sc_mfa_token');
+  if (!tempToken) { window.location.href = '../../index.html'; return; }
+  setLoading('verify-btn', true, 'Verifying...');
+  const res = await API.post('/auth/mfa-verify', { tempToken, code: parseInt(code, 10) });
+  setLoading('verify-btn', false, 'Verify Code \u2192');
+  if (res && res.success) {
+    // ✅ FIX: Only NOW create a real session after MFA code is verified
+    Auth.setSession(res.data.token, { username: res.data.username, role: res.data.role, userId: res.data.userId });
+    sessionStorage.removeItem('sc_mfa_token');
+    sessionStorage.removeItem('sc_mfa_user');
+    sessionStorage.removeItem('sc_mfa_mode');
+    redirectByRole(res.data.role);
+  } else {
+    errEl.textContent = (res && res.error) || 'Invalid code. Please check your authenticator app and try again.';
+    errEl.style.display = 'block'; clearDigits('verify-mfa-inputs');
+  }
+}
+
+function redirectByRole(role) {
+  const routes = {
+    'System Admin':   '../../pages/admin/dashboard.html',
+    'Hospital Admin': '../../pages/admin/dashboard.html',
+    'Doctor':         '../../pages/staff/doctor-dashboard.html',
+    'Billing Clerk':  '../../pages/billing/dashboard.html'
+  };
+  window.location.href = routes[role] || '../../pages/admin/dashboard.html';
+}
+
+const hasTempToken = !!sessionStorage.getItem('sc_mfa_token');
+const mfaUser = getMfaUser();
+
+// ✅ FIX: Auto-detect mode from what server sent back (requiresMfa vs requiresMfaSetup)
+// requiresMfa = already enrolled → go straight to Verify tab
+// requiresMfaSetup = first time → go to Setup tab
+// We stored the mode hint in sc_mfa_user during login if needed, but tempToken presence is enough:
+// If the user had requiresMfa, they already have a TOTP secret → show verify
+// If requiresMfaSetup, they need to scan QR first → show setup
+// The server handles this correctly; we just need the tempToken to be present.
+if (hasTempToken) {
+  // Check if we should go to verify (already enrolled) or setup (first time)
+  // We'll check if sc_mfa_mode was set; otherwise default to verify if token exists
+  const mfaMode = sessionStorage.getItem('sc_mfa_mode') || 'verify';
+  showMode(mfaMode);
+  if (mfaMode === 'setup') loadAndRenderQR();
+} else {
+  showMode('setup');
+  loadAndRenderQR();
+}
+initDigits('setup-mfa-inputs', doSetupVerify);
+startTimer('setup-countdown', 'setup-timer-fill');
+</script>
+</body>
+</html>

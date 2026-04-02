@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Pharmacy</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .stock-bar { height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:4px; }
+  .stock-fill { height:100%;border-radius:3px;transition:width 0.5s; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-breadcrumb">Pharmacy</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+
+    <div class="page-body">
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon">📦</div><div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-label">Total Items</div></div></div>
+        <div class="kpi-card red"><div class="kpi-icon">⚠️</div><div><div class="kpi-value" id="kpi-low">—</div><div class="kpi-label">Low Stock</div></div></div>
+        <div class="kpi-card orange"><div class="kpi-icon">⏰</div><div><div class="kpi-value" id="kpi-exp">—</div><div class="kpi-label">Expiring (30d)</div></div></div>
+        <div class="kpi-card green"><div class="kpi-icon">💊</div><div><div class="kpi-value" id="kpi-disp">—</div><div class="kpi-label">Dispensed Today</div></div></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('prescriptions')">📋 Pending Prescriptions</button>
+        <button class="tab-btn" onclick="switchTab('stock')">📦 Inventory</button>
+        <button class="tab-btn" onclick="switchTab('lowstock')">⚠️ Low Stock</button>
+        <button class="tab-btn" onclick="switchTab('expiring')">⏰ Expiring Soon</button>
+        <button class="tab-btn" onclick="switchTab('receive')">📥 Receive Stock</button>
+      </div>
+
+      <!-- PENDING PRESCRIPTIONS -->
+      <div id="tab-prescriptions" class="tab-pane active">
+        <div class="card">
+          <div class="card-header"><h3>Pending Prescription Dispensing</h3>
+            <button class="btn btn-sm btn-secondary" onclick="loadPrescriptions()">🔄 Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Prescription ID</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Items</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="rx-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div id="tab-stock" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h3>Full Inventory</h3>
+            <select id="cat-filter" class="form-control" style="width:200px" onchange="loadInventory(this.value)">
+              <option value="">All Categories</option>
+              <option>Medicine</option><option>Medical Equipment</option>
+              <option>Consumables</option><option>Surgical Items</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Code</th><th>Item</th><th>Category</th><th>Stock</th><th>Reorder Level</th><th>Price</th><th>Status</th></tr></thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOW STOCK -->
+      <div id="tab-lowstock" class="tab-pane">
+        <div class="card">
+          <div class="card-header"><h3>⚠️ Low Stock Alert</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Item</th><th>Category</th><th>Current Stock</th><th>Reorder Level</th><th>Reorder Qty</th><th>Alert Level</th></tr></thead>
+              <tbody id="low-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPIRING -->
+      <div id="tab-expiring" class="tab-pane">
+        <div class="card">
+          <div class="card-header"><h3>⏰ Items Expiring Within 30 Days</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Item</th><th>Batch</th><th>Expiry Date</th><th>Days Left</th><th>Qty Remaining</th><th>Supplier</th></tr></thead>
+              <tbody id="exp-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECEIVE STOCK -->
+      <div id="tab-receive" class="tab-pane">
+        <div class="card" style="max-width:600px">
+          <div class="card-header"><h3>📥 Receive New Stock</h3></div>
+          <div class="card-body">
+            <form id="receive-form">
+              <div class="form-group">
+                <label class="form-label">Item ID <span class="required">*</span></label>
+                <input name="itemId" type="number" class="form-control" required placeholder="Enter item ID from inventory">
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Batch Number <span class="required">*</span></label>
+                  <input name="batchNumber" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Expiry Date <span class="required">*</span></label>
+                  <input name="expiryDate" type="date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Quantity <span class="required">*</span></label>
+                  <input name="quantity" type="number" class="form-control" required min="1">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cost Per Unit (LKR)</label>
+                  <input name="costPerUnit" type="number" step="0.01" class="form-control" value="0">
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary" onclick="receiveStock()">📥 Record Stock Receipt</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DISPENSE MODAL -->
+<div id="modal-dispense" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>💊 Dispense Prescription</h3>
+      <button onclick="Modal.close('modal-dispense')" class="btn btn-secondary btn-sm">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="dispense-details"></div>
+      <div class="alert alert-warning" style="margin-top:12px">
+        ⚠️ Dispensing will automatically deduct stock (FIFO by expiry date). This action cannot be undone.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('modal-dispense')">Cancel</button>
+      <button id="confirm-dispense-btn" class="btn btn-primary" onclick="confirmDispense()">✅ Confirm Dispense</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+let currentPrescriptionId = null;
+
+Auth.requireAuth();
+Sidebar.render('pharmacy', 'pharmacy-inventory');
+
+async function loadStats() {
+  const res = await API.get('/pharmacy/dashboard');
+  if (res?.success) {
+    document.getElementById('kpi-total').textContent = res.data.total_items ?? '—';
+    document.getElementById('kpi-low').textContent = res.data.low_stock_count ?? '—';
+    document.getElementById('kpi-exp').textContent = res.data.expiring_soon_count ?? '—';
+    document.getElementById('kpi-disp').textContent = res.data.dispensings_today ?? '—';
+  }
+}
+
+async function loadPrescriptions() {
+  const res = await API.get('/pharmacy/prescriptions');
+  if (!res?.success) return;
+  renderTable('rx-tbody', res.data, [
+    { key: 'prescription_id', render: r => `<strong>#${r.prescription_id}</strong>` },
+    { key: 'patient_name' },
+    { key: 'doctor_name' },
+    { key: 'prescription_date', render: r => fmtDate(r.prescription_date) },
+    { key: 'item_count', render: r => `${r.item_count} item(s)` },
+    { key: 'status', render: r => statusBadge(r.status) },
+    { key: 'action', render: r => `<button class="btn btn-sm btn-primary" onclick="openDispense(${r.prescription_id})">💊 Dispense</button>` }
+  ]);
+}
+
+async function openDispense(prescriptionId) {
+  currentPrescriptionId = prescriptionId;
+  const res = await API.get(`/emr/prescriptions/${prescriptionId}`);
+  if (!res?.success) { Toast.error('Failed to load prescription'); return; }
+
+  const items = res.data;
+  const first = items[0] || {};
+  document.getElementById('dispense-details').innerHTML = `
+    <div style="background:var(--light);border-radius:8px;padding:12px;margin-bottom:12px">
+      <strong>Patient:</strong> ${first.patient_name || '—'}<br>
+      <strong>Doctor:</strong> ${first.doctor_name || '—'}<br>
+      <strong>Date:</strong> ${fmtDate(first.prescription_date)}
+    </div>
+    <table class="w-full" style="font-size:13px">
+      <thead><tr style="background:var(--teal-light)"><th style="padding:8px">Medicine</th><th>Dosage</th><th>Frequency</th><th>Days</th><th>Qty</th></tr></thead>
+      <tbody>${items.map(i => `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:6px 8px"><strong>${i.medicine_name}</strong></td>
+          <td style="padding:6px 8px">${i.dosage}</td>
+          <td style="padding:6px 8px">${i.frequency}</td>
+          <td style="padding:6px 8px">${i.duration_days}d</td>
+          <td style="padding:6px 8px">${i.quantity}</td>
+        </tr>
+      `).join('')}</tbody>
+    </table>
+  `;
+  Modal.open('modal-dispense');
+}
+
+async function confirmDispense() {
+  const btn = document.getElementById('confirm-dispense-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Dispensing...';
+
+  const res = await API.post('/pharmacy/dispense', { prescriptionId: currentPrescriptionId });
+  btn.disabled = false;
+  btn.textContent = '✅ Confirm Dispense';
+
+  if (res?.success) {
+    Toast.success('Prescription dispensed and stock updated');
+    Modal.close('modal-dispense');
+    loadPrescriptions();
+    loadStats();
+  } else {
+    Toast.error(res?.error || 'Dispensing failed');
+  }
+}
+
+async function loadInventory(category = '') {
+  const url = category ? `/pharmacy/items?category=${encodeURIComponent(category)}` : '/pharmacy/items';
+  const res = await API.get(url);
+  if (!res?.success) return;
+  renderTable('inv-tbody', res.data, [
+    { key: 'item_code', render: r => `<strong>${r.item_code}</strong>` },
+    { key: 'item_name' },
+    { key: 'category_name' },
+    { key: 'current_stock', render: r => {
+      const pct = Math.min(100, (r.current_stock / (r.reorder_level * 2)) * 100);
+      const color = r.stock_status === 'Critical' ? 'var(--danger)' : r.stock_status === 'Low' ? 'var(--warning)' : 'var(--success)';
+      return `<div>${r.current_stock} ${r.unit_of_measure}</div>
+        <div class="stock-bar"><div class="stock-fill" style="width:${pct}%;background:${color}"></div></div>`;
+    }},
+    { key: 'reorder_level', render: r => r.reorder_level + ' ' + r.unit_of_measure },
+    { key: 'selling_price', render: r => fmtCurrency(r.selling_price) },
+    { key: 'stock_status', render: r => statusBadge(r.stock_status) }
+  ]);
+}
+
+async function loadLowStock() {
+  const res = await API.get('/pharmacy/low-stock');
+  if (!res?.success) return;
+  renderTable('low-tbody', res.data, [
+    { key: 'item_name' },
+    { key: 'category_name' },
+    { key: 'current_stock', render: r => `<strong class="text-danger">${r.current_stock}</strong>` },
+    { key: 'reorder_level' },
+    { key: 'reorder_quantity' },
+    { key: 'stock_status', render: r => statusBadge(r.stock_status) }
+  ]);
+}
+
+async function loadExpiring() {
+  const res = await API.get('/pharmacy/expiring');
+  if (!res?.success) return;
+  renderTable('exp-tbody', res.data, [
+    { key: 'item_name' },
+    { key: 'batch_number' },
+    { key: 'expiry_date', render: r => fmtDate(r.expiry_date) },
+    { key: 'days_to_expiry', render: r => `<strong class="${r.days_to_expiry <= 7 ? 'text-danger' : 'text-warning'}">${r.days_to_expiry} days</strong>` },
+    { key: 'remaining_quantity' },
+    { key: 'supplier_name', render: r => r.supplier_name || '—' }
+  ]);
+}
+
+async function receiveStock() {
+  const data = getFormData('receive-form');
+  if (!data.itemId || !data.batchNumber || !data.expiryDate || !data.quantity) {
+    Toast.error('Please fill all required fields');
+    return;
+  }
+  const res = await API.post('/pharmacy/receive', {
+    itemId: parseInt(data.itemId),
+    batchNumber: data.batchNumber,
+    expiryDate: data.expiryDate,
+    quantity: parseInt(data.quantity),
+    costPerUnit: parseFloat(data.costPerUnit) || 0
+  });
+  if (res?.success) {
+    Toast.success('Stock received and inventory updated');
+    clearForm('receive-form');
+    loadStats();
+  } else {
+    Toast.error(res?.error || 'Failed to record stock');
+  }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(name)));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+  if (name === 'stock') loadInventory();
+  if (name === 'lowstock') loadLowStock();
+  if (name === 'expiring') loadExpiring();
+}
+
+// Init
+loadStats();
+loadPrescriptions();
+</script>
+</body>
+</html>

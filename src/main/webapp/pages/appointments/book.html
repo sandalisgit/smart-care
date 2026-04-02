@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Book Appointment</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .step-indicator { display:flex;gap:0;margin-bottom:24px; }
+  .step-item { flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;color:var(--gray);background:var(--light);border:1px solid var(--border);position:relative; }
+  .step-item:first-child { border-radius:var(--radius) 0 0 var(--radius); }
+  .step-item:last-child { border-radius:0 var(--radius) var(--radius) 0; }
+  .step-item.active { background:var(--teal);color:white;border-color:var(--teal); }
+  .step-item.done { background:var(--success);color:white;border-color:var(--success); }
+  .slot-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:12px; }
+  .slot-btn { padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:#ffffff;cursor:pointer;font-size:13px;font-weight:600;text-align:center;transition:all 0.15s;color:var(--dark); }
+  .slot-btn:hover { border-color:var(--teal);background:var(--teal-light); }
+  .slot-btn.selected { border-color:var(--teal);background:var(--teal);color:white; }
+  .risk-indicator { padding:12px;border-radius:8px;margin-top:12px;font-size:13px; }
+  .risk-high { background:#f8d7da;color:#721c24;border:1px solid #f5c6cb; }
+  .risk-medium { background:#fff3cd;color:#856404;border:1px solid #ffc107; }
+  .risk-low { background:#d4edda;color:#155724;border:1px solid #c3e6cb; }
+  .doctor-card { border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.15s; }
+  .doctor-card:hover { border-color:var(--teal);background:var(--teal-light); }
+  .doctor-card.selected { border-color:var(--teal);background:var(--teal-light); }
+  .today-queue { border:1px solid var(--border);border-radius:8px;overflow:hidden; }
+  .queue-item { padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+  .queue-item:last-child { border-bottom:none; }
+  .queue-time { font-size:16px;font-weight:700;color:var(--teal);min-width:55px; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-breadcrumb">Appointments</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+
+    <div class="page-body">
+      <div style="display:grid;grid-template-columns:1fr 400px;gap:16px">
+
+        <!-- BOOKING FORM -->
+        <div>
+          <!-- Step indicator -->
+          <div class="step-indicator">
+            <div class="step-item active" id="s1">1. Select Patient</div>
+            <div class="step-item" id="s2">2. Choose Doctor</div>
+            <div class="step-item" id="s3">3. Pick Slot</div>
+            <div class="step-item" id="s4">4. Confirm</div>
+          </div>
+
+          <!-- STEP 1: Patient Selection -->
+          <div id="step-1" class="card">
+            <div class="card-header"><h3>👥 Select Patient</h3></div>
+            <div class="card-body">
+              <div class="search-bar">
+                <input id="patient-search" class="form-control" placeholder="Search patient by name or phone..." oninput="searchPatients(this.value)">
+              </div>
+              <div id="patient-results" style="margin-top:12px"></div>
+              <div id="selected-patient" class="hidden" style="background:var(--teal-light);border:1.5px solid var(--teal);border-radius:8px;padding:12px;margin-top:12px"></div>
+              <div style="margin-top:16px">
+                <button class="btn btn-primary" id="next-1" onclick="goStep(2)" disabled>Next: Choose Doctor →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: Doctor Selection -->
+          <div id="step-2" class="card hidden" style="margin-top:0">
+            <div class="card-header"><h3>👨‍⚕️ Select Doctor</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Filter by Specialization</label>
+                <select id="spec-filter" class="form-control" onchange="loadDoctors(this.value)">
+                  <option value="">All Specializations</option>
+                </select>
+              </div>
+              <div id="doctor-list" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"></div>
+              <div style="margin-top:16px;display:flex;gap:8px">
+                <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+                <button class="btn btn-primary" id="next-2" onclick="goStep(3)" disabled>Next: Pick Time Slot →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Date & Slot Selection -->
+          <div id="step-3" class="card hidden" style="margin-top:0">
+            <div class="card-header"><h3>📅 Choose Date & Time Slot</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Appointment Date</label>
+                <input type="date" id="appt-date" class="form-control" onchange="loadSlots()" min="">
+              </div>
+              <div id="slot-container">
+                <p class="text-muted text-sm">Select a date to see available slots</p>
+              </div>
+              <div id="noshow-risk-panel"></div>
+              <div style="margin-top:16px;display:flex;gap:8px">
+                <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
+                <button class="btn btn-primary" id="next-3" onclick="goStep(4)" disabled>Next: Confirm →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4: Confirm -->
+          <div id="step-4" class="card hidden" style="margin-top:0">
+            <div class="card-header"><h3>✅ Confirm Appointment</h3></div>
+            <div class="card-body">
+              <div id="confirm-summary" style="background:var(--light);border-radius:8px;padding:16px;margin-bottom:16px"></div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Appointment Type</label>
+                  <select id="appt-type" class="form-control">
+                    <option>Consultation</option><option>Follow-up</option>
+                    <option>Routine Check</option><option>Emergency</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Reason for Visit</label>
+                  <input type="text" id="appt-reason" class="form-control" placeholder="Brief reason...">
+                </div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
+                <button class="btn btn-primary" id="book-btn" onclick="bookAppointment()">📅 Book Appointment</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TODAY'S QUEUE PANEL -->
+        <div>
+          <div class="card">
+            <div class="card-header"><h3>🕐 Today's Queue</h3>
+              <button class="btn btn-sm btn-secondary" onclick="loadTodayQueue()">Refresh</button>
+            </div>
+            <div id="today-queue-content">
+              <div class="text-center text-muted" style="padding:20px">Select a doctor to see their queue</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+let selectedPatient = null, selectedDoctor = null, selectedSlot = null;
+const urlParams = new URLSearchParams(window.location.search);
+const prePatientId = urlParams.get('patientId');
+
+// Set minimum date to today
+document.getElementById('appt-date').min = new Date().toISOString().split('T')[0];
+
+// Pre-load patient if coming from profile
+if (prePatientId) {
+  API.get(`/patients/${prePatientId}`).then(res => {
+    if (res?.success) selectPatient(res.data.patient);
+  });
+}
+
+const searchPatients = debounce(async q => {
+  if (q.length < 2) { document.getElementById('patient-results').innerHTML = ''; return; }
+  const res = await API.get(`/patients?q=${encodeURIComponent(q)}&limit=5`);
+  if (!res?.success) return;
+  document.getElementById('patient-results').innerHTML = res.data.map(p => `
+    <div onclick="selectPatient(${JSON.stringify(p).replace(/"/g,'&quot;')})"
+         style="padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:all 0.15s"
+         onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
+      <strong>${p.firstName} ${p.lastName}</strong>
+      <span class="badge badge-teal" style="margin-left:8px">${p.patientCode}</span>
+      <span style="color:var(--gray);font-size:12px;margin-left:8px">${p.phone}</span>
+      ${p.allergies && p.allergies !== 'None' ? `<span class="allergy-tag" style="margin-left:8px;font-size:11px">⚠ ${p.allergies}</span>` : ''}
+    </div>
+  `).join('');
+}, 300);
+
+function selectPatient(p) {
+  selectedPatient = p;
+  document.getElementById('patient-results').innerHTML = '';
+  document.getElementById('patient-search').value = '';
+  document.getElementById('selected-patient').innerHTML = `
+    <div class="flex items-center justify-between">
+      <div>
+        <strong>${p.firstName} ${p.lastName}</strong>
+        <span class="badge badge-teal" style="margin-left:8px">${p.patientCode}</span>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">${p.phone} · ${p.gender} · 🩸 ${p.bloodGroup || '—'}</div>
+        ${p.allergies && p.allergies !== 'None' ? `<div class="text-danger" style="font-size:12px;margin-top:2px">⚠️ Allergies: ${p.allergies}</div>` : ''}
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="clearPatient()">Change</button>
+    </div>
+  `;
+  document.getElementById('selected-patient').classList.remove('hidden');
+  document.getElementById('next-1').disabled = false;
+}
+
+function clearPatient() {
+  selectedPatient = null;
+  document.getElementById('selected-patient').classList.add('hidden');
+  document.getElementById('next-1').disabled = true;
+}
+
+Auth.requireAuth();
+Sidebar.render('appointments', 'appointments-book');
+
+async function loadDoctors(spec = '') {
+  const url = spec ? `/appointments/doctors?specialization=${encodeURIComponent(spec)}` : '/appointments/doctors';
+  const res = await API.get(url);
+  if (!res?.success) return;
+
+  // Populate specialization filter once
+  if (!spec) {
+    const specs = [...new Set(res.data.map(d => d.specialization))].sort();
+    const sel = document.getElementById('spec-filter');
+    sel.innerHTML = '<option value="">All Specializations</option>' +
+      specs.map(s => `<option>${s}</option>`).join('');
+  }
+
+  document.getElementById('doctor-list').innerHTML = res.data.map(d => `
+    <div class="doctor-card" id="doc-${d.doctor_id}" onclick="selectDoctor(${JSON.stringify(d).replace(/"/g,'&quot;')})">
+      <div style="font-size:20px;margin-bottom:4px">👨‍⚕️</div>
+      <div style="font-weight:700;font-size:13px">${d.doctor_name}</div>
+      <div style="font-size:11px;color:var(--teal);margin:2px 0">${d.specialization}</div>
+      <div style="font-size:11px;color:var(--gray)">Fee: ${fmtCurrency(d.consultation_fee)}</div>
+      <div style="font-size:11px;color:var(--gray)">⭐ ${d.average_rating ? d.average_rating.toFixed(1) : '—'}</div>
+    </div>
+  `).join('');
+}
+
+function selectDoctor(d) {
+  selectedDoctor = d;
+  document.querySelectorAll('.doctor-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`doc-${d.doctor_id}`)?.classList.add('selected');
+  document.getElementById('next-2').disabled = false;
+  loadTodayQueue();
+}
+
+async function loadTodayQueue() {
+  if (!selectedDoctor) return;
+  const res = await API.get(`/appointments/today?doctorId=${selectedDoctor.doctor_id}`);
+  if (!res?.success) return;
+
+  const content = document.getElementById('today-queue-content');
+  if (!res.data.length) {
+    content.innerHTML = '<div class="text-center text-muted" style="padding:16px">No appointments today</div>';
+    return;
+  }
+
+  content.innerHTML = `<div class="today-queue">` +
+    res.data.map(a => `
+      <div class="queue-item">
+        <div class="queue-time">${String(a.appointment_time).substring(0,5)}</div>
+        <div style="flex:1;padding:0 12px">
+          <div style="font-weight:600;font-size:13px">${a.patient_name}</div>
+          <div style="font-size:11px;color:var(--gray)">${a.appointment_type} · ${a.reason || '—'}</div>
+        </div>
+        ${statusBadge(a.status)}
+      </div>
+    `).join('') + `</div>`;
+}
+
+async function loadSlots() {
+  const date = document.getElementById('appt-date').value;
+  if (!date || !selectedDoctor) return;
+
+  const res = await API.get(`/appointments/slots?doctorId=${selectedDoctor.doctor_id}&date=${date}`);
+  if (!res?.success) return;
+
+  const slots = res.data;
+  const container = document.getElementById('slot-container');
+
+  if (!slots.length) {
+    container.innerHTML = '<div class="alert alert-warning">No available slots for this date. Try another day.</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${slots.length} slot(s) available</p>
+    <div class="slot-grid">
+      ${slots.map(s => `<button class="slot-btn" onclick="selectSlot('${s}',this)">${s}</button>`).join('')}
+    </div>
+  `;
+}
+
+function selectSlot(time, btn) {
+  selectedSlot = time;
+  document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('next-3').disabled = false;
+}
+
+function goStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById(`step-${i}`).classList.toggle('hidden', i !== n);
+    document.getElementById(`s${i}`).className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+  if (n === 2) loadDoctors();
+  if (n === 4) buildConfirmSummary();
+}
+
+function buildConfirmSummary() {
+  const date = document.getElementById('appt-date').value;
+  document.getElementById('confirm-summary').innerHTML = `
+    <div class="info-grid">
+      <div class="info-item"><label>Patient</label><p>${selectedPatient.firstName} ${selectedPatient.lastName} (${selectedPatient.patientCode})</p></div>
+      <div class="info-item"><label>Doctor</label><p>${selectedDoctor.doctor_name}</p></div>
+      <div class="info-item"><label>Specialization</label><p>${selectedDoctor.specialization}</p></div>
+      <div class="info-item"><label>Date & Time</label><p>${fmtDate(date)} at ${selectedSlot}</p></div>
+      <div class="info-item"><label>Consultation Fee</label><p>${fmtCurrency(selectedDoctor.consultation_fee)}</p></div>
+    </div>
+  `;
+}
+
+async function bookAppointment() {
+  const btn = document.getElementById('book-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Booking...';
+
+  const date = document.getElementById('appt-date').value;
+  const res = await API.post('/appointments', {
+    patientId: selectedPatient.patientId,
+    doctorId: selectedDoctor.doctor_id,
+    date, time: selectedSlot,
+    appointmentType: document.getElementById('appt-type').value,
+    reason: document.getElementById('appt-reason').value
+  });
+
+  btn.disabled = false;
+  btn.textContent = '📅 Book Appointment';
+
+  if (res?.success) {
+    const risk = res.data.highRisk ? `⚠️ High no-show risk (${res.data.noShowRisk}) — reminder will be sent` : `✅ Low no-show risk (${res.data.noShowRisk})`;
+    Toast.success(`Appointment booked! ID: ${res.data.appointmentId}`);
+    setTimeout(() => {
+      if (confirm(`Appointment confirmed!\n\n${risk}\n\nView patient profile?`)) {
+        window.location.href = `../patients/profile.html?id=${selectedPatient.patientId}`;
+      } else {
+        window.location.reload();
+      }
+    }, 500);
+  } else {
+    Toast.error(res?.error || 'Booking failed');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Patient Profile</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .profile-header { background: linear-gradient(135deg,var(--teal),var(--teal-dark)); color:white; border-radius:var(--radius); padding:24px; margin-bottom:16px; display:flex; align-items:center; gap:20px; }
+  .profile-avatar { width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0; }
+  .profile-name { font-size:22px;font-weight:700; }
+  .profile-code { font-size:13px;opacity:0.8;margin-top:2px; }
+  .profile-meta { display:flex;gap:16px;margin-top:8px;font-size:13px;opacity:0.9; }
+  .allergy-tag { background:var(--danger);color:white;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600; }
+  .tab-bar { display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:16px; }
+  .tab-btn { padding:10px 20px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--gray);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s; }
+  .tab-btn.active { color:var(--teal);border-bottom-color:var(--teal);font-weight:700; }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+  .info-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px; }
+  .info-item label { font-size:11px;font-weight:600;text-transform:uppercase;color:var(--gray);letter-spacing:0.5px; }
+  .info-item p { font-size:14px;color:var(--dark);margin-top:2px; }
+  .timeline-item { display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border); }
+  .timeline-dot { width:10px;height:10px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:4px; }
+  .risk-bar { height:8px;border-radius:4px;background:var(--border);overflow:hidden; }
+  .risk-fill { height:100%;border-radius:4px;transition:width 0.6s; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo"><div style="font-size:40px">🏥</div><h1>SMART <span>CARE</span></h1></div>
+    <div class="nav-section"><div class="nav-label">Clinical</div>
+      <a class="nav-item" href="list.html"><span class="icon">👥</span> Patients</a>
+      <a class="nav-item" href="../appointments/book.html"><span class="icon">📅</span> Appointments</a>
+      <a class="nav-item" href="../emr/records.html"><span class="icon">📋</span> Medical Records</a>
+      <a class="nav-item" href="../beds/ward.html"><span class="icon">🛏️</span> Bed & Ward</a>
+    </div>
+    <div class="nav-section"><div class="nav-label">Operations</div>
+      <a class="nav-item" href="../pharmacy/dashboard.html"><span class="icon">💊</span> Pharmacy</a>
+      <a class="nav-item" href="../billing/dashboard.html"><span class="icon">💰</span> Billing</a>
+      <a class="nav-item" href="../staff/employees.html"><span class="icon">👔</span> Staff</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="flex items-center gap-3">
+        <a href="list.html" class="btn btn-secondary btn-sm">← Back</a>
+        <span class="topbar-title" id="page-title">Patient Profile</span>
+      </div>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+
+    <div class="page-body">
+      <!-- Profile Header -->
+      <div class="profile-header" id="profile-header">
+        <div class="profile-avatar">👤</div>
+        <div style="flex:1">
+          <div class="profile-name" id="ph-name">Loading...</div>
+          <div class="profile-code" id="ph-code"></div>
+          <div class="profile-meta" id="ph-meta"></div>
+          <div style="margin-top:8px" id="ph-allergies"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="bookAppointment()">📅 Book Appointment</button>
+          <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="admitPatient()">🛏️ Admit Patient</button>
+          <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="viewBills()">💰 View Bills</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('overview')">📋 Overview</button>
+        <button class="tab-btn" onclick="switchTab('appointments')">📅 Appointments</button>
+        <button class="tab-btn" onclick="switchTab('emr')">🩺 Medical Records</button>
+        <button class="tab-btn" onclick="switchTab('labs')">🧪 Lab Tests</button>
+        <button class="tab-btn" onclick="switchTab('bills')">💰 Bills</button>
+      </div>
+
+      <!-- TAB: Overview -->
+      <div id="tab-overview" class="tab-pane active">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header"><h3>Personal Information</h3>
+              <button class="btn btn-sm btn-secondary" onclick="openEditModal()">✏️ Edit</button>
+            </div>
+            <div class="card-body">
+              <div class="info-grid" id="info-personal"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>🤖 AI No-Show Risk</h3></div>
+            <div class="card-body" id="noshow-panel">
+              <p class="text-muted text-sm">Book an appointment to see risk prediction</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Appointments -->
+      <div id="tab-appointments" class="tab-pane">
+        <div class="card">
+          <div class="card-header"><h3>Appointment History</h3>
+            <button class="btn btn-sm btn-primary" onclick="bookAppointment()">➕ New Appointment</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Time</th><th>Doctor</th><th>Type</th><th>Reason</th><th>Status</th></tr></thead>
+              <tbody id="appt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Medical Records -->
+      <div id="tab-emr" class="tab-pane">
+        <div class="card">
+          <div class="card-header"><h3>Medical Record Timeline</h3></div>
+          <div class="card-body" id="emr-timeline"></div>
+        </div>
+      </div>
+
+      <!-- TAB: Lab Tests -->
+      <div id="tab-labs" class="tab-pane">
+        <div class="card">
+          <div class="card-header"><h3>Lab Test History</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Test</th><th>Type</th><th>Ordered</th><th>Result</th><th>Normal Range</th><th>Status</th></tr></thead>
+              <tbody id="lab-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Bills -->
+      <div id="tab-bills" class="tab-pane">
+        <div class="card">
+          <div class="card-header"><h3>Billing History</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Bill No.</th><th>Date</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="bill-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const patientId = parseInt(params.get('id'));
+let patientData = null;
+
+if (!patientId) { Toast.error('No patient ID specified'); window.location.href = 'list.html'; }
+
+async function loadProfile() {
+  const res = await API.get(`/patients/${patientId}`);
+  if (!res?.success) { Toast.error('Patient not found'); return; }
+
+  const { patient, upcomingAppointments } = res.data;
+  patientData = patient;
+  document.title = `Smart Care — ${patient.firstName} ${patient.lastName}`;
+  document.getElementById('page-title').textContent = `${patient.firstName} ${patient.lastName}`;
+
+  // Profile header
+  document.getElementById('ph-name').textContent = `${patient.firstName} ${patient.lastName}`;
+  document.getElementById('ph-code').textContent = `Patient Code: ${patient.patientCode}`;
+
+  const age = patient.dateOfBirth ? Math.floor((Date.now() - new Date(patient.dateOfBirth)) / (365.25*24*60*60*1000)) : '?';
+  document.getElementById('ph-meta').innerHTML = `
+    <span>🎂 ${age} years</span>
+    <span>⚧ ${patient.gender || '—'}</span>
+    <span>🩸 ${patient.bloodGroup || '—'}</span>
+    <span>📞 ${patient.phone}</span>
+  `;
+
+  if (patient.allergies && patient.allergies !== 'None') {
+    document.getElementById('ph-allergies').innerHTML =
+      `<span class="allergy-tag">⚠️ Allergies: ${patient.allergies}</span>`;
+  }
+
+  // Personal info grid
+  document.getElementById('info-personal').innerHTML = [
+    ['Full Name', `${patient.firstName} ${patient.lastName}`],
+    ['Date of Birth', fmtDate(patient.dateOfBirth)],
+    ['Gender', patient.gender],
+    ['Blood Group', patient.bloodGroup || '—'],
+    ['Phone', patient.phone],
+    ['Email', patient.email || '—'],
+    ['Address', patient.address || '—'],
+    ['City', patient.city || '—'],
+    ['National ID', patient.nationalId ? '••••••' + patient.nationalId.slice(-4) : '—'],
+    ['Insurance', patient.insuranceProvider || '—'],
+    ['Chronic Conditions', patient.chronicConditions || 'None'],
+    ['Emergency Contact', patient.emergencyContactName ? `${patient.emergencyContactName} — ${patient.emergencyContactPhone}` : '—'],
+  ].map(([label, val]) => `
+    <div class="info-item">
+      <label>${label}</label>
+      <p>${val || '—'}</p>
+    </div>
+  `).join('');
+
+  // Load appointments
+  loadAppointments();
+  loadLabTests();
+  loadBills();
+}
+
+async function loadAppointments() {
+  const res = await API.get(`/patients/${patientId}/history`);
+  if (!res?.success) return;
+
+  renderTable('appt-tbody', res.data.appointments, [
+    { key: 'appointment_date', render: r => fmtDate(r.appointment_date) },
+    { key: 'appointment_time', render: r => r.appointment_time ? r.appointment_time.toString().substring(0,5) : '—' },
+    { key: 'doctor_name' },
+    { key: 'appointment_type' },
+    { key: 'reason', render: r => r.reason ? r.reason.substring(0,40) + (r.reason.length > 40 ? '...' : '') : '—' },
+    { key: 'status', render: r => statusBadge(r.status) }
+  ]);
+}
+
+async function loadLabTests() {
+  const res = await API.get(`/emr/lab-orders/patient/${patientId}`);
+  if (!res?.success) return;
+
+  renderTable('lab-tbody', res.data, [
+    { key: 'test_name' },
+    { key: 'test_type', render: r => r.test_type || '—' },
+    { key: 'test_date', render: r => fmtDate(r.test_date) },
+    { key: 'test_result', render: r => r.test_result || '—' },
+    { key: 'normal_range', render: r => r.normal_range || '—' },
+    { key: 'status', render: r => statusBadge(r.status) }
+  ]);
+}
+
+async function loadBills() {
+  const res = await API.get(`/billing/patient/${patientId}`);
+  if (!res?.success) return;
+
+  renderTable('bill-tbody', res.data, [
+    { key: 'bill_number', render: r => `<strong>${r.bill_number}</strong>` },
+    { key: 'bill_date', render: r => fmtDate(r.bill_date) },
+    { key: 'total_amount', render: r => fmtCurrency(r.total_amount) },
+    { key: 'paid_amount', render: r => fmtCurrency(r.paid_amount) },
+    { key: 'balance_amount', render: r => `<span class="${r.balance_amount > 0 ? 'text-danger fw-bold' : 'text-success'}">${fmtCurrency(r.balance_amount)}</span>` },
+    { key: 'status', render: r => statusBadge(r.status) },
+    { key: 'action', render: r => `<a href="../billing/bill.html?id=${r.bill_id}" class="btn btn-sm btn-secondary">View</a>` }
+  ]);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', b.getAttribute('onclick').includes(name)));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+
+  if (name === 'emr') loadEmrTimeline();
+}
+
+async function loadEmrTimeline() {
+  const res = await API.get(`/emr/records/${patientId}`);
+  if (!res?.success) return;
+
+  const el = document.getElementById('emr-timeline');
+  if (!res.data.length) { el.innerHTML = '<p class="text-muted">No medical records found</p>'; return; }
+
+  el.innerHTML = res.data.map(r => `
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div style="flex:1">
+        <div class="flex items-center justify-between">
+          <strong>${r.doctor_name} — ${r.specialization}</strong>
+          <span class="text-muted text-sm">${fmtDateTime(r.record_date)}</span>
+        </div>
+        <div style="margin-top:6px;font-size:13px">
+          <span class="text-muted">Complaint:</span> ${r.chief_complaint || '—'}<br>
+          <span class="text-muted">Diagnosis:</span> <strong>${r.diagnosis || '—'}</strong><br>
+          ${r.follow_up_date ? `<span class="text-muted">Follow-up:</span> ${fmtDate(r.follow_up_date)}` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function bookAppointment() {
+  window.location.href = `../appointments/book.html?patientId=${patientId}`;
+}
+function admitPatient() {
+  window.location.href = `../beds/ward.html?admitPatientId=${patientId}`;
+}
+function viewBills() {
+  switchTab('bills');
+}
+
+loadProfile();
+</script>
+</body>
+</html>

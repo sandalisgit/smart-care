@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Bed & Ward Management</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .ward-card { border:1px solid var(--border);border-radius:var(--radius);padding:16px;background:#ffffff;cursor:pointer;transition:all 0.15s;border-left:4px solid var(--teal); }
+  .ward-card:hover { box-shadow:var(--shadow);transform:translateY(-1px); }
+  .ward-card.selected { border-color:var(--teal);background:var(--teal-light); }
+  .occ-bar { height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin-top:6px; }
+  .occ-fill { height:100%;border-radius:4px;transition:width 0.5s; }
+  .ward-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-breadcrumb">Bed & Ward</span>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+    <div class="page-body">
+
+      <!-- Ward overview cards -->
+      <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <h3 style="font-size:15px;font-weight:600">Select Ward to View Bed Map</h3>
+        <button class="btn btn-sm btn-secondary" onclick="loadWards()">🔄 Refresh</button>
+      </div>
+      <div class="ward-grid" id="ward-grid"></div>
+
+      <!-- Bed Map -->
+      <div class="card" id="bed-map-card" style="display:none">
+        <div class="card-header">
+          <h3 id="bed-map-title">Bed Map</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:12px;color:var(--gray)">Legend:</span>
+            <span style="background:#d4edda;padding:2px 8px;border-radius:4px;font-size:11px">Available</span>
+            <span style="background:#f8d7da;padding:2px 8px;border-radius:4px;font-size:11px">Occupied</span>
+            <span style="background:#fff3cd;padding:2px 8px;border-radius:4px;font-size:11px">Needs Sanitizing</span>
+            <span style="background:#e2e3e5;padding:2px 8px;border-radius:4px;font-size:11px">Maintenance</span>
+          </div>
+        </div>
+        <div class="bed-grid" id="bed-grid"></div>
+      </div>
+
+      <!-- Current Admissions Table -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><h3>📋 Current Admissions</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Patient</th><th>Ward</th><th>Room/Bed</th><th>Doctor</th><th>Diagnosis</th><th>Days</th><th>Action</th></tr></thead>
+            <tbody id="admissions-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIT PATIENT MODAL -->
+<div id="modal-admit" class="modal-overlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="admit-bed-title">Admit Patient to Bed</h3>
+      <button onclick="Modal.close('modal-admit')" class="btn btn-secondary btn-sm">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="admit-form">
+        <div class="form-group">
+          <label class="form-label">Patient Search <span class="required">*</span></label>
+          <input id="admit-patient-search" class="form-control" placeholder="Search patient...">
+          <div id="admit-patient-results" style="margin-top:6px"></div>
+          <input type="hidden" id="admit-patient-id">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Admitting Doctor ID <span class="required">*</span></label>
+          <input type="number" id="admit-doctor-id" class="form-control" placeholder="Enter doctor ID">
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Admission Type</label>
+            <select id="admit-type" class="form-control">
+              <option>Planned</option><option>Emergency</option>
+              <option>Outpatient</option><option>Day Care</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Primary Diagnosis</label>
+            <input id="admit-diagnosis" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Admission Notes</label>
+          <textarea id="admit-notes" class="form-control" rows="2"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('modal-admit')">Cancel</button>
+      <button id="admit-btn" class="btn btn-primary" onclick="confirmAdmit()">🛏️ Admit Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- BED INFO MODAL (for occupied beds) -->
+<div id="modal-bed-info" class="modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="bed-info-title">Bed Information</h3>
+      <button onclick="Modal.close('modal-bed-info')" class="btn btn-secondary btn-sm">✕</button>
+    </div>
+    <div class="modal-body" id="bed-info-body"></div>
+    <div class="modal-footer" id="bed-info-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('modal-bed-info')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+let selectedBedId = null, selectedAdmissionId = null;
+
+Auth.requireAuth();
+Sidebar.render('beds', 'beds-overview');
+
+async function loadWards() {
+  const res = await API.get('/beds/wards');
+  if (!res?.success) return;
+
+  document.getElementById('ward-grid').innerHTML = res.data.map(w => {
+    const pct = w.total_beds > 0 ? Math.round((w.occupied_beds / w.total_beds) * 100) : 0;
+    const color = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warning)' : 'var(--success)';
+    return `
+      <div class="ward-card" onclick="loadBedMap(${w.ward_id},'${w.ward_name}')">
+        <div style="font-weight:700;font-size:14px">${w.ward_name}</div>
+        <div style="font-size:11px;color:var(--teal);margin:2px 0">${w.ward_type} · ${w.department_name || ''}</div>
+        <div style="font-size:13px;margin-top:6px">
+          <span class="text-success fw-bold">${w.available_beds}</span> available /
+          <span>${w.total_beds}</span> total
+        </div>
+        <div class="occ-bar">
+          <div class="occ-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">${pct}% occupancy</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadBedMap(wardId, wardName) {
+  document.querySelectorAll('.ward-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  const res = await API.get(`/beds/map/${wardId}`);
+  if (!res?.success) return;
+
+  document.getElementById('bed-map-title').textContent = `🛏️ ${wardName} — Bed Map`;
+  document.getElementById('bed-map-card').style.display = 'block';
+
+  const grid = document.getElementById('bed-grid');
+  grid.innerHTML = res.data.map(b => {
+    let cls = 'bed-available', label = 'Available';
+    if (!b.is_operational) { cls = 'bed-maintenance'; label = 'Maintenance'; }
+    else if (b.is_occupied) { cls = 'bed-occupied'; label = b.patient_name || 'Occupied'; }
+    else if (b.last_sanitized === null && !b.is_occupied) { cls = 'bed-dirty'; label = 'Needs Clean'; }
+
+    return `
+      <div class="bed-cell ${cls}" onclick="bedClick(${JSON.stringify(b).replace(/"/g,'&quot;')})">
+        <div class="bed-number">${b.bed_number}</div>
+        <div style="font-size:10px;margin-top:3px">${b.room_number}</div>
+        <div style="font-size:10px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</div>
+      </div>
+    `;
+  }).join('');
+
+  loadAdmissions();
+}
+
+function bedClick(bed) {
+  if (!bed.is_operational) { Toast.info('Bed is under maintenance'); return; }
+
+  if (bed.is_occupied) {
+    // Show occupied bed info + discharge option
+    document.getElementById('bed-info-title').textContent = `Bed ${bed.bed_number} — ${bed.room_number}`;
+    document.getElementById('bed-info-body').innerHTML = `
+      <div class="info-grid">
+        <div class="info-item"><label>Patient</label><p><a href="../patients/profile.html?id=${bed.current_patient_id}" style="color:var(--teal)">${bed.patient_name}</a></p></div>
+        <div class="info-item"><label>Patient Code</label><p>${bed.patient_code}</p></div>
+        <div class="info-item"><label>Blood Group</label><p>${bed.blood_group || '—'}</p></div>
+        <div class="info-item"><label>Admitted</label><p>${fmtDate(bed.admission_date)}</p></div>
+        <div class="info-item"><label>Days Admitted</label><p>${bed.days_admitted || 0} day(s)</p></div>
+        <div class="info-item"><label>Doctor</label><p>${bed.admitting_doctor || '—'}</p></div>
+        <div class="info-item form-full"><label>Diagnosis</label><p>${bed.primary_diagnosis || '—'}</p></div>
+      </div>
+    `;
+    selectedAdmissionId = bed.admission_id;
+    document.getElementById('bed-info-footer').innerHTML = `
+      <button class="btn btn-secondary" onclick="Modal.close('modal-bed-info')">Close</button>
+      <button class="btn btn-warning" onclick="markSanitized(${bed.bed_id})">🧹 Mark Sanitized</button>
+      <button class="btn btn-danger" onclick="openDischarge()">🚪 Discharge Patient</button>
+    `;
+    Modal.open('modal-bed-info');
+  } else {
+    // Open admit modal
+    selectedBedId = bed.bed_id;
+    document.getElementById('admit-bed-title').textContent = `Admit Patient — Bed ${bed.bed_number} (${bed.room_number})`;
+    Modal.open('modal-admit');
+  }
+}
+
+// Patient search in admit modal
+const searchAdmitPatient = debounce(async q => {
+  if (q.length < 2) return;
+  const res = await API.get(`/patients?q=${encodeURIComponent(q)}&limit=4`);
+  if (!res?.success) return;
+  document.getElementById('admit-patient-results').innerHTML = res.data.map(p => `
+    <div onclick="selectAdmitPatient(${p.patientId},'${p.firstName} ${p.lastName}')"
+         style="padding:8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-bottom:4px;font-size:13px"
+         onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
+      <strong>${p.firstName} ${p.lastName}</strong>
+      <span style="color:var(--gray);margin-left:8px">${p.patientCode}</span>
+    </div>
+  `).join('');
+}, 300);
+
+document.getElementById('admit-patient-search').addEventListener('input', e => searchAdmitPatient(e.target.value));
+
+function selectAdmitPatient(id, name) {
+  document.getElementById('admit-patient-id').value = id;
+  document.getElementById('admit-patient-search').value = name;
+  document.getElementById('admit-patient-results').innerHTML = '';
+}
+
+async function confirmAdmit() {
+  const patientId = document.getElementById('admit-patient-id').value;
+  const doctorId = document.getElementById('admit-doctor-id').value;
+  if (!patientId || !doctorId) { Toast.error('Patient and doctor are required'); return; }
+
+  const btn = document.getElementById('admit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Admitting...';
+
+  const res = await API.post('/beds/admit', {
+    patientId: parseInt(patientId),
+    bedId: selectedBedId,
+    doctorId: parseInt(doctorId),
+    admissionType: document.getElementById('admit-type').value,
+    primaryDiagnosis: document.getElementById('admit-diagnosis').value,
+    notes: document.getElementById('admit-notes').value
+  });
+
+  btn.disabled = false;
+  btn.textContent = '🛏️ Admit Patient';
+
+  if (res?.success) {
+    Toast.success(`Patient admitted! Admission ID: ${res.data.admissionId}`);
+    Modal.close('modal-admit');
+    loadWards();
+  } else {
+    Toast.error(res?.error || 'Admission failed');
+  }
+}
+
+function openDischarge() {
+  Modal.close('modal-bed-info');
+  const summary = prompt('Enter discharge summary:');
+  if (summary === null) return;
+  dischargePatient(selectedAdmissionId, summary);
+}
+
+async function dischargePatient(admissionId, summary) {
+  const res = await API.put(`/beds/discharge/${admissionId}`, { dischargeSummary: summary });
+  if (res?.success) {
+    Toast.success('Patient discharged successfully');
+    loadWards();
+  } else {
+    Toast.error(res?.error || 'Discharge failed');
+  }
+}
+
+async function markSanitized(bedId) {
+  const res = await API.put(`/beds/sanitize/${bedId}`, {});
+  if (res?.success) {
+    Toast.success('Bed marked as sanitized');
+    Modal.close('modal-bed-info');
+  }
+}
+
+async function loadAdmissions() {
+  const res = await API.get('/beds/admissions');
+  if (!res?.success) return;
+  renderTable('admissions-tbody', res.data, [
+    { key: 'patient_name', render: r => `<a href="../patients/profile.html?id=${r.patient_id}" style="color:var(--teal)">${r.patient_name}</a>` },
+    { key: 'ward_name' },
+    { key: 'room_number', render: r => `${r.room_number} / Bed ${r.bed_number}` },
+    { key: 'doctor_name' },
+    { key: 'primary_diagnosis', render: r => r.primary_diagnosis ? r.primary_diagnosis.substring(0,40) : '—' },
+    { key: 'days_admitted', render: r => `${r.days_admitted} day(s)` },
+    { key: 'action', render: r => statusBadge(r.status) }
+  ]);
+}
+
+loadWards();
+loadAdmissions();
+</script>
+</body>
+</html>

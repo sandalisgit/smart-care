@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care &mdash; Patient Login</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .demo-patients { background:var(--teal-light);border:1px solid var(--teal-mid);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:18px;font-size:12px; }
+  .demo-patients h4 { font-weight:700;color:var(--teal-darker);margin-bottom:8px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px; }
+  .pat-row { display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--teal-mid);font-size:11px; }
+  .pat-row:last-child { border-bottom:none; }
+  .pat-id { font-family:monospace;color:var(--teal-darker);font-weight:700; }
+  .pat-use { background:var(--teal);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-weight:600; }
+  .pat-use:hover { background:var(--teal-dark); }
+  .info-note { background:var(--info-light);border:1px solid #BEE5EB;color:#0C5460;padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;margin-bottom:16px; }
+  .error-box { background:var(--red-light);border:1px solid #F5C6CB;color:#721C24;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px;display:none; }
+</style>
+</head>
+<body>
+<div class="auth-layout patient">
+  <div class="auth-left" style="background:linear-gradient(135deg,var(--teal-darker),var(--dark))">
+    <div class="brand"><h1><span class="t">Smart</span><span class="o">Care</span></h1><p>Patient Portal</p></div>
+    <div class="tagline">Your health,<br><em>in your hands</em></div>
+    <p class="desc">Sign in to access appointments, EMR records, prescriptions and manage bills.</p>
+    <div style="margin-top:32px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128197;</span> Book &amp; manage appointments</div>
+      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128203;</span> View medical records &amp; prescriptions</div>
+      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128179;</span> View &amp; track your bills</div>
+      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128241;</span> Your unique patient QR code</div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div style="display:inline-flex;align-items:center;gap:8px;background:var(--teal-light);border:1px solid var(--teal-mid);color:var(--teal-darker);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:20px">
+      &#127973; Patient Login
+    </div>
+    <h2 class="auth-card-title">Sign in to Patient Portal</h2>
+    <p class="auth-card-sub">Enter your Patient ID and registered full name &mdash; no password needed.</p>
+
+    <div class="demo-patients">
+      <h4>Sample Patient Accounts &mdash; click Use to fill</h4>
+      <div class="pat-row"><span class="pat-id">PAT000001</span><span>Saman Silva</span><button class="pat-use" onclick="fillPatient('PAT000001','Saman Silva')">Use</button></div>
+      <div class="pat-row"><span class="pat-id">PAT000002</span><span>Dilini Fernando</span><button class="pat-use" onclick="fillPatient('PAT000002','Dilini Fernando')">Use</button></div>
+      <div class="pat-row"><span class="pat-id">PAT000003</span><span>Kasun Perera</span><button class="pat-use" onclick="fillPatient('PAT000003','Kasun Perera')">Use</button></div>
+      <div class="pat-row"><span class="pat-id">PAT000004</span><span>Nimali Rajapaksa</span><button class="pat-use" onclick="fillPatient('PAT000004','Nimali Rajapaksa')">Use</button></div>
+      <div class="pat-row"><span class="pat-id">PAT000005</span><span>Tharindu Bandara</span><button class="pat-use" onclick="fillPatient('PAT000005','Tharindu Bandara')">Use</button></div>
+    </div>
+
+    <div class="info-note">
+      &#8505;&#65039; Patient login uses your <strong>Patient ID</strong> and <strong>registered full name</strong> only &mdash; no password required.
+      Your data is protected by TLS 1.3 encryption and sessions expire after 15 minutes of inactivity.
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <div class="form-group">
+      <label class="form-label">Patient ID <span class="req">*</span></label>
+      <input id="inp-patient-id" type="text" class="form-control" placeholder="e.g. PAT000001" autocomplete="off" style="text-transform:uppercase">
+      <div class="form-hint">Your Patient ID is printed on your registration card or appointment letter.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Full Name (as registered) <span class="req">*</span></label>
+      <input id="inp-full-name" type="text" class="form-control" placeholder="e.g. Saman Silva" autocomplete="name">
+      <div class="form-hint">Enter your full name exactly as registered (case-insensitive).</div>
+    </div>
+
+    <button id="signin-btn" class="btn btn-primary btn-full btn-lg" onclick="doPatientLogin()">&#128274; Sign In to Patient Portal</button>
+    <hr class="auth-divider">
+    <p style="text-align:center;font-size:13px;color:var(--gray)">
+      Not a registered patient? <a href="patient-signup.html" style="color:var(--orange);font-weight:700">&rarr; Register Now</a>
+    </p>
+    <p style="text-align:center;font-size:13px;color:var(--gray);margin-top:8px">
+      Staff member? <a href="../../index.html" style="color:var(--teal);font-weight:600">Staff Login &rarr;</a>
+    </p>
+    <div class="auth-footer" style="margin-top:24px">
+      <div class="security-badge" style="justify-content:center">
+        <div class="dot"></div>
+        <span>TLS 1.3 Encrypted &middot; Session expires after 15 minutes</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../../js/app.js"></script>
+<script>
+const DEMO_PATIENTS = [
+  { id:'PAT000001', name:'Saman Silva',      dob:'1985-04-12', phone:'+94771234567', gender:'Male',   blood:'O+' },
+  { id:'PAT000002', name:'Dilini Fernando',  dob:'1992-07-23', phone:'+94772345678', gender:'Female', blood:'A+' },
+  { id:'PAT000003', name:'Kasun Perera',     dob:'1978-11-05', phone:'+94773456789', gender:'Male',   blood:'B+' },
+  { id:'PAT000004', name:'Nimali Rajapaksa', dob:'1995-02-18', phone:'+94774567890', gender:'Female', blood:'AB+'},
+  { id:'PAT000005', name:'Tharindu Bandara', dob:'1988-09-30', phone:'+94775678901', gender:'Male',   blood:'O-' },
+];
+
+function fillPatient(id, name) {
+  document.getElementById('inp-patient-id').value = id;
+  document.getElementById('inp-full-name').value  = name;
+  document.getElementById('error-box').style.display = 'none';
+}
+
+document.getElementById('inp-full-name').addEventListener('keypress', e => { if (e.key === 'Enter') doPatientLogin(); });
+document.getElementById('inp-patient-id').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('inp-full-name').focus(); });
+
+async function doPatientLogin() {
+  const patientId = document.getElementById('inp-patient-id').value.trim().toUpperCase();
+  const fullName  = document.getElementById('inp-full-name').value.trim();
+  const errorBox  = document.getElementById('error-box');
+  errorBox.style.display = 'none';
+
+  if (!patientId || !fullName) { errorBox.textContent = 'Please enter your Patient ID and full name.'; errorBox.style.display = 'block'; return; }
+  if (!/^PAT\d{6}$/.test(patientId)) { errorBox.textContent = 'Patient ID format is invalid. It should look like PAT000001.'; errorBox.style.display = 'block'; return; }
+
+  setLoading('signin-btn', true, 'Signing in...');
+
+  // Try live API
+  const res = await API.post('/auth/patient-login', { patientId, fullName });
+  if (res && res.success) {
+    const names = fullName.split(' ');
+    const user = {
+      username: res.data.patientCode, userId: res.data.patientId, role: 'Patient',
+      patientId: res.data.patientId, patientCode: res.data.patientCode,
+      firstName: res.data.firstName, lastName: res.data.lastName,
+    };
+    Auth.setSession(res.data.token, user);
+    setLoading('signin-btn', false, '&#128274; Sign In to Patient Portal');
+    window.location.href = '../patients/patient-portal.html';
+    return;
+  }
+
+  // Demo fallback
+  const found = DEMO_PATIENTS.find(p => p.id === patientId && p.name.toLowerCase() === fullName.toLowerCase());
+  setLoading('signin-btn', false, '&#128274; Sign In to Patient Portal');
+
+  if (found) {
+    const names = found.name.split(' ');
+    const user = {
+      username: found.id, userId: 0, role: 'Patient',
+      patientId: found.id, patientCode: found.id,
+      firstName: names[0], lastName: names.slice(1).join(' '),
+      dob: found.dob, phone: found.phone, gender: found.gender, blood: found.blood,
+    };
+    Auth.setSession('demo-patient-token-' + Date.now(), user);
+    window.location.href = '../patients/patient-portal.html';
+  } else {
+    errorBox.textContent = 'Patient not found. Please check that your Patient ID and full name match exactly as registered.';
+    errorBox.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

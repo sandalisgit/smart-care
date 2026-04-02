@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Medical Records</title>
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  .drug-row { display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px; }
+  .vital-grid { display:grid;grid-template-columns:repeat(5,1fr);gap:12px; }
+  .vital-box { background:var(--light);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border); }
+  .vital-val { font-size:20px;font-weight:700;color:var(--teal); }
+  .vital-label { font-size:11px;color:var(--gray);margin-top:3px; }
+  .interaction-card { padding:10px 14px;border-radius:8px;margin-bottom:6px;font-size:13px; }
+  .ic-Contraindicated { background:#f8d7da;border-left:4px solid var(--danger); }
+  .ic-Major { background:#fff3cd;border-left:4px solid var(--warning); }
+  .ic-Moderate { background:#d1ecf1;border-left:4px solid var(--info); }
+  .ic-Minor { background:var(--light);border-left:4px solid var(--gray); }
+</style>
+</head>
+<body>
+<div class="app-layout">
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="flex items-center gap-3">
+        <button onclick="history.back()" class="btn btn-secondary btn-sm">← Back</button>
+        <span class="topbar-title" id="topbar-breadcrumb" id="page-title">New Consultation</span>
+      </div>
+      <div class="topbar-right" id="topbar-user"></div>
+    </div>
+    <div class="page-body">
+
+      <!-- Patient Banner -->
+      <div id="patient-banner" style="background:linear-gradient(to right,var(--teal),var(--teal-dark));color:white;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-weight:700;font-size:16px" id="banner-name">Select Patient</div>
+          <div style="font-size:12px;opacity:0.85;margin-top:4px" id="banner-meta"></div>
+        </div>
+        <div id="banner-allergies"></div>
+      </div>
+
+      <!-- Patient Search (if no patientId in URL) -->
+      <div id="patient-select-section" class="card" style="margin-bottom:16px">
+        <div class="card-header"><h3>👥 Select Patient</h3></div>
+        <div class="card-body">
+          <div class="search-bar" style="max-width:400px">
+            <input id="pat-search" class="form-control" placeholder="Search patient..." oninput="searchPatient(this.value)">
+          </div>
+          <div id="pat-results" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <!-- CONSULTATION FORM -->
+      <div id="consultation-form" class="hidden">
+
+        <!-- VITALS -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><h3>❤️ Vital Signs</h3></div>
+          <div class="card-body">
+            <div class="vital-grid">
+              <div class="vital-box"><input type="text" id="v-bp" class="form-control" placeholder="120/80"><div class="vital-label">Blood Pressure</div></div>
+              <div class="vital-box"><input type="number" id="v-temp" class="form-control" placeholder="37.0" step="0.1"><div class="vital-label">Temperature °C</div></div>
+              <div class="vital-box"><input type="number" id="v-pulse" class="form-control" placeholder="72"><div class="vital-label">Pulse (bpm)</div></div>
+              <div class="vital-box"><input type="number" id="v-o2" class="form-control" placeholder="98" min="0" max="100"><div class="vital-label">O₂ Saturation %</div></div>
+              <div class="vital-box"><input type="number" id="v-rr" class="form-control" placeholder="16"><div class="vital-label">Respiratory Rate</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLINICAL NOTES -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><h3>📋 Clinical Notes (AES-256 Encrypted)</h3></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Chief Complaint <span class="required">*</span></label>
+                <input id="chief-complaint" class="form-control" required placeholder="Main reason for visit">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Follow-up Date</label>
+                <input type="date" id="follow-up" class="form-control">
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">Symptoms</label>
+                <textarea id="symptoms" class="form-control" rows="2" placeholder="Describe symptoms in detail..."></textarea>
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">Diagnosis <span class="required">*</span></label>
+                <textarea id="diagnosis" class="form-control" rows="2" placeholder="Clinical diagnosis..." required></textarea>
+                <div id="ai-suggestions" style="margin-top:8px"></div>
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">Treatment Plan</label>
+                <textarea id="treatment" class="form-control" rows="2" placeholder="Treatment plan and management..."></textarea>
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">Notes</label>
+                <textarea id="notes" class="form-control" rows="2" placeholder="Additional clinical notes..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRESCRIPTION BUILDER -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <h3>💊 Prescription</h3>
+            <div class="flex gap-2">
+              <button id="check-interactions-btn" class="btn btn-sm btn-secondary" onclick="checkInteractions()">🤖 Check Drug Interactions</button>
+              <button class="btn btn-sm btn-primary" onclick="addDrugRow()">+ Add Drug</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1.5fr 80px 80px 36px;gap:8px;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px">
+              <div>Medicine Name</div><div>Dosage</div><div>Frequency</div><div>Days</div><div>Qty</div><div></div>
+            </div>
+            <div id="drug-rows"></div>
+            <!-- Interaction alerts panel -->
+            <div id="interaction-panel" class="hidden" style="margin-top:16px">
+              <div style="font-weight:700;font-size:14px;margin-bottom:8px">🤖 AI Drug Interaction Check Results</div>
+              <div id="interaction-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LAB ORDERS -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <h3>🧪 Lab Orders</h3>
+            <button class="btn btn-sm btn-primary" onclick="addLabRow()">+ Add Test</button>
+          </div>
+          <div class="card-body">
+            <div id="lab-rows"></div>
+          </div>
+        </div>
+
+        <!-- SUBMIT -->
+        <div class="flex justify-between">
+          <button class="btn btn-secondary" onclick="history.back()">Cancel</button>
+          <button id="save-btn" class="btn btn-primary" onclick="saveConsultation()">💾 Save Consultation Record</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js"></script>
+<script src="../../js/sidebar.js"></script>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+let currentPatientId = urlParams.get('patientId') ? parseInt(urlParams.get('patientId')) : null;
+let currentPatient = null;
+let drugRowCount = 0, labRowCount = 0;
+let interactionForceOverride = false;
+
+if (currentPatientId) {
+  loadPatientBanner(currentPatientId);
+  document.getElementById('patient-select-section').classList.add('hidden');
+  document.getElementById('consultation-form').classList.remove('hidden');
+}
+
+const searchPatient = debounce(async q => {
+  if (q.length < 2) return;
+  const res = await API.get(`/patients?q=${encodeURIComponent(q)}&limit=5`);
+  if (!res?.success) return;
+  document.getElementById('pat-results').innerHTML = res.data.map(p => `
+    <div onclick="selectPatient(${p.patientId})"
+         style="padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:4px;font-size:13px"
+         onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
+      <strong>${p.firstName} ${p.lastName}</strong>
+      <span style="color:var(--gray);margin-left:8px">${p.patientCode} · ${p.phone}</span>
+    </div>
+  `).join('');
+}, 300);
+
+document.getElementById('pat-search')?.addEventListener('input', e => searchPatient(e.target.value));
+
+async function selectPatient(id) {
+  currentPatientId = id;
+  document.getElementById('patient-select-section').classList.add('hidden');
+  document.getElementById('consultation-form').classList.remove('hidden');
+  await loadPatientBanner(id);
+}
+
+Auth.requireAuth();
+Sidebar.render('emr', 'emr-records');
+
+async function loadPatientBanner(id) {
+  const res = await API.get(`/patients/${id}`);
+  if (!res?.success) return;
+  currentPatient = res.data.patient;
+  const p = currentPatient;
+  const age = Math.floor((Date.now() - new Date(p.dateOfBirth)) / (365.25*24*3600*1000));
+  document.getElementById('banner-name').textContent = `${p.firstName} ${p.lastName}`;
+  document.getElementById('banner-meta').textContent = `${p.patientCode} · ${age} yrs · ${p.gender} · 🩸 ${p.bloodGroup || '—'} · ${p.phone}`;
+  document.getElementById('page-title').textContent = `Consultation — ${p.firstName} ${p.lastName}`;
+
+  if (p.allergies && p.allergies !== 'None') {
+    document.getElementById('banner-allergies').innerHTML =
+      `<span style="background:rgba(255,255,255,0.2);padding:6px 12px;border-radius:20px;font-size:12px">⚠️ Allergies: ${p.allergies}</span>`;
+  }
+
+  // Add first drug row automatically
+  if (drugRowCount === 0) addDrugRow();
+  if (labRowCount === 0) addLabRow();
+}
+
+function addDrugRow() {
+  const id = ++drugRowCount;
+  const div = document.createElement('div');
+  div.id = `drug-row-${id}`;
+  div.className = 'drug-row';
+  div.innerHTML = `
+    <input type="text" class="form-control drug-name" placeholder="Drug name" style="font-size:13px">
+    <input type="text" class="form-control" placeholder="e.g. 500mg" style="font-size:13px" data-field="dosage">
+    <input type="text" class="form-control" placeholder="e.g. Twice daily" style="font-size:13px" data-field="frequency">
+    <input type="number" class="form-control" placeholder="7" min="1" style="font-size:13px" data-field="duration">
+    <input type="number" class="form-control" placeholder="14" min="1" style="font-size:13px" data-field="qty">
+    <button class="btn btn-danger btn-sm btn-icon" onclick="document.getElementById('drug-row-${id}').remove()">✕</button>
+  `;
+  document.getElementById('drug-rows').appendChild(div);
+}
+
+function addLabRow() {
+  const id = ++labRowCount;
+  const div = document.createElement('div');
+  div.id = `lab-row-${id}`;
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:8px';
+  div.innerHTML = `
+    <input type="text" class="form-control lab-name" placeholder="Test name e.g. CBC, Blood Sugar" style="font-size:13px">
+    <input type="text" class="form-control" placeholder="Type e.g. Blood" style="font-size:13px" data-field="type">
+    <input type="number" class="form-control" placeholder="Cost (LKR)" style="font-size:13px" data-field="cost">
+    <button class="btn btn-danger btn-sm btn-icon" onclick="document.getElementById('lab-row-${id}').remove()">✕</button>
+  `;
+  document.getElementById('lab-rows').appendChild(div);
+}
+
+async function checkInteractions() {
+  const drugs = [...document.querySelectorAll('.drug-name')].map(i => i.value.trim()).filter(Boolean);
+  if (drugs.length < 2) { Toast.info('Add at least 2 drugs to check interactions'); return; }
+
+  const btn = document.getElementById('check-interactions-btn');
+  btn.disabled = true; btn.textContent = 'Checking...';
+
+  const res = await API.post('/emr/drug-check', { drugs });
+  btn.disabled = false; btn.textContent = '🤖 Check Drug Interactions';
+
+  if (!res?.success) { Toast.error('Drug check failed'); return; }
+
+  const panel = document.getElementById('interaction-panel');
+  const list = document.getElementById('interaction-list');
+  panel.classList.remove('hidden');
+
+  if (!res.data.interactions.length) {
+    list.innerHTML = '<div class="alert alert-success">✅ No known interactions found between these drugs.</div>';
+    return;
+  }
+
+  list.innerHTML = res.data.interactions.map(i => `
+    <div class="interaction-card ic-${i.severity}">
+      <strong>${i.severity}</strong> — ${i.drug_pair}<br>
+      <span style="font-size:12px">${i.description}</span>
+    </div>
+  `).join('');
+
+  if (res.data.hasMajorInteractions) {
+    list.innerHTML += `
+      <div class="alert alert-danger" style="margin-top:12px">
+        ⚠️ <strong>Major or Contraindicated interaction detected.</strong>
+        You must acknowledge before saving.
+        <button class="btn btn-sm btn-warning" style="margin-left:12px" onclick="setOverride()">I Acknowledge — Proceed</button>
+      </div>
+    `;
+    document.getElementById('save-btn').disabled = true;
+  }
+}
+
+function setOverride() {
+  interactionForceOverride = true;
+  document.getElementById('save-btn').disabled = false;
+  document.getElementById('interaction-panel').innerHTML +=
+    '<div class="alert alert-warning" style="margin-top:8px">✅ Doctor acknowledged drug interactions. Proceeding.</div>';
+}
+
+async function saveConsultation() {
+  const chiefComplaint = document.getElementById('chief-complaint').value.trim();
+  const diagnosis = document.getElementById('diagnosis').value.trim();
+  if (!chiefComplaint || !diagnosis) { Toast.error('Chief complaint and diagnosis are required'); return; }
+  if (!currentPatientId) { Toast.error('Select a patient first'); return; }
+
+  const user = Auth.getUser();
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+  // Build vital signs JSON
+  const vitalSigns = JSON.stringify({
+    bp: document.getElementById('v-bp').value,
+    temperature: document.getElementById('v-temp').value,
+    pulse: document.getElementById('v-pulse').value,
+    o2Saturation: document.getElementById('v-o2').value,
+    respiratoryRate: document.getElementById('v-rr').value
+  });
+
+  // Save medical record
+  const recRes = await API.post('/emr/records', {
+    patientId: currentPatientId,
+    doctorId: user.doctorId || 1, // from session in real impl
+    chiefComplaint,
+    symptoms: document.getElementById('symptoms').value,
+    diagnosis,
+    treatmentPlan: document.getElementById('treatment').value,
+    notes: document.getElementById('notes').value,
+    vitalSigns,
+    followUpDate: document.getElementById('follow-up').value || null,
+    appointmentId: parseInt(urlParams.get('appointmentId')) || null
+  });
+
+  if (!recRes?.success) {
+    btn.disabled = false; btn.textContent = '💾 Save Consultation Record';
+    Toast.error(recRes?.error || 'Failed to save record'); return;
+  }
+
+  const recordId = recRes.data.recordId;
+
+  // Save prescription if drugs entered
+  const drugs = [...document.querySelectorAll('#drug-rows > div')].map(row => ({
+    medicineName: row.querySelector('.drug-name')?.value,
+    dosage: row.querySelector('[data-field="dosage"]')?.value,
+    frequency: row.querySelector('[data-field="frequency"]')?.value,
+    durationDays: parseInt(row.querySelector('[data-field="duration"]')?.value) || 7,
+    quantity: parseInt(row.querySelector('[data-field="qty"]')?.value) || 0,
+    instructions: ''
+  })).filter(d => d.medicineName);
+
+  if (drugs.length > 0) {
+    await API.post('/emr/prescriptions', {
+      patientId: currentPatientId,
+      doctorId: user.doctorId || 1,
+      recordId, validityDays: 30, items: drugs
+    });
+  }
+
+  // Save lab orders if entered
+  const labs = [...document.querySelectorAll('#lab-rows > div')].map(row => ({
+    testName: row.querySelector('.lab-name')?.value,
+    testType: row.querySelector('[data-field="type"]')?.value,
+    cost: parseFloat(row.querySelector('[data-field="cost"]')?.value) || 0
+  })).filter(l => l.testName);
+
+  for (const lab of labs) {
+    await API.post('/emr/lab-orders', {
+      patientId: currentPatientId,
+      doctorId: user.doctorId || 1,
+      recordId,
+      testName: lab.testName,
+      testType: lab.testType,
+      cost: lab.cost
+    });
+  }
+
+  btn.disabled = false; btn.textContent = '💾 Save Consultation Record';
+  Toast.success('Consultation saved successfully!');
+  setTimeout(() => window.location.href = `../patients/profile.html?id=${currentPatientId}`, 1500);
+}
+</script>
+</body>
+</html>
