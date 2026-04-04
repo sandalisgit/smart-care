@@ -1,38 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Care — Book Appointment</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Appointments</title>
 <link rel="stylesheet" href="../../css/app.css">
 <style>
-  .step-indicator { display:flex;gap:0;margin-bottom:24px; }
-  .step-item { flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;color:var(--gray);background:var(--light);border:1px solid var(--border);position:relative; }
-  .step-item:first-child { border-radius:var(--radius) 0 0 var(--radius); }
-  .step-item:last-child { border-radius:0 var(--radius) var(--radius) 0; }
-  .step-item.active { background:var(--teal);color:white;border-color:var(--teal); }
-  .step-item.done { background:var(--success);color:white;border-color:var(--success); }
-  .slot-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:12px; }
-  .slot-btn { padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:#ffffff;cursor:pointer;font-size:13px;font-weight:600;text-align:center;transition:all 0.15s;color:var(--dark); }
-  .slot-btn:hover { border-color:var(--teal);background:var(--teal-light); }
-  .slot-btn.selected { border-color:var(--teal);background:var(--teal);color:white; }
-  .risk-indicator { padding:12px;border-radius:8px;margin-top:12px;font-size:13px; }
-  .risk-high { background:#f8d7da;color:#721c24;border:1px solid #f5c6cb; }
-  .risk-medium { background:#fff3cd;color:#856404;border:1px solid #ffc107; }
-  .risk-low { background:#d4edda;color:#155724;border:1px solid #c3e6cb; }
-  .doctor-card { border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.15s; }
-  .doctor-card:hover { border-color:var(--teal);background:var(--teal-light); }
-  .doctor-card.selected { border-color:var(--teal);background:var(--teal-light); }
-  .today-queue { border:1px solid var(--border);border-radius:8px;overflow:hidden; }
-  .queue-item { padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
-  .queue-item:last-child { border-bottom:none; }
-  .queue-time { font-size:16px;font-weight:700;color:var(--teal);min-width:55px; }
+/* ── Step wizard ── */
+.step-indicator{display:flex;gap:0;margin-bottom:24px}
+.step-item{flex:1;text-align:center;padding:10px;font-size:12px;font-weight:600;color:var(--gray);
+  background:var(--light);border:1px solid var(--border);position:relative}
+.step-item:first-child{border-radius:var(--radius) 0 0 var(--radius)}
+.step-item:last-child{border-radius:0 var(--radius) var(--radius) 0}
+.step-item.active{background:var(--teal);color:white;border-color:var(--teal)}
+.step-item.done{background:var(--success);color:white;border-color:var(--success)}
+
+/* ── Calendar tabs ── */
+.view-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+.view-tab{padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;border:none;
+  background:transparent;color:var(--gray);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.view-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+/* ── Calendar grid ── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.cal-header-cell{text-align:center;font-size:11px;font-weight:700;color:var(--gray);padding:4px 0;background:var(--light);border-radius:4px}
+.cal-day{min-height:72px;border:1px solid var(--border);border-radius:6px;padding:4px;
+  cursor:pointer;transition:all .15s;font-size:11px;position:relative}
+.cal-day:hover{border-color:var(--teal);background:var(--teal-light)}
+.cal-day.today{border-color:var(--teal);border-width:2px}
+.cal-day.other-month{opacity:.4;cursor:default}
+.cal-day .day-num{font-weight:700;font-size:13px;color:var(--dark)}
+.cal-day.today .day-num{color:var(--teal)}
+.cal-event{background:var(--teal);color:white;border-radius:3px;padding:1px 4px;
+  font-size:10px;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer}
+.cal-event.status-cancelled{background:#dc3545}
+.cal-event.status-completed{background:var(--success)}
+.cal-event.status-no-show{background:#fd7e14}
+.cal-event.risk-high::after{content:"⚠";margin-left:2px;font-size:9px}
+
+/* ── Week view ── */
+.week-grid{display:grid;grid-template-columns:60px repeat(7,1fr);gap:2px}
+.week-hour{font-size:10px;color:var(--gray);text-align:right;padding-right:4px;padding-top:3px}
+.week-cell{min-height:28px;border:1px solid var(--border);border-radius:3px;position:relative;font-size:10px}
+.week-cell.has-appt{background:var(--teal-light);border-color:var(--teal);cursor:pointer;padding:2px 4px}
+.week-day-header{text-align:center;font-size:11px;font-weight:700;padding:4px 0;
+  background:var(--light);border-radius:4px;color:var(--gray)}
+.week-day-header.today{color:var(--teal)}
+
+/* ── Slot grid ── */
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;margin-top:12px}
+.slot-btn{padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:#fff;
+  cursor:pointer;font-size:13px;font-weight:600;text-align:center;transition:all .15s;color:var(--dark)}
+.slot-btn:hover{border-color:var(--teal);background:var(--teal-light)}
+.slot-btn.selected{border-color:var(--teal);background:var(--teal);color:white}
+
+/* ── Risk / suggestion panels ── */
+.risk-high{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;border-radius:8px;padding:12px;margin-top:12px;font-size:13px}
+.risk-medium{background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-top:12px;font-size:13px}
+.risk-low{background:#d4edda;color:#155724;border:1px solid #c3e6cb;border-radius:8px;padding:12px;margin-top:12px;font-size:13px}
+.suggest-chip{display:inline-block;padding:4px 10px;border-radius:16px;font-size:12px;font-weight:600;
+  background:var(--teal-light);border:1.5px solid var(--teal);color:var(--teal);cursor:pointer;margin:3px;transition:all .15s}
+.suggest-chip:hover{background:var(--teal);color:white}
+
+/* ── Doctor card ── */
+.doctor-card{border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s}
+.doctor-card:hover{border-color:var(--teal);background:var(--teal-light)}
+.doctor-card.selected{border-color:var(--teal);background:var(--teal-light)}
+
+/* ── Today queue ── */
+.today-queue{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.queue-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.queue-item:last-child{border-bottom:none}
+.queue-time{font-size:16px;font-weight:700;color:var(--teal);min-width:55px}
+
+/* ── RBAC write-only ── */
+.write-only{display:none}
 </style>
 </head>
 <body>
 <div class="app-layout">
-    <nav class="sidebar" id="sidebar"></nav>
+  <nav class="sidebar" id="sidebar"></nav>
+  <nav class="sub-sidebar" id="sub-sidebar"></nav>
 
-    <nav class="sub-sidebar" id="sub-sidebar"></nav>
   <div class="main-content">
     <div class="topbar">
       <span class="topbar-title" id="topbar-breadcrumb">Appointments</span>
@@ -40,142 +89,816 @@
     </div>
 
     <div class="page-body">
-      <div style="display:grid;grid-template-columns:1fr 400px;gap:16px">
+      <!-- ── STATS ROW ── -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+        <div class="stat-card"><div class="stat-number" id="stat-total">—</div><div class="stat-label">Today Total</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-scheduled" style="color:var(--teal)">—</div><div class="stat-label">Scheduled</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-completed" style="color:var(--success)">—</div><div class="stat-label">Completed</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-noshow" style="color:#dc3545">—</div><div class="stat-label">No Show</div></div>
+      </div>
 
-        <!-- BOOKING FORM -->
+      <!-- ── MAIN LAYOUT ── -->
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:16px">
+
+        <!-- LEFT: CALENDAR + BOOKING FORM -->
         <div>
-          <!-- Step indicator -->
-          <div class="step-indicator">
-            <div class="step-item active" id="s1">1. Select Patient</div>
-            <div class="step-item" id="s2">2. Choose Doctor</div>
-            <div class="step-item" id="s3">3. Pick Slot</div>
-            <div class="step-item" id="s4">4. Confirm</div>
-          </div>
-
-          <!-- STEP 1: Patient Selection -->
-          <div id="step-1" class="card">
-            <div class="card-header"><h3>👥 Select Patient</h3></div>
-            <div class="card-body">
-              <div class="search-bar">
-                <input id="patient-search" class="form-control" placeholder="Search patient by name or phone..." oninput="searchPatients(this.value)">
+          <!-- Calendar / Search tabs -->
+          <div class="card">
+            <div class="card-header" style="flex-wrap:wrap;gap:8px">
+              <div class="view-tabs" style="margin-bottom:0">
+                <button class="view-tab active" id="tab-calendar" onclick="switchMainTab('calendar')">📅 Calendar</button>
+                <button class="view-tab" id="tab-book" onclick="switchMainTab('book')">➕ Book</button>
+                <button class="view-tab" id="tab-search" onclick="switchMainTab('search')">🔍 Search</button>
+                <button class="view-tab" id="tab-reports" onclick="switchMainTab('reports')">📊 Reports</button>
               </div>
-              <div id="patient-results" style="margin-top:12px"></div>
-              <div id="selected-patient" class="hidden" style="background:var(--teal-light);border:1.5px solid var(--teal);border-radius:8px;padding:12px;margin-top:12px"></div>
-              <div style="margin-top:16px">
-                <button class="btn btn-primary" id="next-1" onclick="goStep(2)" disabled>Next: Choose Doctor →</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- STEP 2: Doctor Selection -->
-          <div id="step-2" class="card hidden" style="margin-top:0">
-            <div class="card-header"><h3>👨‍⚕️ Select Doctor</h3></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">Filter by Specialization</label>
-                <select id="spec-filter" class="form-control" onchange="loadDoctors(this.value)">
-                  <option value="">All Specializations</option>
+              <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                <select id="cal-doctor-filter" class="form-control form-control-sm" style="width:180px" onchange="renderCalendar()">
+                  <option value="0">All Doctors</option>
                 </select>
-              </div>
-              <div id="doctor-list" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"></div>
-              <div style="margin-top:16px;display:flex;gap:8px">
-                <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
-                <button class="btn btn-primary" id="next-2" onclick="goStep(3)" disabled>Next: Pick Time Slot →</button>
+                <button class="btn btn-sm btn-secondary" onclick="navMonth(-1)">‹</button>
+                <span id="cal-month-label" style="font-weight:700;min-width:120px;text-align:center"></span>
+                <button class="btn btn-sm btn-secondary" onclick="navMonth(1)">›</button>
               </div>
             </div>
-          </div>
+            <div class="card-body" style="padding-top:8px">
 
-          <!-- STEP 3: Date & Slot Selection -->
-          <div id="step-3" class="card hidden" style="margin-top:0">
-            <div class="card-header"><h3>📅 Choose Date & Time Slot</h3></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">Appointment Date</label>
-                <input type="date" id="appt-date" class="form-control" onchange="loadSlots()" min="">
+              <!-- CALENDAR VIEW -->
+              <div id="panel-calendar">
+                <div class="view-tabs">
+                  <button class="view-tab active" id="cv-month" onclick="switchCalView('month')">Month</button>
+                  <button class="view-tab" id="cv-week"  onclick="switchCalView('week')">Week</button>
+                  <button class="view-tab" id="cv-day"   onclick="switchCalView('day')">Day</button>
+                </div>
+                <div id="calendar-content">
+                  <div class="text-center text-muted" style="padding:40px">Loading calendar…</div>
+                </div>
               </div>
-              <div id="slot-container">
-                <p class="text-muted text-sm">Select a date to see available slots</p>
-              </div>
-              <div id="noshow-risk-panel"></div>
-              <div style="margin-top:16px;display:flex;gap:8px">
-                <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
-                <button class="btn btn-primary" id="next-3" onclick="goStep(4)" disabled>Next: Confirm →</button>
-              </div>
-            </div>
-          </div>
 
-          <!-- STEP 4: Confirm -->
-          <div id="step-4" class="card hidden" style="margin-top:0">
-            <div class="card-header"><h3>✅ Confirm Appointment</h3></div>
-            <div class="card-body">
-              <div id="confirm-summary" style="background:var(--light);border-radius:8px;padding:16px;margin-bottom:16px"></div>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label class="form-label">Appointment Type</label>
-                  <select id="appt-type" class="form-control">
+              <!-- BOOKING WIZARD -->
+              <div id="panel-book" class="hidden">
+                <div class="step-indicator">
+                  <div class="step-item active" id="s1">1. Patient</div>
+                  <div class="step-item" id="s2">2. Doctor</div>
+                  <div class="step-item" id="s3">3. Slot</div>
+                  <div class="step-item" id="s4">4. Confirm</div>
+                </div>
+
+                <!-- Step 1 -->
+                <div id="step-1">
+                  <div class="form-group">
+                    <input id="patient-search" class="form-control" placeholder="Search patient by name or code…" oninput="searchPatients(this.value)">
+                  </div>
+                  <div id="patient-results"></div>
+                  <div id="selected-patient" class="hidden" style="background:var(--teal-light);border:1.5px solid var(--teal);border-radius:8px;padding:12px"></div>
+                  <div style="margin-top:16px">
+                    <button class="btn btn-primary" id="next-1" onclick="goStep(2)" disabled>Next: Doctor →</button>
+                  </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div id="step-2" class="hidden">
+                  <div class="form-group">
+                    <label class="form-label">Filter by Specialization</label>
+                    <select id="spec-filter" class="form-control" onchange="loadDoctors(this.value)">
+                      <option value="">All Specializations</option>
+                    </select>
+                  </div>
+                  <div id="doctor-list" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"></div>
+                  <div style="margin-top:16px;display:flex;gap:8px">
+                    <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+                    <button class="btn btn-primary" id="next-2" onclick="goStep(3)" disabled>Next: Slot →</button>
+                  </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div id="step-3" class="hidden">
+                  <div class="form-group">
+                    <label class="form-label">Appointment Date</label>
+                    <input type="date" id="appt-date" class="form-control" onchange="loadSlots()" min="">
+                  </div>
+                  <!-- Slot optimization suggestions -->
+                  <div id="suggest-panel" style="margin-bottom:12px">
+                    <div style="font-size:12px;color:var(--gray);margin-bottom:4px">💡 Optimal slots (low no-show risk):</div>
+                    <div id="suggest-chips"><span class="text-muted text-sm">Select a doctor to see suggestions</span></div>
+                  </div>
+                  <div id="slot-container"><p class="text-muted text-sm">Select a date to see available slots</p></div>
+                  <div id="noshow-risk-panel"></div>
+                  <div style="margin-top:16px;display:flex;gap:8px">
+                    <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
+                    <button class="btn btn-primary" id="next-3" onclick="goStep(4)" disabled>Next: Confirm →</button>
+                  </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div id="step-4" class="hidden">
+                  <div id="confirm-summary" style="background:var(--light);border-radius:8px;padding:16px;margin-bottom:16px"></div>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label class="form-label">Appointment Type</label>
+                      <select id="appt-type" class="form-control">
+                        <option>Consultation</option><option>Follow-up</option>
+                        <option>Routine Check</option><option>Emergency</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Reason for Visit</label>
+                      <input type="text" id="appt-reason" class="form-control" placeholder="Brief reason…">
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px">
+                    <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
+                    <button class="btn btn-primary" id="book-btn" onclick="bookAppointment()">📅 Book Appointment</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SEARCH PANEL -->
+              <div id="panel-search" class="hidden">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                  <input id="search-q" class="form-control" placeholder="Patient name or code…" oninput="searchAppointments()">
+                  <select id="search-status" class="form-control" onchange="searchAppointments()">
+                    <option value="">All Status</option>
+                    <option>Scheduled</option><option>Confirmed</option><option>In Progress</option>
+                    <option>Completed</option><option>Cancelled</option><option>No Show</option>
+                  </select>
+                  <select id="search-type" class="form-control" onchange="searchAppointments()">
+                    <option value="">All Types</option>
                     <option>Consultation</option><option>Follow-up</option>
                     <option>Routine Check</option><option>Emergency</option>
                   </select>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Reason for Visit</label>
-                  <input type="text" id="appt-reason" class="form-control" placeholder="Brief reason...">
+                <div style="display:flex;gap:10px;margin-bottom:12px">
+                  <div class="form-group" style="flex:1;margin:0">
+                    <label class="form-label" style="font-size:11px">From</label>
+                    <input type="date" id="search-from" class="form-control" onchange="searchAppointments()">
+                  </div>
+                  <div class="form-group" style="flex:1;margin:0">
+                    <label class="form-label" style="font-size:11px">To</label>
+                    <input type="date" id="search-to" class="form-control" onchange="searchAppointments()">
+                  </div>
+                </div>
+                <div id="search-results"><div class="text-muted text-sm">Enter criteria to search</div></div>
+              </div>
+
+              <!-- REPORTS PANEL -->
+              <div id="panel-reports" class="hidden">
+                <!-- Date range filter -->
+                <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap">
+                  <div class="form-group" style="flex:1;margin:0;min-width:140px">
+                    <label class="form-label" style="font-size:11px">From</label>
+                    <input type="date" id="rpt-from" class="form-control" onchange="loadReportsTab()">
+                  </div>
+                  <div class="form-group" style="flex:1;margin:0;min-width:140px">
+                    <label class="form-label" style="font-size:11px">To</label>
+                    <input type="date" id="rpt-to" class="form-control" onchange="loadReportsTab()">
+                  </div>
+                  <button class="btn btn-secondary btn-sm" onclick="exportReportsCSV()">⬇ Export CSV</button>
+                </div>
+                <!-- Summary cards -->
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+                  <div class="stat-card"><div class="stat-number" id="rpt-total">—</div><div class="stat-label">Total Appointments</div></div>
+                  <div class="stat-card"><div class="stat-number" id="rpt-completion" style="color:var(--success)">—</div><div class="stat-label">Completion Rate</div></div>
+                  <div class="stat-card"><div class="stat-number" id="rpt-noshow" style="color:#dc3545">—</div><div class="stat-label">No-Show Rate</div></div>
+                </div>
+                <!-- By-doctor breakdown -->
+                <div id="rpt-table-wrap">
+                  <div class="text-muted text-sm">Select a date range to view the report.</div>
                 </div>
               </div>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-secondary" onclick="goStep(3)">← Back</button>
-                <button class="btn btn-primary" id="book-btn" onclick="bookAppointment()">📅 Book Appointment</button>
-              </div>
+
             </div>
           </div>
         </div>
 
-        <!-- TODAY'S QUEUE PANEL -->
+        <!-- RIGHT: TODAY'S QUEUE + APPOINTMENT DETAIL MODAL TRIGGER -->
         <div>
           <div class="card">
-            <div class="card-header"><h3>🕐 Today's Queue</h3>
-              <button class="btn btn-sm btn-secondary" onclick="loadTodayQueue()">Refresh</button>
+            <div class="card-header">
+              <h3>🕐 Today's Queue</h3>
+              <div style="display:flex;gap:6px;align-items:center">
+                <select id="queue-doctor" class="form-control form-control-sm" style="width:140px" onchange="loadTodayQueue()">
+                  <option value="">Select doctor…</option>
+                </select>
+                <button class="btn btn-sm btn-secondary" onclick="loadTodayQueue()">↻</button>
+              </div>
             </div>
             <div id="today-queue-content">
-              <div class="text-center text-muted" style="padding:20px">Select a doctor to see their queue</div>
+              <div class="text-center text-muted" style="padding:20px">Select a doctor above</div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Appointment Detail Modal -->
+<div id="modal-appt-detail" class="modal-overlay hidden">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="modal-appt-title">Appointment Details</h3>
+      <button class="modal-close" onclick="Modal.close('modal-appt-detail')">×</button>
+    </div>
+    <div class="modal-body" id="modal-appt-body"></div>
+    <div class="modal-footer write-only" id="modal-appt-actions"></div>
   </div>
 </div>
 
 <script src="../../js/app.js"></script>
 <script src="../../js/sidebar.js"></script>
 <script>
+// =============================================================================
+// CONSTANTS & STATE
+// =============================================================================
+const BOOKING_ROLES = ['System Admin', 'Hospital Admin', 'Receptionist'];
+const WRITE_ROLES   = BOOKING_ROLES; // alias for clarity
+
+let calView   = 'month';   // 'month' | 'week' | 'day'
+let calYear   = new Date().getFullYear();
+let calMonth  = new Date().getMonth() + 1; // 1-based
+let calWeekStart = startOfWeek(new Date());
+let calDay    = new Date();
+let calAppts  = [];        // cached calendar data
+let mainTab   = 'calendar';
+
 let selectedPatient = null, selectedDoctor = null, selectedSlot = null;
-const urlParams = new URLSearchParams(window.location.search);
-const prePatientId = urlParams.get('patientId');
+const urlParams  = new URLSearchParams(window.location.search);
+const prePatient = urlParams.get('patientId');
 
-// Set minimum date to today
-document.getElementById('appt-date').min = new Date().toISOString().split('T')[0];
+// =============================================================================
+// AUTH / RBAC GUARD
+// =============================================================================
+Auth.requireAuth();
+const currentUser = Auth.getUser();
+const canWrite    = WRITE_ROLES.includes(currentUser?.role);
+console.log('[book.html] currentUser:', currentUser, '| canWrite:', canWrite);
 
-// Pre-load patient if coming from profile
-if (prePatientId) {
-  API.get(`/patients/${prePatientId}`).then(res => {
-    if (res?.success) selectPatient(res.data.patient);
+// Show write-only elements for booking roles
+if (canWrite) {
+  document.querySelectorAll('.write-only').forEach(el => {
+    el.style.display = '';
+  });
+  // Show Book tab
+  document.getElementById('tab-book').style.display = '';
+} else {
+  // Doctors/Nurses see calendar and search only; hide Book tab
+  document.getElementById('tab-book').style.display = 'none';
+}
+
+try {
+  const _apptHashToSub = { '#book':'appointments-book', '#search':'appointments-search',
+    '#schedule':'appointments-schedule', '#reports':'appointments-reports' };
+  const _apptActiveSub = _apptHashToSub[window.location.hash] || 'appointments-book';
+  Sidebar.render('appointments', _apptActiveSub);
+} catch (e) {
+  console.error('[book.html] Sidebar.render failed:', e);
+}
+
+// Set minimum date for booking
+if (document.getElementById('appt-date')) {
+  document.getElementById('appt-date').min = new Date().toISOString().split('T')[0];
+}
+
+// Pre-load patient from URL
+if (prePatient && canWrite) {
+  API.get(`/patients/${prePatient}`).then(res => {
+    if (res?.success) {
+      switchMainTab('book');
+      selectPatient(res.data.patient);
+    }
   });
 }
 
+// =============================================================================
+// HASH ROUTING — sidebar sub-menu navigation
+// =============================================================================
+function handleApptHash() {
+  const h = window.location.hash;
+  if      (h === '#book')     switchMainTab('book');
+  else if (h === '#search')   switchMainTab('search');
+  else if (h === '#schedule') switchMainTab('calendar');
+  else if (h === '#reports')  switchMainTab('reports');
+  // default (#book or no hash): calendar is already active
+}
+window.addEventListener('hashchange', handleApptHash);
+
+// =============================================================================
+// INIT
+// =============================================================================
+(async function init() {
+  try { await loadDoctorFilters(); } catch (e) { console.error('[book.html] loadDoctorFilters failed:', e); }
+  loadStats();
+  renderCalendar();
+  handleApptHash();
+})();
+
+// =============================================================================
+// STATS
+// =============================================================================
+async function loadStats() {
+  const res = await API.get('/appointments/stats');
+  if (!res?.success) return;
+  const s = res.data;
+  const total = Object.values(s).reduce((a, b) => a + b, 0);
+  document.getElementById('stat-total').textContent      = total;
+  document.getElementById('stat-scheduled').textContent  = (s['Scheduled'] || 0) + (s['Confirmed'] || 0);
+  document.getElementById('stat-completed').textContent  = s['Completed'] || 0;
+  document.getElementById('stat-noshow').textContent     = s['No Show'] || 0;
+}
+
+// =============================================================================
+// DOCTOR FILTERS
+// =============================================================================
+async function loadDoctorFilters() {
+  const res = await API.get('/appointments/doctors');
+  if (!res?.success || !Array.isArray(res.data)) return;
+  const options = res.data.map(d =>
+    `<option value="${d.doctor_id}">${d.doctor_name} — ${d.specialization}</option>`).join('');
+
+  ['cal-doctor-filter', 'queue-doctor'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML += options;
+  });
+}
+
+// =============================================================================
+// MAIN TAB SWITCH
+// =============================================================================
+function switchMainTab(tab) {
+  mainTab = tab;
+  ['calendar','book','search','reports'].forEach(t => {
+    document.getElementById(`panel-${t}`)?.classList.toggle('hidden', t !== tab);
+    document.getElementById(`tab-${t}`)?.classList.toggle('active', t === tab);
+  });
+  if (tab === 'calendar') renderCalendar();
+  if (tab === 'reports') loadReportsTab();
+  if (tab === 'book' && !canWrite) {
+    switchMainTab('calendar'); // fallback for read-only roles
+    Toast.error('You do not have permission to book appointments.');
+  }
+}
+
+// =============================================================================
+// REPORTS TAB
+// =============================================================================
+let _rptData = []; // cached for CSV export
+
+async function loadReportsTab() {
+  const fromEl = document.getElementById('rpt-from');
+  const toEl   = document.getElementById('rpt-to');
+
+  // Default: first day of current month → today
+  const today = new Date().toISOString().split('T')[0];
+  const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    .toISOString().split('T')[0];
+  if (!fromEl.value) fromEl.value = firstOfMonth;
+  if (!toEl.value)   toEl.value   = today;
+
+  const wrap = document.getElementById('rpt-table-wrap');
+  wrap.innerHTML = '<div class="text-muted text-sm">Loading…</div>';
+
+  // The calendar API only accepts ?year=&month=, so iterate month-by-month
+  // across the selected range and merge results.
+  let all = [];
+  try {
+    const fromDate = new Date(fromEl.value + 'T00:00:00');
+    const toDate   = new Date(toEl.value   + 'T00:00:00');
+    const seen = new Set(); // deduplicate by appointment_id across month boundaries
+    let cur = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+    while (cur <= toDate) {
+      const y = cur.getFullYear();
+      const m = cur.getMonth() + 1;
+      const res = await API.get(`/appointments/calendar?doctorId=0&year=${y}&month=${m}`);
+      if (res?.success && Array.isArray(res.data)) {
+        res.data.forEach(a => {
+          const id = String(a.appointment_id);
+          if (!seen.has(id)) { seen.add(id); all.push(a); }
+        });
+      }
+      cur.setMonth(cur.getMonth() + 1);
+    }
+  } catch (e) {
+    wrap.innerHTML = '<div class="text-muted text-sm">Failed to load data.</div>';
+    return;
+  }
+
+  // Trim to exact from/to date range
+  all = all.filter(a => {
+    const d = (a.appointment_date || '').slice(0, 10);
+    return d >= fromEl.value && d <= toEl.value;
+  });
+
+  _rptData = all;
+
+  const total      = all.length;
+  const completed  = all.filter(a => (a.status||'').toLowerCase() === 'completed').length;
+  const noshow     = all.filter(a => (a.status||'').toLowerCase() === 'no show').length;
+  const compRate   = total ? Math.round(completed / total * 100) : 0;
+  const noshowRate = total ? Math.round(noshow    / total * 100) : 0;
+
+  document.getElementById('rpt-total').textContent      = total;
+  document.getElementById('rpt-completion').textContent = compRate + '%';
+  document.getElementById('rpt-noshow').textContent     = noshowRate + '%';
+
+  // Group by doctor
+  const byDoctor = {};
+  all.forEach(a => {
+    const key = a.doctor_name || a.doctorName || 'Unknown';
+    if (!byDoctor[key]) byDoctor[key] = { total:0, completed:0, cancelled:0, noshow:0 };
+    byDoctor[key].total++;
+    const s = (a.status||'').toLowerCase();
+    if (s === 'completed')  byDoctor[key].completed++;
+    if (s === 'cancelled')  byDoctor[key].cancelled++;
+    if (s === 'no show')    byDoctor[key].noshow++;
+  });
+
+  if (Object.keys(byDoctor).length === 0) {
+    wrap.innerHTML = '<div class="text-muted text-sm">No appointments in selected range.</div>';
+    return;
+  }
+
+  const rows = Object.entries(byDoctor)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([doc, c]) => {
+      const cr = c.total ? Math.round(c.completed / c.total * 100) : 0;
+      return `<tr>
+        <td>${doc}</td>
+        <td style="text-align:center">${c.total}</td>
+        <td style="text-align:center;color:var(--success)">${c.completed}</td>
+        <td style="text-align:center;color:#dc3545">${c.noshow}</td>
+        <td style="text-align:center;color:#fd7e14">${c.cancelled}</td>
+        <td style="text-align:center;font-weight:600">${cr}%</td>
+      </tr>`;
+    }).join('');
+
+  wrap.innerHTML = `
+    <table class="data-table" style="width:100%">
+      <thead><tr>
+        <th>Doctor</th>
+        <th style="text-align:center">Total</th>
+        <th style="text-align:center">Completed</th>
+        <th style="text-align:center">No-Show</th>
+        <th style="text-align:center">Cancelled</th>
+        <th style="text-align:center">Completion%</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function exportReportsCSV() {
+  if (!_rptData.length) { Toast.error('No data to export — load a report first.'); return; }
+  const headers = ['ID','Date','Patient','Doctor','Type','Status'];
+  const lines = [headers.join(',')];
+  _rptData.forEach(a => {
+    lines.push([
+      a.appointment_id || a.id || '',
+      (a.appointment_date || a.date || '').slice(0, 10),
+      (a.patient_name || a.patientName || '').replace(/,/g, ' '),
+      (a.doctor_name  || a.doctorName  || '').replace(/,/g, ' '),
+      (a.appointment_type || a.type || '').replace(/,/g, ' '),
+      (a.status || '').replace(/,/g, ' ')
+    ].join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `appointments_report_${document.getElementById('rpt-from').value}_to_${document.getElementById('rpt-to').value}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// =============================================================================
+// CALENDAR VIEW
+// =============================================================================
+function switchCalView(view) {
+  calView = view;
+  ['month','week','day'].forEach(v => {
+    document.getElementById(`cv-${v}`)?.classList.toggle('active', v === view);
+  });
+  renderCalendar();
+}
+
+function navMonth(delta) {
+  if (calView === 'month') {
+    calMonth += delta;
+    if (calMonth > 12) { calMonth = 1; calYear++; }
+    if (calMonth < 1)  { calMonth = 12; calYear--; }
+  } else if (calView === 'week') {
+    calWeekStart = new Date(calWeekStart.getTime() + delta * 7 * 86400000);
+    calYear  = calWeekStart.getFullYear();
+    calMonth = calWeekStart.getMonth() + 1;
+  } else {
+    calDay = new Date(calDay.getTime() + delta * 86400000);
+    calYear  = calDay.getFullYear();
+    calMonth = calDay.getMonth() + 1;
+  }
+  renderCalendar();
+}
+
+async function renderCalendar() {
+  const calContent = document.getElementById('calendar-content');
+  try {
+    const _dbgToken = localStorage.getItem('sc_token');
+    console.log('[book.html] sc_token:', _dbgToken ? _dbgToken.substring(0, 24) + '…' : 'NOT FOUND');
+
+    const doctorId = parseInt(document.getElementById('cal-doctor-filter').value) || 0;
+    const label    = document.getElementById('cal-month-label');
+
+    // Fetch data
+    const _calUrl = `/appointments/calendar?doctorId=${doctorId}&year=${calYear}&month=${calMonth}`;
+    console.log('[book.html] Fetching calendar →', API_BASE + _calUrl);
+    const res = await API.get(_calUrl);
+    console.log('[book.html] Calendar API response:', res);
+    if (!res) { if (calContent) calContent.innerHTML = '<div style="padding:40px;text-align:center;color:#dc3545">Could not connect to server. Please refresh.</div>'; return; }
+    if (!res.success) { if (calContent) calContent.innerHTML = `<div style="padding:40px;text-align:center;color:#dc3545">Error loading calendar: ${res.error || 'Unknown error'}</div>`; return; }
+    calAppts = res.data || [];
+
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    if (label) label.textContent = `${MONTHS[calMonth-1]} ${calYear}`;
+
+    if (calView === 'month') renderMonthView(calYear, calMonth, calAppts);
+    else if (calView === 'week') renderWeekView(calWeekStart, calAppts);
+    else renderDayView(calDay, calAppts);
+  } catch (err) {
+    console.error('renderCalendar error:', err);
+    if (calContent) calContent.innerHTML = `<div style="padding:40px;text-align:center;color:#dc3545">Calendar error: ${err.message}</div>`;
+  }
+}
+
+function renderMonthView(year, month, appts) {
+  const firstDay = new Date(year, month - 1, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Group appts by date
+  const byDate = {};
+  appts.forEach(a => {
+    const d = String(a.appointment_date).split('T')[0].substring(0,10);
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(a);
+  });
+
+  let html = '<div class="cal-grid">';
+  DAYS.forEach(d => html += `<div class="cal-header-cell">${d}</div>`);
+
+  // Leading empty cells
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day other-month"></div>';
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isToday = iso === today;
+    const dayAppts = byDate[iso] || [];
+    html += `<div class="cal-day${isToday ? ' today' : ''}" onclick="calDayClick('${iso}')">
+      <div class="day-num">${day}</div>`;
+    const visible = dayAppts.slice(0, 3);
+    visible.forEach(a => {
+      const risk = a.no_show_risk > 0.65 ? ' risk-high' : '';
+      const sc   = 'status-' + (a.status || '').toLowerCase().replace(' ', '-');
+      html += `<div class="cal-event ${sc}${risk}" onclick="showApptDetail(${a.appointment_id},event)"
+        title="${a.patient_name} — ${a.appointment_type}">${fmtTime(a.appointment_time)} ${a.patient_name}</div>`;
+    });
+    if (dayAppts.length > 3) {
+      html += `<div style="font-size:10px;color:var(--gray);margin-top:2px">+${dayAppts.length - 3} more</div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  document.getElementById('calendar-content').innerHTML = html;
+}
+
+function renderWeekView(weekStart, appts) {
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = new Date().toISOString().split('T')[0];
+  const hours = [];
+  for (let h = 8; h <= 18; h++) hours.push(h);
+
+  // Group by date+hour
+  const grid = {};
+  appts.forEach(a => {
+    const d = String(a.appointment_date).substring(0,10);
+    const h = parseInt(String(a.appointment_time).substring(0,2));
+    const key = `${d}_${h}`;
+    if (!grid[key]) grid[key] = [];
+    grid[key].push(a);
+  });
+
+  let html = '<div class="week-grid">';
+  // Header row
+  html += '<div class="week-hour"></div>';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart.getTime() + i * 86400000);
+    const iso = d.toISOString().split('T')[0];
+    const isToday = iso === today;
+    html += `<div class="week-day-header${isToday ? ' today' : ''}">${DAYS[d.getDay()]}<br>${d.getDate()}</div>`;
+  }
+  // Hour rows
+  hours.forEach(h => {
+    html += `<div class="week-hour">${h}:00</div>`;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart.getTime() + i * 86400000);
+      const iso = d.toISOString().split('T')[0];
+      const key = `${iso}_${h}`;
+      const cell = grid[key];
+      if (cell && cell.length > 0) {
+        const a = cell[0];
+        html += `<div class="week-cell has-appt" onclick="showApptDetail(${a.appointment_id},event)"
+          title="${a.patient_name}">${a.patient_name?.split(' ')[0] || '—'}</div>`;
+      } else {
+        html += '<div class="week-cell"></div>';
+      }
+    }
+  });
+  html += '</div>';
+  document.getElementById('calendar-content').innerHTML = html;
+}
+
+function renderDayView(day, appts) {
+  const iso = day.toISOString().split('T')[0];
+  const dayAppts = appts.filter(a => String(a.appointment_date).substring(0,10) === iso);
+  const today = new Date().toISOString().split('T')[0];
+
+  let html = `<div style="font-weight:700;font-size:15px;margin-bottom:12px;color:${iso===today?'var(--teal)':'var(--dark)'}">${fmtDateStr(iso)}</div>`;
+  if (!dayAppts.length) {
+    html += '<div class="text-muted text-sm text-center" style="padding:24px">No appointments this day</div>';
+  } else {
+    html += '<div>';
+    dayAppts.forEach(a => {
+      const risk = a.no_show_risk > 0.65 ? ' risk-high' : a.no_show_risk > 0.4 ? ' risk-medium' : ' risk-low';
+      html += `<div class="queue-item" onclick="showApptDetail(${a.appointment_id},event)" style="cursor:pointer;border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+        <div class="queue-time">${fmtTime(a.appointment_time)}</div>
+        <div style="flex:1">
+          <div style="font-weight:600">${a.patient_name}</div>
+          <div style="font-size:11px;color:var(--gray)">${a.doctor_name} · ${a.appointment_type}</div>
+        </div>
+        ${statusBadge(a.status)}
+        ${a.no_show_risk != null ? `<span class="badge${risk.trim()}" style="font-size:10px">${Math.round(a.no_show_risk*100)}% risk</span>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  }
+  document.getElementById('calendar-content').innerHTML = html;
+}
+
+function calDayClick(iso) {
+  calDay = new Date(iso + 'T12:00:00');
+  switchCalView('day');
+  calYear  = calDay.getFullYear();
+  calMonth = calDay.getMonth() + 1;
+}
+
+// =============================================================================
+// APPOINTMENT DETAIL MODAL
+// =============================================================================
+async function showApptDetail(id, event) {
+  if (event) event.stopPropagation();
+  const res = await API.get(`/appointments/${id}`);
+  if (!res?.success) { Toast.error('Could not load appointment'); return; }
+  const a = res.data;
+
+  document.getElementById('modal-appt-title').textContent =
+    `Appointment #${id} — ${a.patient_name}`;
+
+  const riskPct = a.no_show_risk != null ? Math.round(a.no_show_risk * 100) : null;
+  const riskClass = riskPct > 65 ? 'risk-high' : riskPct > 40 ? 'risk-medium' : 'risk-low';
+
+  document.getElementById('modal-appt-body').innerHTML = `
+    <div class="info-grid">
+      <div class="info-item"><label>Patient</label><p>${a.patient_name} (${a.patient_code})</p></div>
+      <div class="info-item"><label>Doctor</label><p>${a.doctor_name} — ${a.specialization}</p></div>
+      <div class="info-item"><label>Date &amp; Time</label><p>${fmtDateStr(String(a.appointment_date).substring(0,10))} at ${fmtTime(a.appointment_time)}</p></div>
+      <div class="info-item"><label>Type</label><p>${a.appointment_type}</p></div>
+      <div class="info-item"><label>Status</label><p>${statusBadge(a.status)}</p></div>
+      <div class="info-item"><label>Reason</label><p>${a.reason || '—'}</p></div>
+      ${a.cancellation_reason ? `<div class="info-item"><label>Cancellation Reason</label><p>${a.cancellation_reason}</p></div>` : ''}
+      ${riskPct != null ? `<div class="info-item"><label>No-Show Risk</label><p><span class="${riskClass}" style="padding:3px 8px;border-radius:12px;font-size:12px">${riskPct}%</span></p></div>` : ''}
+      ${a.allergies && a.allergies !== 'None' ? `<div class="info-item" style="grid-column:1/-1"><label>⚠ Allergies</label><p class="text-danger">${a.allergies}</p></div>` : ''}
+    </div>
+  `;
+
+  // Write actions (only for booking roles)
+  const actionsEl = document.getElementById('modal-appt-actions');
+  if (canWrite && !['Cancelled','Completed','No Show'].includes(a.status)) {
+    actionsEl.innerHTML = `
+      <button class="btn btn-secondary btn-sm" onclick="openRescheduleDialog(${id},${a.doctor_id})">📅 Reschedule</button>
+      <button class="btn btn-danger btn-sm" onclick="cancelAppointment(${id},'${a.patient_name.replace(/'/g,"\\'")}')">✕ Cancel</button>
+    `;
+    actionsEl.style.display = '';
+  } else {
+    actionsEl.innerHTML = '';
+    actionsEl.style.display = 'none';
+  }
+
+  Modal.open('modal-appt-detail');
+}
+
+// =============================================================================
+// CANCEL APPOINTMENT (FR-15)
+// =============================================================================
+async function cancelAppointment(apptId, patientName) {
+  const reason = prompt(
+    `Cancel appointment for ${patientName}?\n\nEnter cancellation reason (≥24h notice required per FR-15):`);
+  if (reason === null) return; // user dismissed
+  if (!reason.trim()) { Toast.error('Please provide a cancellation reason'); return; }
+
+  const res = await API.delete(`/appointments/${apptId}?reason=${encodeURIComponent(reason)}`);
+  if (res?.success) {
+    Toast.success('Appointment cancelled');
+    Modal.close('modal-appt-detail');
+    renderCalendar();
+    loadTodayQueue();
+    loadStats();
+  } else {
+    const code = res?.errorCode;
+    if (code === 'CANCELLATION_POLICY') {
+      Toast.error('Cannot cancel: ' + (res?.error || 'within 24h of appointment'));
+    } else {
+      Toast.error(res?.error || 'Cancellation failed');
+    }
+  }
+}
+
+// =============================================================================
+// RESCHEDULE (FR-14) — fixes path to use /reschedule sub-resource
+// =============================================================================
+async function openRescheduleDialog(apptId, doctorId) {
+  const newDate = prompt('Reschedule — Enter new date (YYYY-MM-DD):');
+  if (!newDate) return;
+  const newTime = prompt('Enter new time (HH:MM, 24h):');
+  if (!newTime) return;
+
+  const res = await API.put(`/appointments/${apptId}/reschedule`, {
+    date: newDate, time: newTime, doctorId: doctorId
+  });
+  if (res?.success) {
+    Toast.success(`Rescheduled to ${newDate} ${newTime}`);
+    Modal.close('modal-appt-detail');
+    renderCalendar();
+    loadTodayQueue();
+  } else if (res?.errorCode === 'SLOT_CONFLICT') {
+    Toast.error('That slot is already booked — choose another time');
+  } else {
+    Toast.error(res?.error || 'Reschedule failed');
+  }
+}
+
+// =============================================================================
+// TODAY'S QUEUE
+// =============================================================================
+async function loadTodayQueue() {
+  const doctorId = document.getElementById('queue-doctor').value;
+  if (!doctorId) return;
+
+  const res = await API.get(`/appointments/today?doctorId=${doctorId}`);
+  const content = document.getElementById('today-queue-content');
+  if (!res?.success) { content.innerHTML = '<div class="text-muted text-sm" style="padding:16px">Error loading queue</div>'; return; }
+
+  if (!res.data.length) {
+    content.innerHTML = '<div class="text-muted text-sm text-center" style="padding:20px">No appointments today</div>';
+    return;
+  }
+
+  content.innerHTML = '<div class="today-queue">' +
+    res.data.map(a => {
+      const riskPct = a.no_show_risk != null ? Math.round(a.no_show_risk * 100) : null;
+      const riskClass = riskPct > 65 ? 'text-danger' : riskPct > 40 ? 'text-warning' : '';
+      return `<div class="queue-item">
+        <div class="queue-time">${fmtTime(a.appointment_time)}</div>
+        <div style="flex:1;min-width:100px">
+          <div style="font-weight:600;font-size:13px">${a.patient_name}</div>
+          <div style="font-size:11px;color:var(--gray)">${a.appointment_type}${a.reason ? ' · ' + a.reason : ''}</div>
+          ${a.allergies && a.allergies !== 'None' ? `<div class="text-danger" style="font-size:10px">⚠ ${a.allergies}</div>` : ''}
+        </div>
+        ${statusBadge(a.status)}
+        ${riskPct != null ? `<span class="${riskClass}" style="font-size:10px;font-weight:700">${riskPct}%</span>` : ''}
+        ${(canWrite && !['Cancelled','Completed'].includes(a.status)) ? `
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <button class="btn btn-xs" style="font-size:10px;padding:2px 6px;background:var(--teal);color:white;border:none;border-radius:4px;cursor:pointer"
+            onclick="showApptDetail(${a.appointment_id})">Detail</button>
+          <button class="btn btn-xs" style="font-size:10px;padding:2px 6px;background:#c62828;color:white;border:none;border-radius:4px;cursor:pointer"
+            onclick="cancelAppointment(${a.appointment_id},'${(a.patient_name||'').replace(/'/g,"\\'")}')">Cancel</button>
+        </div>` : ''}
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// =============================================================================
+// BOOKING WIZARD (write roles only)
+// =============================================================================
 const searchPatients = debounce(async q => {
   if (q.length < 2) { document.getElementById('patient-results').innerHTML = ''; return; }
   const res = await API.get(`/patients?q=${encodeURIComponent(q)}&limit=5`);
   if (!res?.success) return;
   document.getElementById('patient-results').innerHTML = res.data.map(p => `
     <div onclick="selectPatient(${JSON.stringify(p).replace(/"/g,'&quot;')})"
-         style="padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:all 0.15s"
-         onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
+      style="padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:all .15s"
+      onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
       <strong>${p.firstName} ${p.lastName}</strong>
       <span class="badge badge-teal" style="margin-left:8px">${p.patientCode}</span>
       <span style="color:var(--gray);font-size:12px;margin-left:8px">${p.phone}</span>
-      ${p.allergies && p.allergies !== 'None' ? `<span class="allergy-tag" style="margin-left:8px;font-size:11px">⚠ ${p.allergies}</span>` : ''}
+      ${p.allergies && p.allergies !== 'None' ? `<span class="text-danger" style="font-size:11px;margin-left:8px">⚠ ${p.allergies}</span>` : ''}
     </div>
   `).join('');
 }, 300);
@@ -185,16 +908,15 @@ function selectPatient(p) {
   document.getElementById('patient-results').innerHTML = '';
   document.getElementById('patient-search').value = '';
   document.getElementById('selected-patient').innerHTML = `
-    <div class="flex items-center justify-between">
+    <div style="display:flex;align-items:center;justify-content:space-between">
       <div>
         <strong>${p.firstName} ${p.lastName}</strong>
         <span class="badge badge-teal" style="margin-left:8px">${p.patientCode}</span>
-        <div style="font-size:12px;color:var(--gray);margin-top:2px">${p.phone} · ${p.gender} · 🩸 ${p.bloodGroup || '—'}</div>
-        ${p.allergies && p.allergies !== 'None' ? `<div class="text-danger" style="font-size:12px;margin-top:2px">⚠️ Allergies: ${p.allergies}</div>` : ''}
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">${p.phone} · ${p.gender} · 🩸 ${p.bloodGroup||'—'}</div>
+        ${p.allergies && p.allergies !== 'None' ? `<div class="text-danger" style="font-size:12px">⚠ Allergies: ${p.allergies}</div>` : ''}
       </div>
       <button class="btn btn-sm btn-secondary" onclick="clearPatient()">Change</button>
-    </div>
-  `;
+    </div>`;
   document.getElementById('selected-patient').classList.remove('hidden');
   document.getElementById('next-1').disabled = false;
 }
@@ -205,20 +927,15 @@ function clearPatient() {
   document.getElementById('next-1').disabled = true;
 }
 
-Auth.requireAuth();
-Sidebar.render('appointments', 'appointments-book');
-
 async function loadDoctors(spec = '') {
   const url = spec ? `/appointments/doctors?specialization=${encodeURIComponent(spec)}` : '/appointments/doctors';
   const res = await API.get(url);
   if (!res?.success) return;
 
-  // Populate specialization filter once
   if (!spec) {
     const specs = [...new Set(res.data.map(d => d.specialization))].sort();
-    const sel = document.getElementById('spec-filter');
-    sel.innerHTML = '<option value="">All Specializations</option>' +
-      specs.map(s => `<option>${s}</option>`).join('');
+    document.getElementById('spec-filter').innerHTML =
+      '<option value="">All Specializations</option>' + specs.map(s => `<option>${s}</option>`).join('');
   }
 
   document.getElementById('doctor-list').innerHTML = res.data.map(d => `
@@ -228,8 +945,7 @@ async function loadDoctors(spec = '') {
       <div style="font-size:11px;color:var(--teal);margin:2px 0">${d.specialization}</div>
       <div style="font-size:11px;color:var(--gray)">Fee: ${fmtCurrency(d.consultation_fee)}</div>
       <div style="font-size:11px;color:var(--gray)">⭐ ${d.average_rating ? d.average_rating.toFixed(1) : '—'}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function selectDoctor(d) {
@@ -237,31 +953,33 @@ function selectDoctor(d) {
   document.querySelectorAll('.doctor-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`doc-${d.doctor_id}`)?.classList.add('selected');
   document.getElementById('next-2').disabled = false;
-  loadTodayQueue();
+  loadTodayQueue(); // mirror selection in queue panel
+  document.getElementById('queue-doctor').value = d.doctor_id;
+  loadSlotSuggestions();
 }
 
-async function loadTodayQueue() {
+async function loadSlotSuggestions() {
   if (!selectedDoctor) return;
-  const res = await API.get(`/appointments/today?doctorId=${selectedDoctor.doctor_id}`);
-  if (!res?.success) return;
-
-  const content = document.getElementById('today-queue-content');
-  if (!res.data.length) {
-    content.innerHTML = '<div class="text-center text-muted" style="padding:16px">No appointments today</div>';
+  const res = await API.get(`/appointments/suggest?doctorId=${selectedDoctor.doctor_id}&days=7`);
+  const el = document.getElementById('suggest-chips');
+  if (!res?.success || !res.data.length) {
+    el.innerHTML = '<span class="text-muted text-sm">No suggestions available</span>';
     return;
   }
+  el.innerHTML = res.data.slice(0, 5).map(s =>
+    `<span class="suggest-chip" onclick="applySuggestion('${s.date}','${s.time}')"
+      title="Optimal score: ${Math.round(s.optimalScore*100)}%">${s.dayOfWeek} ${s.date.slice(5)} ${s.time}</span>`
+  ).join('');
+}
 
-  content.innerHTML = `<div class="today-queue">` +
-    res.data.map(a => `
-      <div class="queue-item">
-        <div class="queue-time">${String(a.appointment_time).substring(0,5)}</div>
-        <div style="flex:1;padding:0 12px">
-          <div style="font-weight:600;font-size:13px">${a.patient_name}</div>
-          <div style="font-size:11px;color:var(--gray)">${a.appointment_type} · ${a.reason || '—'}</div>
-        </div>
-        ${statusBadge(a.status)}
-      </div>
-    `).join('') + `</div>`;
+function applySuggestion(date, time) {
+  document.getElementById('appt-date').value = date;
+  loadSlots().then(() => {
+    // Auto-select the suggested time slot
+    document.querySelectorAll('.slot-btn').forEach(btn => {
+      if (btn.textContent.trim() === time) btn.click();
+    });
+  });
 }
 
 async function loadSlots() {
@@ -273,18 +991,19 @@ async function loadSlots() {
 
   const slots = res.data;
   const container = document.getElementById('slot-container');
+  selectedSlot = null;
+  document.getElementById('next-3').disabled = true;
 
   if (!slots.length) {
-    container.innerHTML = '<div class="alert alert-warning">No available slots for this date. Try another day.</div>';
+    container.innerHTML = '<div class="alert alert-warning">No slots available. Try another date or check the doctor\'s schedule.</div>';
     return;
   }
 
   container.innerHTML = `
     <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${slots.length} slot(s) available</p>
-    <div class="slot-grid">
-      ${slots.map(s => `<button class="slot-btn" onclick="selectSlot('${s}',this)">${s}</button>`).join('')}
-    </div>
-  `;
+    <div class="slot-grid">${slots.map(s =>
+      `<button class="slot-btn" onclick="selectSlot('${s}',this)">${s}</button>`
+    ).join('')}</div>`;
 }
 
 function selectSlot(time, btn) {
@@ -292,12 +1011,26 @@ function selectSlot(time, btn) {
   document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   document.getElementById('next-3').disabled = false;
+
+  // Show basic risk from rule-based estimate while AI runs on server
+  const date = document.getElementById('appt-date').value;
+  if (date) {
+    const dow = new Date(date).getDay();
+    const isWeekend = dow === 0 || dow === 5 || dow === 6;
+    const riskEl = document.getElementById('noshow-risk-panel');
+    if (isWeekend) {
+      riskEl.innerHTML = '<div class="risk-medium">📊 Weekend appointment — slightly elevated no-show risk</div>';
+    } else {
+      riskEl.innerHTML = '<div class="risk-low">📊 Weekday morning — low predicted no-show risk</div>';
+    }
+  }
 }
 
 function goStep(n) {
   for (let i = 1; i <= 4; i++) {
-    document.getElementById(`step-${i}`).classList.toggle('hidden', i !== n);
-    document.getElementById(`s${i}`).className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+    document.getElementById(`step-${i}`)?.classList.toggle('hidden', i !== n);
+    const si = document.getElementById(`s${i}`);
+    if (si) si.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
   }
   if (n === 2) loadDoctors();
   if (n === 4) buildConfirmSummary();
@@ -310,42 +1043,120 @@ function buildConfirmSummary() {
       <div class="info-item"><label>Patient</label><p>${selectedPatient.firstName} ${selectedPatient.lastName} (${selectedPatient.patientCode})</p></div>
       <div class="info-item"><label>Doctor</label><p>${selectedDoctor.doctor_name}</p></div>
       <div class="info-item"><label>Specialization</label><p>${selectedDoctor.specialization}</p></div>
-      <div class="info-item"><label>Date & Time</label><p>${fmtDate(date)} at ${selectedSlot}</p></div>
-      <div class="info-item"><label>Consultation Fee</label><p>${fmtCurrency(selectedDoctor.consultation_fee)}</p></div>
-    </div>
-  `;
+      <div class="info-item"><label>Date &amp; Time</label><p>${fmtDateStr(date)} at ${selectedSlot}</p></div>
+      <div class="info-item"><label>Fee</label><p>${fmtCurrency(selectedDoctor.consultation_fee)}</p></div>
+    </div>`;
 }
 
 async function bookAppointment() {
   const btn = document.getElementById('book-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Booking...';
+  btn.innerHTML = '<span class="spinner"></span> Booking…';
 
   const date = document.getElementById('appt-date').value;
   const res = await API.post('/appointments', {
     patientId: selectedPatient.patientId,
-    doctorId: selectedDoctor.doctor_id,
+    doctorId:  selectedDoctor.doctor_id,
     date, time: selectedSlot,
     appointmentType: document.getElementById('appt-type').value,
     reason: document.getElementById('appt-reason').value
   });
 
-  btn.disabled = false;
+  btn.disabled  = false;
   btn.textContent = '📅 Book Appointment';
 
   if (res?.success) {
-    const risk = res.data.highRisk ? `⚠️ High no-show risk (${res.data.noShowRisk}) — reminder will be sent` : `✅ Low no-show risk (${res.data.noShowRisk})`;
+    const risk = res.data.highRisk
+      ? `⚠️ High no-show risk (${res.data.noShowRisk}) — 24h reminder will be sent`
+      : `✅ Low no-show risk (${res.data.noShowRisk})`;
     Toast.success(`Appointment booked! ID: ${res.data.appointmentId}`);
+    loadStats();
     setTimeout(() => {
       if (confirm(`Appointment confirmed!\n\n${risk}\n\nView patient profile?`)) {
         window.location.href = `../patients/profile.html?id=${selectedPatient.patientId}`;
       } else {
-        window.location.reload();
+        // Reset wizard
+        selectedPatient = null; selectedDoctor = null; selectedSlot = null;
+        clearPatient();
+        goStep(1);
+        renderCalendar();
       }
     }, 500);
+  } else if (res?.errorCode === 'SLOT_CONFLICT') {
+    Toast.error('Slot taken — please go back and choose another time');
   } else {
     Toast.error(res?.error || 'Booking failed');
   }
+}
+
+// =============================================================================
+// SEARCH
+// =============================================================================
+const searchAppointments = debounce(async () => {
+  const q      = document.getElementById('search-q').value;
+  const status = document.getElementById('search-status').value;
+  const type   = document.getElementById('search-type').value;
+  const from   = document.getElementById('search-from').value;
+  const to     = document.getElementById('search-to').value;
+
+  const params = new URLSearchParams();
+  if (q)      params.set('q', q);
+  if (status) params.set('status', status);
+  if (type)   params.set('type', type);
+  if (from)   params.set('from', from);
+  if (to)     params.set('to', to);
+  params.set('limit', '50');
+
+  const res = await API.get('/appointments/search?' + params.toString());
+  const el  = document.getElementById('search-results');
+  if (!res?.success) { el.innerHTML = '<div class="text-danger text-sm">Search failed</div>'; return; }
+  if (!res.data.length) {
+    el.innerHTML = '<div class="text-muted text-sm text-center" style="padding:20px">No results found</div>';
+    return;
+  }
+
+  el.innerHTML = `<table class="data-table" style="width:100%">
+    <thead><tr>
+      <th>Date</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Type</th><th>Status</th><th>Risk</th>
+    </tr></thead>
+    <tbody>${res.data.map(a => {
+      const riskPct = a.no_show_risk != null ? Math.round(a.no_show_risk * 100) : null;
+      const riskClass = riskPct > 65 ? 'text-danger' : riskPct > 40 ? 'text-warning' : 'text-success';
+      return `<tr style="cursor:pointer" onclick="showApptDetail(${a.appointment_id})">
+        <td>${String(a.appointment_date).substring(0,10)}</td>
+        <td>${fmtTime(a.appointment_time)}</td>
+        <td>${a.patient_name}<br><small class="text-muted">${a.patient_code}</small></td>
+        <td>${a.doctor_name}<br><small class="text-muted">${a.specialization}</small></td>
+        <td>${a.appointment_type}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td><span class="${riskClass}" style="font-weight:700">${riskPct != null ? riskPct + '%' : '—'}</span></td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+}, 400);
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+function startOfWeek(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function fmtDateStr(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function statusBadge(s) {
+  const classes = {
+    'Scheduled':'badge-teal', 'Confirmed':'badge-success', 'In Progress':'badge-primary',
+    'Completed':'badge-success', 'Cancelled':'badge-danger', 'No Show':'badge-warning'
+  };
+  return `<span class="badge ${classes[s] || ''}">${s || '—'}</span>`;
 }
 </script>
 </body>

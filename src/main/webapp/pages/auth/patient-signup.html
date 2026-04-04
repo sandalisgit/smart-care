@@ -1,410 +1,1093 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Care — Patient Registration</title>
-<link rel="stylesheet" href="../../css/app.css">
 <style>
-  .step-section { display:none; }
-  .step-section.active { display:block; }
-  .section-label { font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:18px;padding-bottom:8px;border-bottom:2px solid var(--teal-light); }
-  .optional-badge { font-size:10px;font-weight:600;background:var(--light);color:var(--gray);padding:2px 8px;border-radius:10px;margin-left:8px;border:1px solid var(--border); }
-  .privacy-box { background:var(--teal-light);border:1px solid var(--teal-mid);border-radius:var(--radius-sm);padding:12px;margin-top:16px;font-size:12px;color:var(--teal-darker); }
-  .nic-hint { font-size:11px;color:var(--gray);margin-top:4px; }
-  .pwd-strength { height:4px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden; }
-  .pwd-strength-fill { height:100%;border-radius:2px;transition:all 0.3s;width:0; }
-  .consent-box { background:var(--lighter);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:14px; }
-  .consent-row { display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:12px;color:var(--mid); }
-  .consent-row:last-child { margin-bottom:0; }
-  .consent-row input { margin-top:2px;accent-color:var(--teal);flex-shrink:0; }
-  .hipaa-note { background:var(--teal-light);border-left:3px solid var(--teal);padding:10px 14px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:11px;color:var(--teal-darker);margin-top:14px; }
-  .success-info { background:var(--lighter);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:16px;font-size:13px; }
-  .success-info div { display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--mid); }
-  .success-info div:last-child { margin-bottom:0; }
-  .success-info span.ic { font-size:16px; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f4f8fb;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px 60px;
+}
+
+/* ── CARD ── */
+.card {
+  display: flex;
+  width: 1060px;
+  max-width: 100%;
+  min-height: 720px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 48px rgba(0,0,0,0.15);
+}
+
+/* ── LEFT PANEL ── */
+.left {
+  width: 320px;
+  flex-shrink: 0;
+  background: #0f2540;
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.left::after {
+  content: '';
+  position: absolute;
+  bottom: -70px; right: -70px;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  background: rgba(14,140,140,0.1);
+  pointer-events: none;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+.brand-icon {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  background: rgba(14,140,140,0.18);
+  border: 1px solid rgba(14,140,140,0.32);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.brand-name { font-size: 20px; font-weight: 800; }
+.brand-name .sc { color: #26a6b2; }
+.brand-name .care { color: #f5950f; }
+.brand-sub { font-size: 10px; color: rgba(255,255,255,0.42); margin-top: 3px; }
+
+.left-tagline {
+  font-size: 27px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.22;
+  margin-bottom: 12px;
+}
+.left-tagline em { color: #14b8b8; font-style: italic; }
+
+.left-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,0.58);
+  line-height: 1.7;
+  margin-bottom: 22px;
+}
+
+.left-infobox {
+  background: rgba(14,140,140,0.14);
+  border: 1px solid rgba(14,140,140,0.28);
+  border-radius: 10px;
+  padding: 13px 15px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.62;
+  margin-bottom: 22px;
+}
+.left-infobox strong { color: #14b8b8; display: block; margin-bottom: 4px; }
+
+.left-deco {
+  flex: 1;
+  min-height: 90px;
+  border-radius: 12px;
+  background: rgba(14,140,140,0.07);
+  border: 1px solid rgba(14,140,140,0.14);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.left-deco::before {
+  content: '';
+  position: absolute;
+  bottom: 12px; right: 14px;
+  font-size: 38px;
+  opacity: 0.2;
+}
+
+.signin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.17);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.18s;
+}
+.signin-btn:hover { background: rgba(255,255,255,0.15); }
+.signin-btn span { opacity: 0.6; }
+
+/* ── RIGHT PANEL ── */
+.right {
+  flex: 1;
+  background: #fff;
+  padding: 36px 42px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 92vh;
+}
+
+/* ── BADGE ── */
+.reg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(46,125,50,0.10);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2e7d32;
+  margin-bottom: 10px;
+  width: fit-content;
+}
+
+.page-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  font-weight: 700;
+  color: #0f2540;
+  margin-bottom: 4px;
+}
+
+.page-sub {
+  font-size: 12px;
+  color: #556a7d;
+  margin-bottom: 14px;
+}
+.page-sub a { color: #0e8c8c; font-weight: 600; text-decoration: none; }
+.page-sub a:hover { text-decoration: underline; }
+
+/* ── WARNING BAR ── */
+.warn-bar {
+  background: #fff8e1;
+  border-radius: 7px;
+  padding: 9px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #7a5a00;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.warn-bar a { color: #0e8c8c; font-weight: 700; text-decoration: none; margin-left: auto; flex-shrink: 0; }
+
+/* ── STEPPER ── */
+.stepper { margin-bottom: 26px; }
+
+.stepper-track {
+  position: relative;
+  height: 4px;
+  background: #d0dce8;
+  border-radius: 2px;
+  margin-bottom: 0;
+}
+.stepper-fill {
+  position: absolute; left: 0; top: 0; height: 100%;
+  background: #0e8c8c;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.stepper-dots {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0;
+  margin-top: -13px;
+}
+.dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+
+.step-dot {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  border: 2px solid #d0dce8;
+  background: #fff;
+  color: #7a9bb5;
+  transition: all 0.3s;
+}
+.step-dot.done   { background: #0e8c8c; border-color: #0e8c8c; color: #fff; }
+.step-dot.active { background: #1a3a5c; border-color: #1a3a5c; color: #fff; }
+
+.step-lbl { font-size: 11px; color: #7a9bb5; font-weight: 500; }
+.step-lbl.active { color: #0e8c8c; font-weight: 700; }
+.step-lbl.done   { color: #0e8c8c; }
+
+/* ── ERROR ── */
+.err-box {
+  background: #fff3f3;
+  border: 1px solid #f5c6cb;
+  border-radius: 7px;
+  padding: 9px 14px;
+  font-size: 12px;
+  color: #c62828;
+  margin-bottom: 14px;
+  display: none;
+}
+
+/* ── PANELS ── */
+.step-panel { display: none; }
+.step-panel.active { display: block; }
+
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #556a7d;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e4edf5;
+}
+.sec-label .note { font-weight: 400; text-transform: none; letter-spacing: 0; color: #8aabbf; }
+
+/* ── FORM ── */
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.f-row.full { grid-template-columns: 1fr; }
+.f-grp { display: flex; flex-direction: column; gap: 5px; }
+
+.f-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3a4a5c;
+}
+.f-label .req { color: #e53935; }
+
+.f-input, .f-select, .f-textarea {
+  border: 1.5px solid #c8d8e8;
+  border-radius: 7px;
+  padding: 10px 13px;
+  font-size: 13px;
+  color: #0f2540;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  width: 100%;
+  font-family: inherit;
+}
+.f-input::placeholder { color: #9aafbf; }
+.f-input:focus, .f-select:focus, .f-textarea:focus {
+  border-color: #0e8c8c;
+  box-shadow: 0 0 0 3px rgba(14,140,140,0.11);
+}
+.f-select { cursor: pointer; }
+.f-textarea { resize: vertical; min-height: 58px; }
+
+.f-hint { font-size: 10px; color: #8aabbf; margin-top: 2px; line-height: 1.5; }
+.f-hint.warn { color: #b05000; font-weight: 600; }
+
+/* ── BLOOD GROUP PICKER ── */
+.blood-picker { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 2px; }
+.blood-btn {
+  width: 46px; height: 34px;
+  border: 1.5px solid #c8d8e8;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3a4a5c;
+  cursor: pointer;
+  transition: all 0.14s;
+}
+.blood-btn:hover   { border-color: #0e8c8c; background: #f0fafa; }
+.blood-btn.sel     { border-color: #e53935; background: #fce4e4; color: #c62828; }
+
+/* ── INSURANCE ROW ── */
+.ins-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1.5px solid #c8d8e8;
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+}
+.ins-row:hover { border-color: #0e8c8c; }
+.ins-lbl strong { font-size: 13px; color: #0f2540; display: block; }
+.ins-lbl span   { font-size: 11px; color: #7a9bb5; }
+
+/* toggle */
+.tog { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+.tog input { opacity: 0; width: 0; height: 0; }
+.tog-track { position: absolute; inset: 0; background: #d0dce8; border-radius: 10px; cursor: pointer; transition: background 0.18s; }
+.tog input:checked + .tog-track { background: #0e8c8c; }
+.tog-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.18s; pointer-events: none; }
+.tog input:checked ~ .tog-thumb { transform: translateX(18px); }
+
+/* ── STRENGTH ── */
+.str-row { display: flex; gap: 6px; margin-top: 6px; }
+.str-seg { flex: 1; height: 4px; border-radius: 2px; background: #d0dce8; transition: background 0.25s; }
+
+/* ── HIPAA BOX ── */
+.hipaa-box {
+  background: rgba(14,140,140,0.07);
+  border: 1px solid rgba(14,140,140,0.18);
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 11px;
+  color: #1a5a5a;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+.hipaa-box strong { color: #0a7070; }
+
+/* ── CHECKBOXES ── */
+.chk-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 11px; cursor: pointer; }
+.chk-box {
+  width: 16px; height: 16px;
+  border: 2px solid #0e8c8c;
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  background: #0e8c8c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.chk-box.off { background: #fff; border-color: #c8d8e8; color: transparent; }
+.chk-text { font-size: 12px; color: #3a4a5c; line-height: 1.55; }
+.chk-text a { color: #0e8c8c; text-decoration: none; font-weight: 600; }
+
+/* ── BUTTONS ── */
+.btn-row { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; gap: 12px; }
+
+.btn-back {
+  padding: 13px 24px;
+  border: 1.5px solid #c8d8e8;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #556a7d;
+  cursor: pointer;
+  min-width: 120px;
+  transition: all 0.14s;
+}
+.btn-back:hover { border-color: #7a9bb5; color: #0f2540; }
+
+.btn-next {
+  padding: 13px 32px;
+  background: #1a3a5c;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  min-width: 200px;
+  transition: background 0.14s;
+}
+.btn-next:hover { background: #0f2540; }
+
+.btn-create {
+  padding: 13px 32px;
+  background: #2e7d32;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  min-width: 240px;
+  transition: background 0.14s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-create:hover:not(:disabled) { background: #1b5e20; }
+.btn-create:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* ── SUCCESS ── */
+.success { text-align: center; padding: 16px 0 24px; }
+.suc-icon { font-size: 76px; animation: pop 0.5s ease; margin-bottom: 4px; display: block; }
+@keyframes pop { 0%{transform:scale(.4);opacity:0} 75%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+.suc-title {
+  font-family: Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f2540;
+  margin-bottom: 10px;
+}
+.suc-title .sc { color: #26a6b2; }
+.suc-title .care { color: #f5950f; }
+.suc-body {
+  font-size: 13px;
+  color: #556a7d;
+  line-height: 1.65;
+  max-width: 520px;
+  margin: 0 auto 24px;
+}
+
+.pat-id-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: #f4f8fb;
+  border: 2px dashed #b0c8d8;
+  border-radius: 10px;
+  padding: 14px 28px;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'Courier New', monospace;
+  color: #1a3a5c;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+.pat-id-note { font-size: 11px; color: #7a9bb5; margin-bottom: 20px; }
+
+.info-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+.info-strip.blue { background: #e3f2fd; color: #1a3a5c; }
+.info-strip.gray { background: #f9f9f9; color: #3a4a5c; border: 1px solid #e4edf5; }
+
+.btn-portal {
+  display: inline-block;
+  margin-top: 22px;
+  padding: 15px 44px;
+  background: #1a3a5c;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.btn-portal:hover { background: #0f2540; }
+
+/* ── SPINNER ── */
+.spin {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sp 0.6s linear infinite;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 740px) {
+  .card { flex-direction: column; }
+  .left { width: 100%; padding: 24px 22px; }
+  .right { padding: 24px 20px; max-height: none; }
+  .f-row { grid-template-columns: 1fr; }
+}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-<div class="auth-layout">
-  <!-- Left panel -->
-  <div class="auth-left">
-    <div class="brand"><h1><span class="t">Smart</span><span class="o">Care</span></h1><p>Patient Portal Registration</p></div>
-    <p class="desc" style="margin-bottom:20px">Create your patient account to book appointments, access your medical records, view bills and stay connected with your care team.</p>
-    <div style="background:rgba(255,255,255,0.08);border-radius:var(--radius);padding:16px;font-size:13px;color:rgba(255,255,255,0.8)">
-      <div style="font-weight:700;color:white;margin-bottom:10px">🏥 Patient Portal Registration</div>
-      <div style="margin-bottom:6px">This sign-up is for patients only.</div>
-      <div style="margin-bottom:6px">📅 Book appointments online</div>
-      <div style="margin-bottom:6px">📋 Access EMR records</div>
-      <div style="margin-bottom:6px">💳 View prescriptions &amp; bills</div>
-      <div>💊 Track your medications</div>
+<div class="card">
+
+  <!-- ════════ LEFT PANEL ════════ -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-icon" style="background:none;padding:0;box-shadow:none"><img src="/smart-care/images/logo.png" alt="SmartCare" style="width:48px;height:48px;object-fit:contain"></div>
+      <div>
+        <div class="brand-name"><span class="sc">Smart</span><span class="care">Care</span></div>
+        <div class="brand-sub">Hospital ERP System</div>
+      </div>
     </div>
-    <div style="margin-top:20px;font-size:13px;color:rgba(255,255,255,0.65)">
-      Already registered?
-      <a href="patient-login.html" style="color:var(--orange);font-weight:700"> Sign In →</a>
+
+    <div class="left-tagline" id="lp-tagline">Your health,<br><em>in your hands</em></div>
+
+    <p class="left-desc" id="lp-desc">
+      Create your patient account to book appointments, access your medical records, view bills and stay connected with your care team.
+    </p>
+
+    <div class="left-infobox" id="lp-info">
+      <strong>🏥 Patient Portal Registration</strong>
+      This sign-up is for <b>patients only</b>.<br>
+      Book appointments, access EMR records,<br>
+      view prescriptions and manage bills.
     </div>
-    <div style="margin-top:10px">
-      <span style="font-size:12px;color:rgba(255,200,0,0.8);background:rgba(255,200,0,0.1);padding:5px 12px;border-radius:6px;border:1px solid rgba(255,200,0,0.2)">
-        ⚠️ Are you a registered patient? Use Sign In →
-      </span>
-    </div>
+
+    <div class="left-deco"></div>
+
+    <a href="patient-login.html" class="signin-btn">
+      <span>Not a registered patient? Go ahead and Sign Up</span>
+      <strong>→ Register</strong>
+    </a>
   </div>
 
-  <!-- Right panel — sign-up form -->
-  <div class="auth-right" style="overflow-y:auto;padding:36px 44px">
-    <!-- Step indicator -->
-    <div class="step-indicator" id="step-indicator">
-      <div class="step-item active" id="si-1">
-        <div class="step-num">1</div>
-        <div class="step-label">Personal</div>
+  <!-- ════════ RIGHT PANEL ════════ -->
+  <div class="right">
+
+    <div class="reg-badge" id="hdr-badge">🩺 PATIENT REGISTRATION</div>
+    <div class="page-title" id="hdr-title">Create your patient account</div>
+    <div class="page-sub" id="hdr-sub">
+      Already registered? <a href="patient-login.html">Sign in to Patient Portal</a>
+    </div>
+
+    <!-- Warning bar -->
+    <div class="warn-bar" id="hdr-warn">
+      ⚠️&nbsp; Are you a registered patient?
+      <a href="patient-login.html">Use Sign In →</a>
+    </div>
+
+    <!-- ── STEPPER ── -->
+    <div class="stepper" id="stepper">
+      <div class="stepper-track">
+        <div class="stepper-fill" id="st-fill" style="width:16%"></div>
       </div>
-      <div class="step-connector" id="sc-1"></div>
-      <div class="step-item" id="si-2">
-        <div class="step-num">2</div>
-        <div class="step-label">Medical</div>
-      </div>
-      <div class="step-connector" id="sc-2"></div>
-      <div class="step-item" id="si-3">
-        <div class="step-num">3</div>
-        <div class="step-label">Account</div>
+      <div class="stepper-dots">
+        <div class="dot-wrap">
+          <div class="step-dot active" id="d1">1</div>
+          <div class="step-lbl active" id="l1">Personal</div>
+        </div>
+        <div class="dot-wrap">
+          <div class="step-dot" id="d2">2</div>
+          <div class="step-lbl" id="l2">Medical</div>
+        </div>
+        <div class="dot-wrap">
+          <div class="step-dot" id="d3">3</div>
+          <div class="step-lbl" id="l3">Account</div>
+        </div>
       </div>
     </div>
 
-    <!-- ── STEP 1: Personal Information ── -->
-    <div class="step-section active" id="step-1">
-      <div class="section-label">01 — PERSONAL INFORMATION</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">First Name <span class="req">*</span></label>
-          <input name="firstName" class="form-control" placeholder="e.g. Saman">
+    <div class="err-box" id="err"></div>
+
+    <!-- ══════════════════════════════════════
+         STEP 1 — PERSONAL INFORMATION
+    ══════════════════════════════════════ -->
+    <div class="step-panel active" id="p1">
+      <div class="sec-label">01 — PERSONAL INFORMATION</div>
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-label">First Name <span class="req">*</span></label>
+          <input id="fn" class="f-input" placeholder="e.g. Saman" autocomplete="given-name">
         </div>
-        <div class="form-group">
-          <label class="form-label">Last Name <span class="req">*</span></label>
-          <input name="lastName" class="form-control" placeholder="e.g. Perera">
+        <div class="f-grp">
+          <label class="f-label">Last Name <span class="req">*</span></label>
+          <input id="ln" class="f-input" placeholder="e.g. Perera" autocomplete="family-name">
         </div>
       </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Gender <span class="req">*</span></label>
-          <select name="gender" class="form-control">
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-label">Date of Birth <span class="req">*</span></label>
+          <input id="dob" type="date" class="f-input">
+        </div>
+        <div class="f-grp">
+          <label class="f-label">Gender <span class="req">*</span></label>
+          <select id="gender" class="f-select">
             <option value="">▾ Select gender...</option>
-            <option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Date of Birth <span class="req">*</span></label>
-          <input name="dateOfBirth" type="date" class="form-control" max="">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">NIC / Passport Number <span class="req">*</span></label>
-        <input name="nationalId" class="form-control" placeholder="198512345678V  or  A12345678">
-        <p class="nic-hint">Sri Lanka NIC (old 9+V or new 12 digits) or passport number.</p>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Phone Number <span class="req">*</span></label>
-          <input name="phone" type="tel" class="form-control" placeholder="📞 +94 7X XXX XXXX">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email Address</label>
-          <input name="email" type="email" class="form-control" placeholder="✉️ you@example.com">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Home Address</label>
-        <input name="address" class="form-control" placeholder="Street, City, Province...">
-      </div>
-
-      <div class="error-box" id="err-1" style="display:none;background:var(--red-light);border:1px solid #F5C6CB;color:#721C24;padding:10px;border-radius:var(--radius-sm);font-size:13px;margin-top:12px"></div>
-
-      <button class="btn btn-primary btn-full btn-lg" style="margin-top:16px" onclick="goStep(2)">Continue →</button>
-    </div>
-
-    <!-- ── STEP 2: Medical Information ── -->
-    <div class="step-section" id="step-2">
-      <div class="section-label">02 — MEDICAL INFORMATION <span class="optional-badge">all fields optional</span></div>
-      <p style="font-size:12px;color:var(--gray);margin-bottom:18px">Your medical information helps us provide safer, faster care. All fields on this step are optional but strongly recommended.</p>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Blood Group</label>
-          <select name="bloodGroup" class="form-control">
-            <option value="">▾ Select (A+, B-, O+...)</option>
-            <option>A+</option><option>A−</option><option>B+</option><option>B−</option>
-            <option>AB+</option><option>AB−</option><option>O+</option><option>O−</option><option>Unknown</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Height (cm)</label>
-          <input name="height" type="number" class="form-control" placeholder="e.g. 172">
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Weight (kg)</label>
-          <input name="weight" type="number" class="form-control" placeholder="e.g. 68">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Preferred Doctor</label>
-          <select name="preferredDoctor" class="form-control" id="doctor-select">
-            <option value="">▾ No preference / Select doctor...</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+            <option>Prefer not to say</option>
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Known Allergies</label>
-        <input name="allergies" class="form-control" placeholder="e.g. Penicillin, Peanuts, Latex — or 'None known'">
-        <p class="form-hint" style="color:var(--orange)">⚠️ Allergy information is critical for patient safety and visible to your care team.</p>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Existing Medical Conditions</label>
-        <input name="chronicConditions" class="form-control" placeholder="e.g. Type 2 Diabetes, Hypertension — or 'None'">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Current Medications</label>
-        <input name="currentMedications" class="form-control" placeholder="e.g. Metformin 500mg, Amlodipine 5mg — or 'None'">
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Emergency Contact Name</label>
-          <input name="emergencyContactName" class="form-control" placeholder="Name">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Emergency Contact Phone</label>
-          <input name="emergencyContactPhone" class="form-control" placeholder="+94 7X XXX XXXX">
+
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label" id="nic-label">NIC / Passport Number <span class="req" id="nic-req">*</span> <span id="nic-optional-tag" style="display:none;color:#6C757D;font-weight:400;font-size:11px">(Optional — under 18)</span></label>
+          <input id="nic" class="f-input" placeholder="e.g. 199512345678 or 951234567V">
+          <div class="f-hint" id="nic-hint">Old NIC: 9 digits + V or X (e.g. 951234567V). New NIC: 12 digits (e.g. 199512345678).</div>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Insurance Provider</label>
-        <select name="insuranceProvider" class="form-control">
-          <option value="">▾ I have health insurance — Link your insurance for faster billing</option>
-          <option>Ceylinco Insurance</option><option>AIA Insurance</option>
-          <option>Union Assurance</option><option>LOLC Insurance</option><option>Other</option>
-        </select>
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-label">Phone Number <span class="req">*</span></label>
+          <input id="phone" class="f-input" placeholder="📞  +94 7X XXX XXXX" type="tel">
+        </div>
+        <div class="f-grp">
+          <label class="f-label">Email Address <span class="req">*</span></label>
+          <input id="email" class="f-input" placeholder="✉️  you@example.com" type="email">
+        </div>
       </div>
 
-      <div class="privacy-box">
-        🔒 <strong>Privacy protected</strong> — Your medical data is encrypted with AES-256-GCM and only accessible by your assigned care team (HIPAA 45 CFR §164.312).
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Home Address</label>
+          <textarea id="address" class="f-textarea" placeholder="Street, City, Province..." rows="3"></textarea>
+        </div>
       </div>
 
-      <div style="display:flex;gap:10px;margin-top:18px">
-        <button class="btn btn-secondary" style="flex:1" onclick="goStep(1)">← Back</button>
-        <button class="btn btn-primary" style="flex:2" onclick="goStep(3)">Continue →</button>
+      <div class="btn-row">
+        <div></div>
+        <button class="btn-next" onclick="go(2)">Continue →</button>
       </div>
     </div>
 
-    <!-- ── STEP 3: Account Setup ── -->
-    <div class="step-section" id="step-3">
-      <div class="section-label">03 — ACCOUNT SETUP</div>
-      <p style="font-size:12px;color:var(--gray);margin-bottom:18px">Create your username and password to complete your patient account registration.</p>
-      <div class="form-group">
-        <label class="form-label">Username <span class="req">*</span></label>
-        <input name="username" id="inp-username" class="form-control" placeholder="e.g. saman.perera">
-        <p class="form-hint">Lowercase letters, numbers and dots only. 4–20 characters.</p>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password <span class="req">*</span></label>
-        <input name="password" id="inp-password" type="password" class="form-control" placeholder="Create a strong password" oninput="checkPwd(this.value)">
-        <div class="pwd-strength"><div class="pwd-strength-fill" id="pwd-fill"></div></div>
-        <p class="form-hint" id="pwd-hint">Enter a password</p>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Confirm Password <span class="req">*</span></label>
-        <input name="confirmPassword" id="inp-confirm" type="password" class="form-control" placeholder="Re-enter your password">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email Address <span class="req">*</span></label>
-        <input name="accountEmail" type="email" class="form-control" placeholder="your@email.com">
-        <p class="form-hint">This will be used for appointment reminders and notifications.</p>
+    <!-- ══════════════════════════════════════
+         STEP 2 — MEDICAL INFORMATION
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="p2">
+      <div class="sec-label">
+        02 — MEDICAL INFORMATION &nbsp;<span class="note">(all fields optional)</span>
       </div>
 
-      <div class="consent-box">
-        <div class="consent-row">
-          <input type="checkbox" id="consent-1">
-          <label for="consent-1">I consent to SmartCare storing my personal and medical information securely for healthcare delivery (HIPAA 45 CFR §164.312).</label>
+      <p style="font-size:12px;color:#7a9bb5;margin-bottom:18px;line-height:1.65">
+        Your medical information helps us provide safer, faster care. All fields are optional but recommended.
+      </p>
+
+      <!-- Blood group -->
+      <div class="f-grp" style="margin-bottom:18px">
+        <label class="f-label">Blood Group</label>
+        <div class="blood-picker">
+          <button type="button" class="blood-btn" onclick="pickBlood('A+',this)">A+</button>
+          <button type="button" class="blood-btn" onclick="pickBlood('A−',this)">A−</button>
+          <button type="button" class="blood-btn" onclick="pickBlood('B+',this)">B+</button>
+          <button type="button" class="blood-btn" onclick="pickBlood('B−',this)">B−</button>
+          <button type="button" class="blood-btn sel" onclick="pickBlood('AB+',this)">AB+</button>
+          <button type="button" class="blood-btn" onclick="pickBlood('AB−',this)">AB−</button>
+          <button type="button" class="blood-btn" onclick="pickBlood('O+',this)">O+</button>
+          <button type="button" class="blood-btn" onclick="pickBlood('O−',this)">O−</button>
         </div>
-        <div class="consent-row">
-          <input type="checkbox" id="consent-2">
-          <label for="consent-2">I agree that my records may be accessed by my assigned doctors and nurses at SmartCare (<a href="#" style="color:var(--teal)">Terms of Service</a>).</label>
+        <input type="hidden" id="blood" value="AB+">
+        <div class="f-hint" id="blood-selected">✓ Selected: AB+</div>
+      </div>
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-label">Height (cm)</label>
+          <input id="height" class="f-input" placeholder="e.g. 172" type="number" min="50" max="250">
         </div>
-        <div class="consent-row">
-          <input type="checkbox" id="consent-3">
-          <label for="consent-3">I agree to receive appointment reminders and health notifications via SMS and email (optional — you can opt out anytime from your profile).</label>
+        <div class="f-grp">
+          <label class="f-label">Weight (kg)</label>
+          <input id="weight" class="f-input" placeholder="e.g. 68" type="number" min="1" max="500">
         </div>
       </div>
 
-      <div class="hipaa-note">
-        🔐 <strong>HIPAA 45 CFR §164.312</strong> — Passwords hashed with bcrypt (cost ≥12). Sessions auto-expire after 15 minutes. MFA available in settings.
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Known Allergies</label>
+          <textarea id="allergies" class="f-textarea" placeholder="e.g. Penicillin, Peanuts, Latex — or 'None known'" rows="2"></textarea>
+          <div class="f-hint warn">⚠️ Allergy information is critical for patient safety and visible to your care team.</div>
+        </div>
       </div>
 
-      <div class="error-box" id="err-3" style="display:none;background:var(--red-light);border:1px solid #F5C6CB;color:#721C24;padding:10px;border-radius:var(--radius-sm);font-size:13px;margin-top:12px"></div>
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Existing Medical Conditions</label>
+          <textarea id="conditions" class="f-textarea" placeholder="e.g. Type 2 Diabetes, Hypertension — or 'None'" rows="2"></textarea>
+        </div>
+      </div>
 
-      <div style="display:flex;gap:10px;margin-top:18px">
-        <button class="btn btn-secondary" style="flex:1" onclick="goStep(2)">← Back</button>
-        <button id="create-btn" class="btn btn-primary" style="flex:2" onclick="createAccount()">Create Account</button>
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Current Medications</label>
+          <textarea id="meds" class="f-textarea" placeholder="e.g. Metformin 500mg, Amlodipine 5mg — or 'None'" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Preferred Doctor</label>
+          <select id="pref-doc" class="f-select">
+            <option value="">▾  No preference / Select doctor...</option>
+            <option>Dr. A. Silva — General Medicine</option>
+            <option>Dr. P. Fernando — Pediatrics</option>
+            <option>Dr. R. Perera — Surgery</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Insurance toggle -->
+      <label class="ins-row" for="ins-toggle">
+        <div class="ins-lbl">
+          <strong>I have health insurance</strong>
+          <span>Link your insurance for faster billing</span>
+        </div>
+        <div class="tog">
+          <input type="checkbox" id="ins-toggle" onchange="toggleIns(this.checked)">
+          <div class="tog-track"></div>
+          <div class="tog-thumb"></div>
+        </div>
+      </label>
+
+      <div id="ins-fields" style="display:none" class="f-row">
+        <div class="f-grp">
+          <label class="f-label">Insurance Provider</label>
+          <input id="ins-prov" class="f-input" placeholder="e.g. Sri Lanka Insurance">
+        </div>
+        <div class="f-grp">
+          <label class="f-label">Policy / Member Number</label>
+          <input id="ins-num" class="f-input" placeholder="Policy or member ID">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-back" onclick="go(1)">← Back</button>
+        <button class="btn-next" onclick="go(3)">Continue →</button>
       </div>
     </div>
 
-    <!-- ── SUCCESS SCREEN ── -->
-    <div class="step-section" id="step-success">
-      <div class="success-screen">
-        <div class="success-icon">✅</div>
-        <h2>Welcome to<br><span class="t">Smart</span><span class="o">Care</span>!</h2>
-        <p>You can now log in to book appointments, access your medical records, and manage your care from anywhere.</p>
-        <div style="margin:20px 0">
-          <p style="font-size:13px;color:var(--gray)">Your patient account has been created successfully. Your Patient ID has been assigned:</p>
-          <div class="patient-id-chip" id="assigned-id">🩺 PAT000000</div>
+    <!-- ══════════════════════════════════════
+         STEP 3 — ACCOUNT SETUP
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="p3">
+      <div class="sec-label">03 — ACCOUNT SETUP</div>
+
+      <p style="font-size:12px;color:#7a9bb5;margin-bottom:16px;line-height:1.65">
+        Create your username and password to complete your patient account registration.
+      </p>
+
+      <div class="hipaa-box">
+        🔐 <strong>HIPAA 45 CFR §164.312</strong><br>
+        Your credentials are encrypted with AES-256-GCM at rest and transmitted over TLS 1.3. Passwords are hashed using bcrypt (cost factor 12) — never stored in plain text.
+      </div>
+
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Username <span class="req">*</span></label>
+          <input id="uname" class="f-input" placeholder="e.g. saman.perera" autocomplete="username">
+          <div class="f-hint">Lowercase letters, numbers and dots only. 4–20 characters.</div>
         </div>
-        <div class="success-info">
-          <div><span class="ic">🔒</span> Your data is encrypted with AES-256-GCM under HIPAA 45 CFR §164.312.</div>
-          <div><span class="ic">📋</span> Your audit record has been created with timestamp and encrypted hash.</div>
-          <div><span class="ic">📱</span> Your unique QR code is available in your patient portal.</div>
+      </div>
+
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Password <span class="req">*</span></label>
+          <input id="pwd" type="password" class="f-input" placeholder="Create a strong password" oninput="strCheck()" autocomplete="new-password">
+          <div class="str-row">
+            <div class="str-seg" id="s1"></div>
+            <div class="str-seg" id="s2"></div>
+            <div class="str-seg" id="s3"></div>
+          </div>
+          <div class="f-hint" id="str-hint"></div>
         </div>
-        <a href="patient-login.html" class="btn btn-primary btn-lg" style="margin-top:24px;display:inline-flex">→ Go to Patient Portal</a>
+      </div>
+
+      <div class="f-row full">
+        <div class="f-grp">
+          <label class="f-label">Confirm Password <span class="req">*</span></label>
+          <input id="cpwd" type="password" class="f-input" placeholder="Re-enter your password" autocomplete="new-password">
+        </div>
+      </div>
+
+      <!-- Consents -->
+      <div style="margin:20px 0 4px">
+        <div class="chk-row" onclick="togChk('c1')">
+          <div class="chk-box" id="c1">✓</div>
+          <div class="chk-text">I consent to SmartCare storing my personal and medical information securely in accordance with <a href="#">HIPAA privacy standards</a> and Sri Lanka health data regulations.</div>
+        </div>
+        <div class="chk-row" onclick="togChk('c2')">
+          <div class="chk-box" id="c2">✓</div>
+          <div class="chk-text">I agree that my records may be accessed by my assigned doctors and nurses for the purpose of providing medical care.</div>
+        </div>
+        <div class="chk-row" onclick="togChk('c3')">
+          <div class="chk-box off" id="c3"></div>
+          <div class="chk-text">I agree to receive appointment reminders and health notifications via SMS and email. <span style="color:#8aabbf">(optional)</span></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-back" onclick="go(2)">← Back</button>
+        <button class="btn-create" id="create-btn" onclick="doRegister()"> Create Account</button>
       </div>
     </div>
-  </div>
-</div>
 
-<script src="../../js/app.js"></script>
-<script src="../../js/sidebar.js"></script>
+    <!-- ══════════════════════════════════════
+         STEP 4 — SUCCESS
+    ══════════════════════════════════════ -->
+    <div class="step-panel" id="p4">
+      <div class="success">
+        <span class="suc-icon">✅</span>
+        <div class="suc-title">Welcome to <span class="sc">Smart</span><span class="care">Care</span>!</div>
+        <p class="suc-body">
+          Your patient account has been created successfully. Your Patient ID has been assigned.
+          You can now log in to book appointments, access your medical records, and manage your care online.
+        </p>
+
+        <div class="pat-id-box">🩺&nbsp; Patient ID: &nbsp;<span id="assigned-id">PAT000099</span></div>
+        <div class="pat-id-note">Save this ID — you will need it to log in to the Patient Portal</div>
+
+        <!-- FR-09: QR Code generated on registration -->
+        <div style="margin:20px auto;text-align:center">
+          <div style="font-size:13px;font-weight:700;color:#0f2540;margin-bottom:10px">📱 Your Patient QR Code — FR-09</div>
+          <div id="reg-qr-code" style="display:inline-block;padding:12px;background:#fff;border:2px solid #1B8A8F;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div>
+          <div style="font-size:11px;color:#6c757d;margin-top:8px">Scan this QR code for rapid identification at the hospital</div>
+          <button onclick="downloadRegQR()" style="margin-top:10px;padding:8px 20px;background:#1B8A8F;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">📥 Download QR Code PNG</button>
+        </div>
+
+        <div class="info-strip blue">🔒 Your data is encrypted with AES-256-GCM under HIPAA 45 CFR §164.312.</div>
+        <div class="info-strip gray" id="notif-strip" style="display:none">📩 You will receive appointment reminders and health notifications via SMS and email.</div>
+        <div class="info-strip gray">📋 Your audit record has been created with timestamp and encrypted hash.</div>
+
+        <a href="patient-login.html" class="btn-portal">→&nbsp; Go to Patient Portal</a>
+      </div>
+    </div>
+
+  </div><!-- /right -->
+</div><!-- /card -->
+
 <script>
-let formData = {};
-const steps = [null, 'step-1', 'step-2', 'step-3'];
-let currentStep = 1;
+/* ── state ── */
+const fd = {};
+const chks = { c1:true, c2:true, c3:false };
+let cur = 1;
 
-// Set max DOB to today
-document.querySelector('[name=dateOfBirth]').max = new Date().toISOString().split('T')[0];
+/* max DOB = today */
+document.getElementById('dob').max = new Date().toISOString().split('T')[0];
 
-// Load doctors for dropdown
-API.get('/appointments/doctors').then(res => {
-  if (res?.success) {
-    const sel = document.getElementById('doctor-select');
-    res.data.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d.doctor_id;
-      opt.textContent = `${d.doctor_name} — ${d.specialization}`;
-      sel.appendChild(opt);
+/* NIC required/optional toggle based on age */
+function updateNicRequirement() {
+  const dobVal = document.getElementById('dob').value;
+  if (!dobVal) return;
+  const dob = new Date(dobVal);
+  const today = new Date();
+  const age = today.getFullYear() - dob.getFullYear() -
+    (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+  const isMinor = age < 18;
+  document.getElementById('nic-req').style.display = isMinor ? 'none' : '';
+  document.getElementById('nic-optional-tag').style.display = isMinor ? 'inline' : 'none';
+}
+document.getElementById('dob').addEventListener('change', updateNicRequirement);
+
+/* blood group */
+function pickBlood(val, btn) {
+  document.querySelectorAll('.blood-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('blood').value = val;
+  document.getElementById('blood-selected').textContent = '✓ Selected: ' + val;
+}
+
+/* insurance toggle */
+function toggleIns(on) {
+  document.getElementById('ins-fields').style.display = on ? 'grid' : 'none';
+}
+
+/* checkbox toggle */
+function togChk(id) {
+  chks[id] = !chks[id];
+  const el = document.getElementById(id);
+  el.textContent = chks[id] ? '✓' : '';
+  el.classList.toggle('off', !chks[id]);
+}
+
+/* password strength */
+function strCheck() {
+  const v = document.getElementById('pwd').value;
+  let sc = 0;
+  if (v.length >= 8) sc++;
+  if (/[A-Z]/.test(v)) sc++;
+  if (/[0-9]/.test(v)) sc++;
+  if (/[^A-Za-z0-9]/.test(v)) sc++;
+  const cols = ['#d0dce8','#e53935','#fb8c00','#fdd835','#43a047'];
+  const hints = ['','Weak — add uppercase, numbers & symbols','Fair — add numbers & symbols','Good — add a symbol','Strong ✓'];
+  [1,2,3].forEach(i => {
+    document.getElementById('s'+i).style.background = i <= sc ? cols[sc] : '#d0dce8';
+  });
+  const h = document.getElementById('str-hint');
+  h.textContent = v.length ? hints[sc] : '';
+  h.style.color = cols[sc];
+}
+
+/* navigation */
+function go(n) {
+  if (n > cur && !validate(cur)) return;
+  clearErr();
+
+  // dots
+  for (let i = 1; i <= 3; i++) {
+    const d = document.getElementById('d'+i);
+    const l = document.getElementById('l'+i);
+    d.className = 'step-dot';
+    l.className = 'step-lbl';
+    if (i < n)      { d.classList.add('done'); d.textContent = '✓'; l.classList.add('done'); }
+    else if (i===n) { d.classList.add('active'); d.textContent = i; l.classList.add('active'); }
+    else            { d.textContent = i; }
+  }
+
+  // progress
+  const pcts = {1:'16%', 2:'50%', 3:'83%', 4:'100%'};
+  document.getElementById('st-fill').style.width = pcts[n] || '16%';
+
+  // left panel
+  const tl = {
+    1:'Your health,<br><em>in your hands</em>',
+    2:'Medical details<br><em>keep your team informed</em>',
+    3:'Almost done —<br><em>set up your access</em>',
+    4:'Welcome to<br><em>SmartCare!</em>',
+  };
+  document.getElementById('lp-tagline').innerHTML = tl[n];
+
+  // hide header on success
+  const hide = n === 4;
+  ['hdr-badge','hdr-title','hdr-sub','hdr-warn','stepper'].forEach(id => {
+    document.getElementById(id).style.display = hide ? 'none' : '';
+  });
+
+  // panels
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('p'+n).classList.add('active');
+  cur = n;
+  document.querySelector('.right').scrollTop = 0;
+}
+
+/* validation */
+function validate(step) {
+  if (step === 1) {
+    const v = (id) => document.getElementById(id).value.trim();
+    if (!v('fn'))     return err('First name is required.');
+    if (!v('ln'))     return err('Last name is required.');
+    if (!v('dob'))    return err('Date of birth is required.');
+    if (!v('gender')) return err('Please select your gender.');
+    // NIC only required if 18 or older
+    const dobVal = new Date(v('dob'));
+    const today = new Date();
+    const ageYears = today.getFullYear() - dobVal.getFullYear() - (today < new Date(today.getFullYear(), dobVal.getMonth(), dobVal.getDate()) ? 1 : 0);
+    if (ageYears >= 18 && !v('nic')) return err('NIC / Passport number is required for patients 18 and older.');
+    if (v('nic')) {
+      const nic = v('nic').trim().toUpperCase();
+      const oldNIC = /^[0-9]{9}[VX]$/;      // Pre-2016: 9 digits + V or X
+      const newNIC = /^[0-9]{12}$/;          // Post-2016: 12 digits
+      const passport = /^[A-Z][0-9]{7,8}$/;  // Passport: letter + 7-8 digits
+      if (!oldNIC.test(nic) && !newNIC.test(nic) && !passport.test(nic)) {
+        return err('Invalid NIC format. Use old format (9 digits + V/X, e.g. 951234567V) or new format (12 digits, e.g. 199512345678).');
+      }
+    }
+    if (!v('phone'))  return err('Phone number is required.');
+    if (!v('email'))  return err('Email address is required.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) return err('Please enter a valid email address.');
+    Object.assign(fd, { firstName:v('fn'), lastName:v('ln'), dateOfBirth:v('dob'), gender:v('gender'),
+      nationalId:v('nic'), phone:v('phone'), email:v('email'), address:v('address'),
+      smsNotifications: chks.c3 || false, emailNotifications: chks.c3 || false });
+  }
+  if (step === 2) {
+    Object.assign(fd, {
+      bloodGroup: document.getElementById('blood').value,
+      height: document.getElementById('height').value,
+      weight: document.getElementById('weight').value,
+      allergies: document.getElementById('allergies').value.trim(),
+      conditions: document.getElementById('conditions').value.trim(),
+      medications: document.getElementById('meds').value.trim(),
+      preferredDoctor: document.getElementById('pref-doc').value,
     });
   }
-});
-
-function goStep(n) {
-  if (n === 2 && !validateStep1()) return;
-  if (n === 3 && !validateStep2()) return;
-
-  // Save current step data
-  collectFormData();
-
-  // Update UI
-  steps.forEach((id, i) => {
-    if (i === 0) return;
-    document.getElementById(id).classList.toggle('active', i === n);
-    const si = document.getElementById('si-' + i);
-    si.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
-    if (i < steps.length - 1) {
-      const sc = document.getElementById('sc-' + i);
-      if (sc) sc.className = 'step-connector' + (i < n ? ' done' : '');
-    }
-  });
-  currentStep = n;
-  window.scrollTo(0, 0);
-}
-
-function collectFormData() {
-  document.querySelectorAll('[name]').forEach(el => {
-    formData[el.name] = el.value;
-  });
-}
-
-function validateStep1() {
-  const errEl = document.getElementById('err-1');
-  errEl.style.display = 'none';
-  const firstName  = document.querySelector('[name=firstName]').value.trim();
-  const lastName   = document.querySelector('[name=lastName]').value.trim();
-  const gender     = document.querySelector('[name=gender]').value;
-  const dob        = document.querySelector('[name=dateOfBirth]').value;
-  const nic        = document.querySelector('[name=nationalId]').value.trim();
-  const phone      = document.querySelector('[name=phone]').value.trim();
-  if (!firstName || !lastName || !gender || !dob || !nic || !phone) {
-    errEl.textContent = 'Please fill all required fields (marked with *).';
-    errEl.style.display = 'block'; return false;
+  if (step === 3) {
+    const un = document.getElementById('uname').value.trim();
+    const pw = document.getElementById('pwd').value;
+    const cp = document.getElementById('cpwd').value;
+    if (!un) return err('Username is required.');
+    if (!/^[a-z0-9.]{4,20}$/.test(un)) return err('Username must be 4–20 chars: lowercase letters, numbers and dots only.');
+    if (!pw) return err('Password is required.');
+    if (pw.length < 8) return err('Password must be at least 8 characters.');
+    if (pw !== cp) return err('Passwords do not match. Please re-enter.');
+    if (!chks.c1) return err('You must consent to data storage to create an account.');
+    if (!chks.c2) return err('You must agree to allow your doctors to access your records.');
+    Object.assign(fd, { username: un, password: pw });
   }
   return true;
 }
 
-function validateStep2() { return true; } // All optional
-
-function checkPwd(val) {
-  const fill = document.getElementById('pwd-fill');
-  const hint = document.getElementById('pwd-hint');
-  const strength = [/[A-Z]/, /[a-z]/, /[0-9]/, /[^A-Za-z0-9]/, /.{8,}/].filter(r => r.test(val)).length;
-  const pct = (strength / 5) * 100;
-  const colors = ['', '#dc3545', '#fd7e14', '#ffc107', '#28a745', '#18AEBA'];
-  const labels = ['', 'Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'];
-  fill.style.width = pct + '%';
-  fill.style.background = colors[strength] || '';
-  hint.textContent = val ? labels[strength] : 'Enter a password';
-  hint.style.color = colors[strength] || 'var(--gray)';
+function err(msg) {
+  const el = document.getElementById('err');
+  el.textContent = msg; el.style.display = 'block'; return false;
+}
+function clearErr() {
+  document.getElementById('err').style.display = 'none';
 }
 
-async function createAccount() {
-  const errEl = document.getElementById('err-3');
-  errEl.style.display = 'none';
-  collectFormData();
+/* submit */
+async function doRegister() {
+  if (!validate(3)) return;
+  const btn = document.getElementById('create-btn');
+  btn.innerHTML = '<span class="spin"></span> Creating account...';
+  btn.disabled = true;
 
-  const pwd     = document.getElementById('inp-password').value;
-  const confirm = document.getElementById('inp-confirm').value;
-  const username = document.getElementById('inp-username').value.trim();
+  try {
+    const res = await fetch('/smart-care/api/patients/signup', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(fd)
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      const patCode = json.data.patientCode;
+      const patName = (fd.firstName || '') + ' ' + (fd.lastName || '');
+      document.getElementById('assigned-id').textContent = patCode;
+      if (chks.c3) document.getElementById('notif-strip').style.display = '';
+      btn.innerHTML = 'Create Account';
+      btn.disabled = false;
+      go(4);
+      // FR-09: Generate QR code on registration
+      setTimeout(() => generateRegistrationQR(patCode, patName), 300);
+      return;
+    }
+    err(json.error || 'Registration failed. Please try again.');
+  } catch(e) {
+    err('Could not connect to the server. Please check your connection and try again.');
+  }
+  btn.innerHTML = 'Create Account';
+  btn.disabled = false;
+}
 
-  if (!username || !pwd || !confirm || !formData.accountEmail) {
-    errEl.textContent = 'Please fill all required fields.'; errEl.style.display = 'block'; return;
-  }
-  if (pwd !== confirm) {
-    errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return;
-  }
-  if (pwd.length < 8) {
-    errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return;
-  }
-  if (!document.getElementById('consent-1').checked || !document.getElementById('consent-2').checked) {
-    errEl.textContent = 'You must agree to the required consents.'; errEl.style.display = 'block'; return;
-  }
+// FR-09: Generate QR code on registration
+function generateRegistrationQR(patCode, patName) {
+  const el = document.getElementById('reg-qr-code');
+  if (!el || typeof QRCode === 'undefined') return;
+  el.innerHTML = '';
+  const qrText = [
+    'SmartCare Hospital ERP',
+    'Patient: ' + patName.trim(),
+    'ID: ' + patCode
+  ].join('\n');
+  new QRCode(el, {
+    text: qrText,
+    width: 180,
+    height: 180,
+    colorDark: '#0f2540',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+}
 
-  setLoading('create-btn', true, 'Creating account...');
-  const payload = {
-    firstName:            formData.firstName,
-    lastName:             formData.lastName,
-    gender:               formData.gender,
-    dateOfBirth:          formData.dateOfBirth,
-    nationalId:           formData.nationalId,
-    phone:                formData.phone,
-    email:                formData.email || formData.accountEmail,
-    address:              formData.address,
-    bloodGroup:           formData.bloodGroup,
-    allergies:            formData.allergies || 'None',
-    chronicConditions:    formData.chronicConditions || 'None',
-    currentMedications:   formData.currentMedications,
-    emergencyContactName: formData.emergencyContactName,
-    emergencyContactPhone:formData.emergencyContactPhone,
-    insuranceProvider:    formData.insuranceProvider,
-    preferredDoctorId:    formData.preferredDoctor || null,
-    username,
-    password: pwd,
-    accountEmail: formData.accountEmail,
-  };
-
-  const res = await API.post('/patients/register', payload);
-  setLoading('create-btn', false, 'Create Account');
-
-  if (res?.success) {
-    document.getElementById('assigned-id').textContent = '🩺 Patient ID: ' + res.data.patientCode;
-    document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('step-success').classList.add('active');
-    // Update step indicators all done
-    ['si-1','si-2','si-3'].forEach(id => { document.getElementById(id).className = 'step-item done'; });
-  } else {
-    errEl.textContent = res?.error || 'Registration failed. Please try again.';
-    errEl.style.display = 'block';
-  }
+function downloadRegQR() {
+  const el = document.getElementById('reg-qr-code');
+  const canvas = el && el.querySelector('canvas');
+  if (!canvas) { alert('QR not ready yet.'); return; }
+  const patCode = document.getElementById('assigned-id').textContent || 'patient';
+  const pad = 16, labelH = 40;
+  const out = document.createElement('canvas');
+  out.width  = canvas.width  + pad * 2;
+  out.height = canvas.height + pad * 2 + labelH;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(canvas, pad, pad);
+  ctx.fillStyle = '#0f2540';
+  ctx.font = 'bold 14px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(patCode, out.width/2, canvas.height + pad + 20);
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#6c757d';
+  ctx.fillText('SmartCare Hospital ERP', out.width/2, canvas.height + pad + 36);
+  const a = document.createElement('a');
+  a.href = out.toDataURL('image/png');
+  a.download = 'SmartCare_QR_' + patCode + '.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 </script>
 </body>

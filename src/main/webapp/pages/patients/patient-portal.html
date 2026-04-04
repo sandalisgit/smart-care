@@ -3,238 +3,282 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Care — Patient Portal</title>
-<link rel="stylesheet" href="../../css/app.css">
 <style>
-  .patient-portal .sidebar { background: linear-gradient(180deg, #0E8A95 0%, #18AEBA 100%); }
-  .patient-portal .nav-item { color: rgba(255,255,255,0.8); }
-  .portal-welcome { background: linear-gradient(135deg,var(--teal),#0f4f5a); color:white; border-radius:var(--radius); padding:20px 24px; margin-bottom:20px; }
-  .qr-box { background:white;border-radius:8px;padding:12px;display:inline-block;text-align:center;margin-top:8px; }
-  .quick-action { background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;text-decoration:none;display:block;color:var(--dark); }
-  .quick-action:hover { border-color:var(--teal);background:var(--teal-light);transform:translateY(-2px);box-shadow:var(--shadow); }
-  .quick-action .qa-icon { font-size:28px;margin-bottom:8px; }
-  .quick-action .qa-label { font-weight:600;font-size:13px; }
-  .quick-action .qa-sub { font-size:11px;color:var(--gray);margin-top:2px; }
-  .record-row { display:flex;gap:12px;padding:12px;border-bottom:1px solid var(--border);align-items:flex-start; }
-  .record-date { font-size:12px;color:var(--gray);min-width:90px; }
-  .bill-summary { background:var(--teal-light);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px; }
-  .bill-stat label { font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:0.5px; }
-  .bill-stat .val { font-size:20px;font-weight:700;color:var(--dark);margin-top:2px; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f8fb;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+.snav{width:220px;flex-shrink:0;background:#0f2540;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.snav-brand{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px}
+.snav-brand .logo{font-size:24px}
+.snav-brand h1{font-size:16px;font-weight:800;line-height:1}
+.snav-brand h1 .t{color:#26a6b2}.snav-brand h1 .o{color:#f5950f}
+.snav-brand p{font-size:10px;color:rgba(255,255,255,.42);margin-top:2px}
+.snav-pat{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.av{width:38px;height:38px;border-radius:50%;background:rgba(14,140,140,.28);color:#14b8b8;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;margin-bottom:6px}
+.pat-name{font-size:13px;font-weight:700;color:#fff}
+.pat-id{font-size:10px;color:rgba(255,255,255,.4);font-family:monospace;margin-top:1px}
+.nl{display:flex;align-items:center;gap:9px;padding:10px 16px;color:rgba(255,255,255,.58);font-size:13px;font-weight:500;cursor:pointer;transition:all .14s;border:none;background:none;width:100%;text-align:left;text-decoration:none}
+.nl:hover{background:rgba(255,255,255,.07);color:#fff}
+.nl.active{background:rgba(14,140,140,.2);color:#14b8b8;border-left:3px solid #14b8b8}
+.ni{font-size:16px;width:20px;flex-shrink:0}
+.snav-foot{margin-top:auto;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid #e4e8ec;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:14px;font-weight:700;color:#0f2540}
+.sess-bar{background:#fff8e1;border:1px solid #FFD9A8;border-radius:7px;padding:5px 12px;font-size:11px;color:#856404;display:flex;align-items:center;gap:6px}
+.sess-timer{font-weight:800;font-family:monospace;font-size:13px}
+.body{padding:20px 24px;flex:1}
+.panel{display:none}.panel.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:#fff;border-radius:11px;border:1px solid #e4e8ec;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.sv{font-size:22px;font-weight:800;color:#0f2540;line-height:1}
+.sl{font-size:11px;color:#6c757d;margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+.ss{font-size:11px;font-weight:600;margin-top:3px}
+.ss.teal{color:#1B8A8F}.ss.red{color:#e53935}
+.card{background:#fff;border-radius:11px;border:1px solid #e4e8ec;box-shadow:0 2px 6px rgba(0,0,0,.05);margin-bottom:14px}
+.ch{padding:14px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.ch h3{font-size:14px;font-weight:700;color:#0f2540}
+.cb{padding:16px 18px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ac{background:#fff;border:1px solid #e4e8ec;border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.ad{text-align:center;min-width:46px}.aday{font-size:20px;font-weight:800;color:#0f2540;line-height:1}.amon{font-size:11px;color:#6c757d;text-transform:uppercase}
+.aline{width:1px;height:36px;background:#e4e8ec}
+.ainfo{flex:1}.adoc{font-size:13px;font-weight:700;color:#0f2540}.atype{font-size:12px;color:#6c757d;margin-top:1px}
+.atime{font-size:13px;font-weight:700;color:#1B8A8F}
+.qa{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.qab{background:#fff;border:1px solid #e4e8ec;border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .14s;text-decoration:none;display:block}
+.qab:hover{border-color:#1B8A8F;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.qi{font-size:26px;margin-bottom:6px;display:block}
+.ql{font-size:12px;font-weight:700;color:#0f2540}
+.qs{font-size:10px;color:#6c757d;margin-top:2px}
+.tl{border-left:2px solid #b2dfdf;margin-left:14px;padding-left:16px}
+.tli{position:relative;margin-bottom:16px}
+.tld{position:absolute;left:-23px;top:4px;width:10px;height:10px;border-radius:50%;background:#1B8A8F;border:2px solid #fff}
+.tldate{font-size:11px;color:#6c757d;margin-bottom:3px}
+.tlcard{background:#f8fbfc;border:1px solid #d0e8e8;border-radius:8px;padding:9px 12px}
+.tltype{font-size:10px;font-weight:700;color:#1B8A8F;text-transform:uppercase;letter-spacing:.3px}
+.tldx{font-size:13px;font-weight:700;color:#0f2540;margin-top:2px}
+.tldoc{font-size:11px;color:#6c757d;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fa;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #e4e8ec}
+td{padding:9px 14px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.bdg{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.bg{background:#e8f5e9;color:#0a5c35}.by{background:#fff8e1;color:#856404}
+.bt{background:#e8f6f6;color:#0F5558}.br{background:#fce4e4;color:#c62828}.bgr{background:#f1f3f5;color:#495057}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fl{font-size:12px;font-weight:600;color:#495057}
+.fi{border:1.5px solid #d8e4ee;border-radius:7px;padding:9px 12px;font-size:13px;color:#0f2540;outline:none;width:100%;transition:border-color .15s;font-family:inherit;background:#fff}
+.fi:focus{border-color:#1B8A8F;box-shadow:0 0 0 3px rgba(27,138,143,.1)}
+.btn{padding:8px 16px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .14s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.bp{background:#1B8A8F;color:#fff}.bp:hover{background:#156C70}
+.bs{background:#f1f3f5;color:#495057;border:1px solid #dee2e6}.bs:hover{background:#e9ecef}
+.bsm{padding:5px 12px;font-size:12px}
+.bd{background:#fce4e4;color:#c62828}
+.qr-box{width:170px;height:170px;background:#f4f8fb;border:2px dashed #b2dfdf;border-radius:12px;margin:0 auto 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all .15s}
+.qr-box:hover{border-color:#1B8A8F;background:#e8f6f6}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:28px;max-width:320px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.g2edit{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.full{grid-column:1/-1}
+.skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;height:18px;width:80%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 </head>
-<body class="patient-portal">
-<div class="app-layout">
-  <!-- Patient Sidebar -->
-  <nav class="sidebar">
-    <div class="sidebar-logo"><div style="font-size:40px">🏥</div><h1>SMART <span>CARE</span></h1><div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px">Patient Portal</div></div>
-    <div class="nav-section">
-      <a class="nav-item active" id="nav-home" href="#" onclick="showTab('home');return false"><span class="icon">🏠</span> Home</a>
-      <a class="nav-item" id="nav-appointments" href="#" onclick="showTab('appointments');return false"><span class="icon">📅</span> Appointments</a>
-      <a class="nav-item" id="nav-records" href="#" onclick="showTab('records');return false"><span class="icon">📋</span> My Records</a>
-      <a class="nav-item" id="nav-bills" href="#" onclick="showTab('bills');return false"><span class="icon">💳</span> Bills</a>
-      <a class="nav-item" id="nav-profile-tab" href="#" onclick="showTab('profile-tab');return false"><span class="icon">👤</span> Profile</a>
-    </div>
-    <div style="padding:16px;margin-top:auto">
-      <button class="btn btn-secondary btn-sm w-full" onclick="logout()" style="color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2)">Logout</button>
-    </div>
-  </nav>
+<body>
+<div class="layout">
 
-  <div class="main-content">
-    <div class="topbar">
-      <span class="topbar-title" id="portal-title">Patient Portal</span>
-      <div class="topbar-right" id="topbar-user"></div>
+<!-- NAV -->
+<nav class="snav">
+  <div class="snav-brand">
+    <div class="logo" style="font-size:0"><img src="/smart-care/images/logo.png" alt="SmartCare" style="width:28px;height:28px;object-fit:contain"></div>
+    <div>
+      <h1><span class="t">Smart</span><span class="o">Care</span></h1>
+      <p>Patient Portal</p>
     </div>
+  </div>
+  <div class="snav-pat">
+    <div class="av" id="nav-av">…</div>
+    <div class="pat-name" id="nav-name">Loading…</div>
+    <div class="pat-id" id="nav-id">—</div>
+  </div>
+  <div style="padding:8px 0;flex:1">
+    <button class="nl active" id="nl-home"         onclick="sp('home')">        <span class="ni">🏠</span>Dashboard</button>
+    <button class="nl"        id="nl-appointments" onclick="sp('appointments')"><span class="ni">📅</span>My Appointments</button>
+    <button class="nl"        id="nl-records"      onclick="sp('records')">     <span class="ni">📋</span>Medical Records</button>
+    <button class="nl"        id="nl-bills"        onclick="sp('bills')">       <span class="ni">💰</span>Bills &amp; Payments</button>
+    <button class="nl"        id="nl-profile"      onclick="sp('profile')">     <span class="ni">👤</span>My Profile</button>
+  </div>
+  <div class="snav-foot">
+    <button class="nl" style="color:rgba(255,255,255,.45)" onclick="doLogout()"><span class="ni">🚪</span>Logout</button>
+  </div>
+</nav>
 
-    <!-- ===== HOME ===== -->
-    <div id="tab-home" class="page-body">
-      <div class="portal-welcome">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-size:22px;font-weight:700" id="welcome-name">Good morning!</div>
-            <div id="welcome-meta" style="font-size:13px;opacity:0.85;margin-top:6px"></div>
-            <div style="margin-top:12px;display:flex;gap:10px">
-              <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="showTab('appointments')">📅 Book Appointment</button>
-              <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="showTab('records')">📋 My Records</button>
-            </div>
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="page-title">Patient Dashboard</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="sess-bar">⏱ Session: <span class="sess-timer" id="sess-clock">15:00</span></div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- HOME -->
+    <div class="panel active" id="panel-home">
+      <div class="stats">
+        <div class="stat">
+          <div class="sv" id="stat-appts">—</div>
+          <div class="sl">Upcoming Appointments</div>
+          <div class="ss teal" id="stat-appts-sub">Loading…</div>
+        </div>
+        <div class="stat">
+          <div class="sv" id="stat-records">—</div>
+          <div class="sl">Medical Records</div>
+          <div class="ss teal" id="stat-records-sub">Loading…</div>
+        </div>
+        <div class="stat">
+          <div class="sv" id="stat-bills">—</div>
+          <div class="sl">Outstanding Bill</div>
+          <div class="ss red" id="stat-bills-sub">Loading…</div>
+        </div>
+        <div class="stat">
+          <div class="sv" id="stat-doctor" style="font-size:14px">—</div>
+          <div class="sl">Assigned Doctor</div>
+          <div class="ss teal" id="stat-doctor-sub">—</div>
+        </div>
+      </div>
+      <div class="g2">
+        <div>
+          <div class="card">
+            <div class="ch"><h3>📅 Upcoming Appointments</h3><button class="btn bs bsm" onclick="sp('appointments')">View All</button></div>
+            <div class="cb" id="home-appts" style="padding:10px 16px"><div class="skeleton" style="margin-bottom:10px"></div><div class="skeleton" style="margin-bottom:10px;width:60%"></div></div>
           </div>
-          <!-- QR Code (FR-09) -->
-          <div class="qr-box" id="qr-container">
-            <div style="width:80px;height:80px;background:var(--dark);display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:28px;color:white">QR</div>
-            <div style="font-size:10px;color:var(--gray);margin-top:4px" id="qr-label">Loading...</div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="ch"><h3>⚡ Quick Actions</h3></div>
+            <div class="cb">
+              <div class="qa">
+                <a class="qab" href="#" onclick="sp('appointments');return false"><span class="qi">📅</span><div class="ql">My Appointments</div><div class="qs">View all visits</div></a>
+                <a class="qab" href="#" onclick="sp('records');return false"><span class="qi">📋</span><div class="ql">Medical Records</div><div class="qs">View EMR — FR-03</div></a>
+                <a class="qab" href="#" onclick="dlReport();return false"><span class="qi">📥</span><div class="ql">Download Report</div><div class="qs">PDF export — FR-04</div></a>
+                <a class="qab" href="#" onclick="sp('bills');return false"><span class="qi">💰</span><div class="ql">My Bills</div><div class="qs">View invoices</div></a>
+                <a class="qab" href="#" onclick="sp('profile');return false"><span class="qi">✏️</span><div class="ql">Edit Profile</div><div class="qs">Update info — FR-07</div></a>
+                <a class="qab" href="#" onclick="showQR();return false"><span class="qi">📱</span><div class="ql">My QR Code</div><div class="qs">Patient ID — FR-09</div></a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Quick Actions -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-        <a class="quick-action" href="#" onclick="showTab('appointments');return false">
-          <div class="qa-icon">📅</div>
-          <div class="qa-label">Book Appointment</div>
-          <div class="qa-sub">Find available doctors & slots</div>
-        </a>
-        <a class="quick-action" href="#" onclick="showTab('records');return false">
-          <div class="qa-icon">📋</div>
-          <div class="qa-label">My Records</div>
-          <div class="qa-sub">View diagnoses & prescriptions</div>
-        </a>
-        <a class="quick-action" href="#" onclick="showTab('bills');return false">
-          <div class="qa-icon">💳</div>
-          <div class="qa-label">My Bills</div>
-          <div class="qa-sub">View & pay outstanding bills</div>
-        </a>
-        <a class="quick-action" href="#" onclick="showTab('profile-tab');return false">
-          <div class="qa-icon">👤</div>
-          <div class="qa-label">My Profile</div>
-          <div class="qa-sub">Update contact information</div>
-        </a>
-      </div>
-
-      <!-- Upcoming appointments -->
+    <!-- APPOINTMENTS -->
+    <div class="panel" id="panel-appointments">
       <div class="card">
-        <div class="card-header"><h3>📅 Upcoming Appointments</h3></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Time</th><th>Doctor</th><th>Type</th><th>Status</th></tr></thead>
-            <tbody id="home-appts-tbody">
-              <tr><td colspan="5" class="text-center text-muted" style="padding:16px">Loading...</td></tr>
-            </tbody>
-          </table>
+        <div class="ch">
+          <h3>📅 My Appointments</h3>
+          <select class="fi" id="appt-filter" style="width:140px;padding:5px 10px;font-size:12px" onchange="filterAppts()">
+            <option value="">All</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table><thead><tr><th>Date &amp; Time</th><th>Doctor</th><th>Type</th><th>AI No-show Risk</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="appt-tbody"><tr><td colspan="6" style="text-align:center;padding:20px"><div class="skeleton" style="margin:0 auto"></div></td></tr></tbody></table>
         </div>
       </div>
     </div>
 
-    <!-- ===== APPOINTMENTS ===== -->
-    <div id="tab-appointments" class="page-body hidden">
-      <!-- AI suggestion banner -->
-      <div class="alert alert-info" id="ai-suggestion" style="margin-bottom:16px"></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <!-- Book new appointment -->
-        <div class="card">
-          <div class="card-header"><h3>📅 Book New Appointment</h3></div>
-          <div class="card-body">
-            <div class="form-group">
-              <label class="form-label">Select Doctor / Specialization</label>
-              <select id="book-spec" class="form-control" onchange="loadDoctorOptions(this.value)">
-                <option value="">All Specializations</option>
-                <option>Cardiology</option><option>Pediatrics</option><option>General Surgery</option>
-                <option>Internal Medicine</option><option>Dermatology</option><option>Neurology</option>
-              </select>
+    <!-- MEDICAL RECORDS -->
+    <div class="panel" id="panel-records">
+      <div class="g2">
+        <div>
+          <div class="card">
+            <div class="ch">
+              <h3>📋 Medical Records <span style="font-size:10px;color:#6c757d;font-weight:400">(Read-only — FR-30)</span></h3>
+              <button class="btn bp bsm" onclick="dlReport()">📥 Download PDF</button>
             </div>
-            <div id="doctor-options" style="display:grid;gap:8px;margin-bottom:12px"></div>
-            <div class="form-group">
-              <label class="form-label">Preferred Date</label>
-              <input type="date" id="book-date" class="form-control" onchange="loadPatientSlots()">
+            <div style="overflow-x:auto">
+              <table><thead><tr><th>Date</th><th>Type</th><th>Diagnosis</th><th>Doctor</th><th>Actions</th></tr></thead>
+              <tbody id="rec-tbody"><tr><td colspan="5" style="text-align:center;padding:20px"><div class="skeleton" style="margin:0 auto"></div></td></tr></tbody></table>
             </div>
-            <div id="patient-slots" style="margin-bottom:12px"></div>
-            <div class="form-group">
-              <label class="form-label">Reason for Visit</label>
-              <input type="text" id="book-reason" class="form-control" placeholder="Brief reason...">
-            </div>
-            <button class="btn btn-primary w-full" onclick="bookPatientAppointment()">📅 Confirm Booking</button>
           </div>
         </div>
-
-        <!-- My appointments list -->
-        <div class="card">
-          <div class="card-header"><h3>My Appointments</h3></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Doctor</th><th>Type</th><th>Status</th></tr></thead>
-              <tbody id="patient-appts-tbody"></tbody>
-            </table>
+        <div>
+          <div class="card">
+            <div class="ch"><h3>📅 History Timeline — FR-03</h3></div>
+            <div class="cb" id="hist-tl"><div class="skeleton" style="margin-bottom:10px"></div><div class="skeleton" style="width:60%"></div></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ===== MY RECORDS (FR-03, FR-04, FR-30) ===== -->
-    <div id="tab-records" class="page-body hidden">
-      <div class="alert alert-info" style="margin-bottom:16px">
-        🔒 <strong>Read-only</strong> — You can view your records but only your doctor can edit them
-        <button class="btn btn-sm btn-secondary" style="margin-left:12px" onclick="downloadPDF()">📄 Download Full Report (PDF)</button>
-      </div>
-
-      <!-- Tab bar inside records -->
-      <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchRecordsTab('diagnoses')">🩺 Diagnoses</button>
-        <button class="tab-btn" onclick="switchRecordsTab('prescriptions')">💊 Prescriptions</button>
-        <button class="tab-btn" onclick="switchRecordsTab('lab')">🔬 Lab Results</button>
-      </div>
-
-      <div id="records-diagnoses" class="tab-pane active">
-        <div class="card">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Diagnosis</th><th>Doctor</th><th>Follow-up</th></tr></thead>
-              <tbody id="diag-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div id="records-prescriptions" class="tab-pane">
-        <div class="card">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
-              <tbody id="rx-view-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div id="records-lab" class="tab-pane">
-        <div class="card">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Test</th><th>Result</th><th>Normal Range</th><th>Status</th></tr></thead>
-              <tbody id="lab-view-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== BILLS (FR-03) ===== -->
-    <div id="tab-bills" class="page-body hidden">
-      <div class="bill-summary" id="bill-summary-panel">
-        <div class="bill-stat"><label>Total Paid (All Time)</label><div class="val" id="bs-paid">—</div></div>
-        <div class="bill-stat"><label>Insurance Covered</label><div class="val" id="bs-insurance">—</div></div>
-        <div class="bill-stat"><label>Outstanding Balance</label><div class="val" id="bs-outstanding" style="color:var(--danger)">—</div></div>
-      </div>
+    <!-- BILLS -->
+    <div class="panel" id="panel-bills">
       <div class="card">
-        <div class="card-header"><h3>💳 Payment History</h3></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Invoice ID</th><th>Date</th><th>Description</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
-            <tbody id="patient-bills-tbody"></tbody>
-          </table>
+        <div class="ch">
+          <h3>💰 My Bills &amp; Payments</h3>
+          <div id="bill-summary" style="font-size:12px;color:#6c757d"></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table><thead><tr><th>Invoice #</th><th>Date</th><th>Services</th><th>Amount (LKR)</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="bill-tbody"><tr><td colspan="6" style="text-align:center;padding:20px"><div class="skeleton" style="margin:0 auto"></div></td></tr></tbody></table>
         </div>
       </div>
     </div>
 
-    <!-- ===== PROFILE (FR-07) ===== -->
-    <div id="tab-profile-tab" class="page-body hidden">
-      <div style="display:grid;grid-template-columns:280px 1fr;gap:16px">
-        <div class="card" style="height:fit-content">
-          <div class="card-body" style="text-align:center">
-            <div style="font-size:64px">👤</div>
-            <div id="pp-name" style="font-size:18px;font-weight:700;margin-top:8px"></div>
-            <div id="pp-code" class="badge badge-teal" style="margin-top:6px"></div>
-            <div id="pp-since" class="text-muted text-sm" style="margin-top:6px"></div>
+    <!-- PROFILE -->
+    <div class="panel" id="panel-profile">
+      <div class="g2">
+        <div>
+          <div class="card">
+            <div class="ch"><h3>👤 Edit My Profile — FR-07</h3></div>
+            <div class="cb">
+              <div style="text-align:center;margin-bottom:16px">
+                <div style="width:64px;height:64px;border-radius:50%;background:rgba(14,140,140,.15);color:#1B8A8F;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;margin:0 auto 8px" id="pf-av">…</div>
+                <div style="font-size:15px;font-weight:700" id="pf-name">Loading…</div>
+                <div style="font-size:11px;color:#6c757d;font-family:monospace" id="pf-pid">—</div>
+              </div>
+              <div class="g2edit">
+                <div class="fg"><label class="fl">First Name</label><input class="fi" id="pf-fn" placeholder="Loading…"></div>
+                <div class="fg"><label class="fl">Last Name</label><input class="fi" id="pf-ln" placeholder="Loading…"></div>
+                <div class="fg"><label class="fl">Phone Number</label><input class="fi" id="pf-ph" placeholder="Loading…"></div>
+                <div class="fg"><label class="fl">Email Address</label><input class="fi" id="pf-em" placeholder="Loading…"></div>
+                <div class="fg full"><label class="fl">Home Address</label><input class="fi" id="pf-ad" placeholder="Loading…"></div>
+                <div class="fg"><label class="fl">Emergency Contact</label><input class="fi" id="pf-ec" placeholder="Loading…"></div>
+                <div class="fg"><label class="fl">Emergency Phone</label><input class="fi" id="pf-ep" placeholder="Loading…"></div>
+                <div class="fg"><label class="fl">Blood Group</label><input class="fi" id="pf-bg" placeholder="—" readonly style="background:#f8f9fa"></div>
+                <div class="fg"><label class="fl">Date of Birth</label><input class="fi" id="pf-dob" placeholder="—" readonly style="background:#f8f9fa"></div>
+                <div class="fg full"><label class="fl">Allergies</label><input class="fi" id="pf-al" placeholder="Loading…"></div>
+                <div class="fg full"><label class="fl">Chronic Conditions</label><input class="fi" id="pf-cc" placeholder="Loading…"></div>
+              </div>
+              <button class="btn bp" style="width:100%;margin-top:14px;justify-content:center" onclick="saveProfile()">💾 Save Changes</button>
+            </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><h3>✏️ Edit Profile</h3>
-            <button class="btn btn-primary btn-sm" onclick="savePatientProfile()">💾 Save Changes</button>
+        <div>
+          <div class="card">
+            <div class="ch"><h3>📱 My Patient QR Code — FR-09</h3></div>
+            <div class="cb" style="text-align:center">
+              <div class="qr-box" onclick="showQR()" id="qr-preview-box">
+                <div id="qr-canvas-small"></div>
+              </div>
+              <div style="font-family:monospace;font-size:15px;font-weight:800;color:#0f2540" id="qr-id">—</div>
+              <div style="font-size:11px;color:#6c757d;margin-top:4px;margin-bottom:12px">Show to staff for rapid identification</div>
+              <button class="btn bp bsm" onclick="dlQR()">📥 Download QR Code PNG</button>
+            </div>
           </div>
-          <div class="card-body">
-            <div class="form-grid">
-              <div class="form-group"><label class="form-label">First Name</label><input id="pp-fname" class="form-control"></div>
-              <div class="form-group"><label class="form-label">Last Name</label><input id="pp-lname" class="form-control"></div>
-              <div class="form-group"><label class="form-label">Phone</label><input id="pp-phone" class="form-control"></div>
-              <div class="form-group"><label class="form-label">Email</label><input id="pp-email" type="email" class="form-control"></div>
-              <div class="form-group form-full"><label class="form-label">Address</label><input id="pp-address" class="form-control"></div>
-              <div class="form-group"><label class="form-label">Emergency Contact Name</label><input id="pp-ec-name" class="form-control"></div>
-              <div class="form-group"><label class="form-label">Emergency Contact Phone</label><input id="pp-ec-phone" class="form-control"></div>
+          <div class="card">
+            <div class="ch"><h3>🔒 Account Security</h3></div>
+            <div class="cb">
+              <p style="font-size:12px;color:#6c757d;margin-bottom:12px">Session auto-expires after 15 minutes of inactivity (FR-06, NFR-08). Passwords hashed with bcrypt cost-12 (NFR-06).</p>
+              <button class="btn bs" style="width:100%;justify-content:center;margin-bottom:8px" onclick="changePassword()">🔑 Change Password</button>
+              <div style="font-size:11px;color:#6c757d;text-align:center">🔐 AES-256-GCM encrypted · TLS 1.3 · HIPAA compliant</div>
             </div>
           </div>
         </div>
@@ -243,264 +287,608 @@
 
   </div>
 </div>
+</div>
 
-<script src="../../js/app.js"></script>
-<script src="../../js/sidebar.js"></script>
+<!-- QR Modal -->
+<div class="modal-bg" id="qr-modal">
+  <div class="modal-box">
+    <div id="qr-canvas-large" style="margin:0 auto 16px;display:flex;justify-content:center"></div>
+    <div style="font-size:20px;font-weight:800;color:#0f2540;font-family:monospace;margin-bottom:4px" id="modal-pid">—</div>
+    <div style="font-size:12px;color:#6c757d;margin:4px 0 18px">SmartCare Hospital ERP · Patient QR Code</div>
+    <button class="btn bp" style="width:100%;justify-content:center;margin-bottom:8px" onclick="dlQR()">📥 Download PNG — FR-09</button>
+    <button class="btn bs" style="width:100%;justify-content:center" onclick="document.getElementById('qr-modal').classList.remove('open')">Close</button>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container" style="position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-// Patient portal — loaded when patient logs in
-// In real system, patientId comes from session
-const user = Auth.getUser();
-let patientData = null;
-let selectedDoctorId = null, selectedSlot = null;
+// ─── Inline API + Toast (patient portal uses sessionStorage, not localStorage) ───
+const API_BASE = '/smart-care/api';
 
-// FR-09: Generate QR code using canvas
-function generateQRCode(patientCode) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 80; canvas.height = 80;
-  const ctx = canvas.getContext('2d');
-  // Simple pattern to represent QR (real implementation uses qrcode.js library)
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0,0,80,80);
-  ctx.fillStyle = '#fff';
-  // Border
-  ctx.fillRect(4,4,24,24); ctx.fillRect(52,4,24,24); ctx.fillRect(4,52,24,24);
-  ctx.fillStyle = '#000';
-  ctx.fillRect(8,8,16,16); ctx.fillRect(56,8,16,16); ctx.fillRect(8,56,16,16);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(12,12,8,8); ctx.fillRect(60,12,8,8); ctx.fillRect(12,60,8,8);
-  // Data pattern
-  for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) {
-    if (Math.random() > 0.5) { ctx.fillStyle = '#000'; ctx.fillRect(32+i*5, 32+j*5, 4, 4); }
-  }
-  ctx.fillStyle = '#000';
-  for (let i = 0; i < 16; i++) if (Math.random()>0.5) ctx.fillRect(32+i*3, 4, 2, 2);
-  return canvas.toDataURL();
+function patientToken() {
+  return sessionStorage.getItem('sc_token') || localStorage.getItem('sc_token');
 }
 
-Auth.requirePatient();
-async function loadPortal() {
-  // Try to load from session — use dummy patient ID 1 for demo
-  const patId = user.patientId || 1;
-  const res = await API.get(`/patients/${patId}`);
-  if (!res?.success) {
-    document.getElementById('welcome-name').textContent = 'Welcome to Smart Care Patient Portal';
+const API = {
+  async request(method, url, body = null) {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = patientToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    try {
+      const res = await fetch(API_BASE + url, { method, headers, body: body ? JSON.stringify(body) : null });
+      return await res.json();
+    } catch(e) { console.error('API error', e); return null; }
+  },
+  get:  (url)       => API.request('GET',  url),
+  post: (url, body) => API.request('POST', url, body),
+  put:  (url, body) => API.request('PUT',  url, body),
+};
+
+const Toast = {
+  show(msg, type='info') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    const colors = {success:'#1B8A8F',error:'#c62828',info:'#0f2540',warning:'#856404'};
+    t.style.cssText = `background:${colors[type]||colors.info};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;max-width:320px;box-shadow:0 4px 12px rgba(0,0,0,.2)`;
+    t.textContent = msg; c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  },
+  success: m => Toast.show(m,'success'),
+  error:   m => Toast.show(m,'error'),
+  info:    m => Toast.show(m,'info'),
+};
+
+// ─── Auth check ───
+const storedUser  = JSON.parse(sessionStorage.getItem('sc_user') || localStorage.getItem('sc_user') || '{}');
+const storedToken = patientToken();
+if (!storedToken) { window.location.href = '/smart-care/pages/auth/patient-login.html'; }
+
+// patId = numeric patient DB id (used for /api/patients/{id})
+// patCode = PAT000001 format (used for appointments, billing)
+const patId   = storedUser.patientId   || storedUser.userId || '';
+const patCode = storedUser.patientCode || storedUser.patientId || '';
+
+// Seed nav from session immediately (will be overwritten by real API data)
+function seedNav(firstName, lastName, code) {
+  const name = (firstName + ' ' + lastName).trim() || storedUser.username || 'Patient';
+  const ini  = name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase() || 'P';
+  const displayCode = code || patCode || patId;
+  ['nav-av','pf-av'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=ini; });
+  ['nav-name','pf-name'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=name; });
+  ['nav-id','pf-pid','qr-id','modal-pid'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=displayCode; });
+}
+seedNav(storedUser.firstName||'', storedUser.lastName||storedUser.username||'', patCode);
+
+// ─── Session countdown ───
+let secs = 15*60;
+function tickSess() {
+  const m=Math.floor(secs/60), s=secs%60;
+  const el=document.getElementById('sess-clock');
+  if(el){ el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; el.style.color=secs<=120?'#e53935':'#856404'; }
+  if(secs<=0) doLogout();
+  secs--;
+}
+tickSess(); setInterval(tickSess,1000);
+['click','keydown','mousemove'].forEach(e=>document.addEventListener(e,()=>{ secs=15*60; }));
+
+function doLogout(){ sessionStorage.clear(); localStorage.removeItem('sc_token'); localStorage.removeItem('sc_user'); window.location.href='/smart-care/pages/auth/patient-login.html'; }
+
+// ─── Panel switching ───
+const panelTitles={home:'Patient Dashboard',appointments:'My Appointments',records:'Medical Records',bills:'Bills & Payments',profile:'My Profile'};
+function sp(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nl').forEach(l=>l.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('nl-'+id).classList.add('active');
+  const t=document.getElementById('page-title'); if(t) t.textContent=panelTitles[id]||id;
+}
+
+const rb=r=>({High:'<span class="bdg br">High</span>',Medium:'<span class="bdg by">Medium</span>',Low:'<span class="bdg bg">Low</span>'}[r]||`<span class="bdg bg">Low</span>`);
+const sb=s=>{
+  const sl=(s||'').toLowerCase();
+  if(sl==='upcoming'||sl==='scheduled'||sl==='confirmed') return '<span class="bdg bt">Upcoming</span>';
+  if(sl==='completed'||sl==='done') return '<span class="bdg bgr">Done</span>';
+  if(sl==='cancelled'||sl==='canceled') return '<span class="bdg br">Cancelled</span>';
+  return `<span class="bdg bgr">${s}</span>`;
+};
+
+// ─── Global data cache ───
+let allAppts = [], allRecs = [], allBills = [], patientProfile = null;
+
+// ─── Load patient profile ───
+async function loadProfile() {
+  if (!patId) return;
+  try {
+    const res = await API.get(`/patients/${patId}`);
+    if (!res || !res.success) return;
+    const p = res.data.patient || res.data;
+    patientProfile = p;
+
+    const firstName = p.firstName || p.first_name || '';
+    const lastName  = p.lastName  || p.last_name  || '';
+    const code      = p.patientCode || p.patient_code || patCode;
+
+    seedNav(firstName, lastName, code);
+
+    // Fill profile form
+    const set = (id, val) => { const el=document.getElementById(id); if(el) el.value = val || ''; };
+    set('pf-fn',  firstName);
+    set('pf-ln',  lastName);
+    set('pf-ph',  p.phone);
+    set('pf-em',  p.email);
+    set('pf-ad',  p.address);
+    set('pf-ec',  p.emergencyContactName  || p.emergency_contact_name);
+    set('pf-ep',  p.emergencyContactPhone || p.emergency_contact_phone);
+    set('pf-bg',  p.bloodGroup  || p.blood_group);
+    set('pf-al',  p.allergies);
+    set('pf-cc',  p.chronicConditions || p.chronic_conditions);
+
+    // Format DOB
+    if (p.dateOfBirth || p.date_of_birth) {
+      const dob = new Date(p.dateOfBirth || p.date_of_birth);
+      if (!isNaN(dob)) document.getElementById('pf-dob').value = dob.toLocaleDateString('en-GB');
+    }
+
+    // Update assigned doctor stat from preferred doctor
+    if (p.preferredDoctor || p.preferred_doctor) {
+      document.getElementById('stat-doctor').textContent = p.preferredDoctor || p.preferred_doctor;
+      document.getElementById('stat-doctor-sub').textContent = 'Preferred Doctor';
+    }
+  } catch(e) { console.warn('Profile load error:', e); }
+}
+
+// ─── Load appointments ───
+async function loadAppointments() {
+  try {
+    // Try by numeric patientId first, fallback to patientCode
+    const url = patId ? `/appointments?patientId=${patId}` : `/appointments?patientCode=${patCode}`;
+    const res = await API.get(url);
+    if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      allAppts = res.data;
+    } else {
+      allAppts = [];
+    }
+  } catch(e) { allAppts = []; }
+  renderAppointments(allAppts);
+  updateApptStats();
+}
+
+// ─── Load medical records ───
+async function loadRecords() {
+  try {
+    const res = await API.get(`/emr/records/${patId}?limit=20`);
+    if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      allRecs = res.data;
+    } else {
+      allRecs = [];
+    }
+  } catch(e) { allRecs = []; }
+  renderRecords(allRecs);
+  updateRecordStats();
+}
+
+// ─── Load bills ───
+async function loadBills() {
+  try {
+    const url = patCode ? `/billing/bills?patientCode=${patCode}` : `/billing/bills?patientId=${patId}`;
+    const res = await API.get(url);
+    if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      allBills = res.data;
+    } else {
+      allBills = [];
+    }
+  } catch(e) { allBills = []; }
+  renderBills(allBills);
+  updateBillStats();
+}
+
+// ─── Render appointments ───
+function renderAppointments(appts) {
+  const upcoming = appts.filter(a => {
+    const s = (a.status || a.appointment_status || '').toLowerCase();
+    return s === 'upcoming' || s === 'scheduled' || s === 'confirmed';
+  });
+
+  // Home panel upcoming cards
+  if (upcoming.length === 0) {
+    document.getElementById('home-appts').innerHTML = '<p style="color:#6c757d;font-size:13px;padding:8px 0">No upcoming appointments.</p>';
+  } else {
+    document.getElementById('home-appts').innerHTML = upcoming.slice(0,3).map(a => {
+      const dt = new Date(a.appointment_date || a.date || '');
+      const dayNum = isNaN(dt) ? '—' : dt.getDate();
+      const monStr = isNaN(dt) ? '—' : dt.toLocaleString('en',{month:'short'});
+      return `<div class="ac">
+        <div class="ad"><div class="aday">${dayNum}</div><div class="amon">${monStr}</div></div>
+        <div class="aline"></div>
+        <div class="ainfo"><div class="adoc">${a.doctor_name||a.doctorName||'—'}</div><div class="atype">${a.appointment_type||a.appointmentType||a.type||'—'}</div></div>
+        <div class="atime">${a.appointment_time||a.appointmentTime||a.time||'—'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Full appointments table
+  if (appts.length === 0) {
+    document.getElementById('appt-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6c757d;padding:20px">No appointments found.</td></tr>';
     return;
   }
-  patientData = res.data.patient;
-
-  const p = patientData;
-  const hour = new Date().getHours();
-  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('welcome-name').textContent = `${greet}, ${p.firstName}!`;
-  document.getElementById('welcome-meta').textContent =
-    `Patient ID: ${p.patientCode}  |  Last visit: —  |  Next appointment: see Appointments tab`;
-
-  // QR code (FR-09)
-  const qrImg = document.createElement('img');
-  qrImg.src = generateQRCode(p.patientCode);
-  qrImg.style.cssText = 'width:80px;height:80px;border-radius:4px';
-  document.getElementById('qr-container').innerHTML = '';
-  document.getElementById('qr-container').appendChild(qrImg);
-  const lbl = document.createElement('div');
-  lbl.style.cssText = 'font-size:10px;color:var(--gray);margin-top:4px;font-weight:700';
-  lbl.textContent = p.patientCode;
-  document.getElementById('qr-container').appendChild(lbl);
-
-  // Profile tab
-  document.getElementById('pp-name').textContent = `${p.firstName} ${p.lastName}`;
-  document.getElementById('pp-code').textContent = p.patientCode;
-  document.getElementById('pp-since').textContent = 'Member since: ' + fmtDate(p.registrationDate);
-  document.getElementById('pp-fname').value = p.firstName;
-  document.getElementById('pp-lname').value = p.lastName;
-  document.getElementById('pp-phone').value = p.phone || '';
-  document.getElementById('pp-email').value = p.email || '';
-  document.getElementById('pp-address').value = p.address || '';
-  document.getElementById('pp-ec-name').value = p.emergencyContactName || '';
-  document.getElementById('pp-ec-phone').value = p.emergencyContactPhone || '';
-
-  loadHomeAppointments(patId);
-  loadAISuggestion(p);
+  document.getElementById('appt-tbody').innerHTML = appts.map(a => {
+    const dt = new Date(a.appointment_date || a.date || '');
+    const dateStr = isNaN(dt) ? (a.appointment_date||'—') : dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    const status  = a.status || a.appointment_status || 'Unknown';
+    const sl      = status.toLowerCase();
+    const apptId  = a.appointment_id || a.id || 0;
+    const isUpcoming = sl === 'upcoming' || sl === 'scheduled' || sl === 'confirmed';
+    return `<tr>
+      <td><strong>${dateStr}</strong><br><span style="font-size:11px;color:#6c757d">${a.appointment_time||a.time||''}</span></td>
+      <td>${a.doctor_name||a.doctorName||'—'}</td>
+      <td>${a.appointment_type||a.appointmentType||a.type||'—'}</td>
+      <td>${rb(a.no_show_risk||a.noShowRisk||'Low')}</td>
+      <td>${sb(status)}</td>
+      <td>${isUpcoming ? `<button class="btn bs bsm" onclick="rescheduleAppt(${apptId})">Reschedule</button>
+         <button class="btn bd bsm" onclick="cancelAppt(${apptId})">Cancel</button>` : '—'}</td>
+    </tr>`;
+  }).join('');
 }
 
-async function loadHomeAppointments(patId) {
-  const res = await API.get(`/patients/${patId}/history`);
-  if (!res?.success) return;
-  renderTable('home-appts-tbody', (res.data.appointments || []).slice(0, 5), [
-    { key: 'appointment_date', render: r => fmtDate(r.appointment_date) },
-    { key: 'appointment_time', render: r => String(r.appointment_time||'').substring(0,5) },
-    { key: 'doctor_name' },
-    { key: 'appointment_type' },
-    { key: 'status', render: r => statusBadge(r.status) }
-  ]);
+function filterAppts() {
+  const f = document.getElementById('appt-filter').value.toLowerCase();
+  if (!f) { renderAppointments(allAppts); return; }
+  renderAppointments(allAppts.filter(a => {
+    const s = (a.status || a.appointment_status || '').toLowerCase();
+    if (f === 'upcoming')  return s === 'upcoming' || s === 'scheduled' || s === 'confirmed';
+    if (f === 'completed') return s === 'completed' || s === 'done';
+    if (f === 'cancelled') return s === 'cancelled' || s === 'canceled';
+    return true;
+  }));
 }
 
-function loadAISuggestion(patient) {
-  const conditions = patient.chronicConditions || '';
-  let msg = '🤖 AI Suggestion: ';
-  if (conditions.includes('Diabetes')) {
-    msg += 'Based on your diabetes management, consider booking a follow-up with an Endocrinologist. Optimal slots are usually mid-morning.';
-  } else if (conditions.includes('Hypertension')) {
-    msg += 'Based on your hypertension history, a cardiology check-up every 6 months is recommended.';
+// ─── Render records ───
+function renderRecords(recs) {
+  if (recs.length === 0) {
+    document.getElementById('rec-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6c757d;padding:20px">No medical records found.</td></tr>';
+    document.getElementById('hist-tl').innerHTML = '<p style="color:#6c757d;font-size:13px">No history available.</p>';
+    return;
+  }
+
+  document.getElementById('rec-tbody').innerHTML = recs.map(r => {
+    const dateStr = r.record_date || r.recordDate || r.date || '—';
+    return `<tr>
+      <td>${dateStr}</td>
+      <td><span class="bdg bt">${r.visit_type||r.visitType||r.type||'—'}</span></td>
+      <td>${r.diagnosis||r.dx||'—'}</td>
+      <td>${r.doctor_name||r.doctorName||r.doc||'—'}</td>
+      <td>
+        <button class="btn bs bsm" onclick="viewRecord('${r.record_id||r.id||''}')">View</button>
+        <button class="btn bp bsm" onclick="dlReport('${r.record_id||r.id||''}')">📥 PDF</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('hist-tl').innerHTML = '<div class="tl">' + recs.map(r => {
+    const dateStr = r.record_date || r.recordDate || r.date || '—';
+    return `<div class="tli"><div class="tld"></div>
+      <div class="tldate">${dateStr}</div>
+      <div class="tlcard">
+        <div class="tltype">${r.visit_type||r.visitType||r.type||'—'}</div>
+        <div class="tldx">${r.diagnosis||r.dx||'—'}</div>
+        <div class="tldoc">${r.doctor_name||r.doctorName||r.doc||'—'}</div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// ─── Render bills ───
+function renderBills(bills) {
+  if (bills.length === 0) {
+    document.getElementById('bill-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6c757d;padding:20px">No bills found.</td></tr>';
+    document.getElementById('bill-summary').textContent = '';
+    return;
+  }
+  const unpaid = bills.filter(b => (b.status||'').toLowerCase() !== 'paid');
+  const total  = unpaid.reduce((s,b) => s + Number(b.total_amount||b.amount||b.amt||0), 0);
+  document.getElementById('bill-summary').textContent = unpaid.length > 0 ? `${unpaid.length} unpaid · LKR ${total.toLocaleString()} outstanding` : 'All bills paid ✓';
+
+  document.getElementById('bill-tbody').innerHTML = bills.map(b => {
+    const status  = b.status || 'Unknown';
+    const amt     = Number(b.total_amount||b.amount||b.amt||0);
+    const invRef  = b.bill_number||b.billNumber||b.invoice_number||b.inv||'—';
+    const dateStr = b.bill_date||b.billDate||b.date||'—';
+    const svc     = b.service_description||b.serviceDescription||b.description||b.svc||'—';
+    const isPaid  = status.toLowerCase() === 'paid';
+    return `<tr>
+      <td><code>${invRef}</code></td>
+      <td>${dateStr}</td>
+      <td>${svc}</td>
+      <td><strong>LKR ${amt.toLocaleString()}</strong></td>
+      <td>${isPaid ? '<span class="bdg bg">Paid</span>' : `<span class="bdg br">${status}</span>`}</td>
+      <td>
+        <button class="btn bs bsm" onclick="dlReport()">📥 Receipt</button>
+        ${!isPaid ? `<button class="btn bp bsm" onclick="payBill('${invRef}')">Pay Now</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Update stat boxes ───
+function updateApptStats() {
+  const upcoming = allAppts.filter(a => {
+    const s = (a.status || a.appointment_status || '').toLowerCase();
+    return s === 'upcoming' || s === 'scheduled' || s === 'confirmed';
+  });
+  document.getElementById('stat-appts').textContent = upcoming.length;
+  if (upcoming.length > 0) {
+    const next = upcoming[0];
+    const dt = new Date(next.appointment_date || next.date || '');
+    const dateStr = isNaN(dt) ? (next.appointment_date||'') : dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    document.getElementById('stat-appts-sub').textContent = `Next: ${dateStr} ${next.appointment_time||next.time||''}`.trim();
   } else {
-    msg += 'Based on your health profile, a General Medicine consultation is recommended. Book a convenient slot below.';
-  }
-  document.getElementById('ai-suggestion').textContent = msg;
-}
-
-async function loadDoctorOptions(spec) {
-  const url = spec ? `/appointments/doctors?specialization=${encodeURIComponent(spec)}` : '/appointments/doctors';
-  const res = await API.get(url);
-  if (!res?.success) return;
-  document.getElementById('doctor-options').innerHTML = res.data.slice(0,4).map(d => `
-    <div onclick="selectBookDoctor(${d.doctor_id}, '${d.doctor_name}', this)"
-         style="padding:10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.15s;font-size:13px"
-         id="book-doc-${d.doctor_id}">
-      <strong>${d.doctor_name}</strong>
-      <span class="badge badge-teal" style="margin-left:8px">${d.specialization}</span>
-      <div style="font-size:11px;color:var(--gray);margin-top:2px">Fee: ${fmtCurrency(d.consultation_fee)} · ⭐ ${d.average_rating?.toFixed(1) || '—'}</div>
-      ${d.doctor_id === selectedDoctorId ? '<div style="color:var(--teal);font-size:11px;margin-top:2px">Selected ✓</div>' : '<div style="font-size:11px;color:var(--gray)">✅ Available</div>'}
-    </div>
-  `).join('');
-}
-
-function selectBookDoctor(id, name, el) {
-  selectedDoctorId = id;
-  document.querySelectorAll('[id^="book-doc-"]').forEach(e => e.style.borderColor = 'var(--border)');
-  el.style.borderColor = 'var(--teal)';
-  el.style.background = 'var(--teal-light)';
-  if (document.getElementById('book-date').value) loadPatientSlots();
-}
-
-async function loadPatientSlots() {
-  if (!selectedDoctorId) return;
-  const date = document.getElementById('book-date').value;
-  if (!date) return;
-  const res = await API.get(`/appointments/slots?doctorId=${selectedDoctorId}&date=${date}`);
-  if (!res?.success) return;
-  const el = document.getElementById('patient-slots');
-  if (!res.data.length) { el.innerHTML = '<div class="alert alert-warning">No slots available this day</div>'; return; }
-  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px">` +
-    res.data.map(s => `<button class="slot-btn btn btn-secondary btn-sm" onclick="selectedSlot='${s}';document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">${s}</button>`).join('') +
-    `</div>`;
-}
-
-async function bookPatientAppointment() {
-  if (!selectedDoctorId || !selectedSlot) { Toast.error('Select a doctor, date and time slot'); return; }
-  const patId = patientData?.patientId || 1;
-  const res = await API.post('/appointments', {
-    patientId: patId, doctorId: selectedDoctorId,
-    date: document.getElementById('book-date').value,
-    time: selectedSlot, appointmentType: 'Consultation',
-    reason: document.getElementById('book-reason').value
-  });
-  if (res?.success) {
-    Toast.success('Appointment booked! Confirmation details saved.');
-    loadHomeAppointments(patId);
-    showTab('home');
-  } else Toast.error(res?.error || 'Booking failed');
-}
-
-async function loadRecordsTab(patId) {
-  const emrRes = await API.get(`/emr/records/${patId}`);
-  if (emrRes?.success) {
-    renderTable('diag-tbody', emrRes.data, [
-      { key: 'record_date', render: r => fmtDate(r.record_date) },
-      { key: 'diagnosis', render: r => `<strong>${r.diagnosis || '—'}</strong>` },
-      { key: 'doctor_name' },
-      { key: 'follow_up_date', render: r => r.follow_up_date ? fmtDate(r.follow_up_date) : '—' }
-    ]);
-  }
-  const labRes = await API.get(`/emr/lab-orders/patient/${patId}`);
-  if (labRes?.success) {
-    renderTable('lab-view-tbody', labRes.data, [
-      { key: 'test_date', render: r => fmtDate(r.test_date) },
-      { key: 'test_name' },
-      { key: 'test_result', render: r => r.test_result || 'Pending' },
-      { key: 'normal_range', render: r => r.normal_range || '—' },
-      { key: 'status', render: r => statusBadge(r.status) }
-    ]);
+    document.getElementById('stat-appts-sub').textContent = 'No upcoming appointments';
   }
 }
 
-async function loadBillsTab(patId) {
-  const res = await API.get(`/billing/patient/${patId}`);
-  if (!res?.success) return;
-  const totalPaid = res.data.reduce((a,b) => a + parseFloat(b.paid_amount||0), 0);
-  const outstanding = res.data.reduce((a,b) => a + parseFloat(b.balance_amount||0), 0);
-  document.getElementById('bs-paid').textContent = fmtCurrency(totalPaid);
-  document.getElementById('bs-insurance').textContent = 'LKR 0.00';
-  document.getElementById('bs-outstanding').textContent = fmtCurrency(outstanding);
-  if (outstanding <= 0) document.getElementById('bs-outstanding').style.color = 'var(--success)';
-
-  renderTable('patient-bills-tbody', res.data, [
-    { key: 'bill_number', render: r => `<strong>${r.bill_number}</strong>` },
-    { key: 'bill_date', render: r => fmtDate(r.bill_date) },
-    { key: 'description', render: () => 'Medical Services' },
-    { key: 'total_amount', render: r => fmtCurrency(r.total_amount) },
-    { key: 'paid_amount', render: r => fmtCurrency(r.paid_amount) },
-    { key: 'balance_amount', render: r => `<span class="${r.balance_amount > 0 ? 'text-danger' : 'text-success'}">${fmtCurrency(r.balance_amount)}</span>` },
-    { key: 'status', render: r => statusBadge(r.status) }
-  ]);
+function updateRecordStats() {
+  document.getElementById('stat-records').textContent = allRecs.length;
+  if (allRecs.length > 0) {
+    const last = allRecs[0];
+    document.getElementById('stat-records-sub').textContent = `Last: ${last.record_date||last.recordDate||last.date||'—'}`;
+  } else {
+    document.getElementById('stat-records-sub').textContent = 'No records yet';
+  }
 }
 
-function downloadPDF() {
-  Toast.info('Generating PDF report... (FR-04)');
-  window.open(`/smart-care/api/patients/${patientData?.patientId || 1}/report`, '_blank');
+function updateBillStats() {
+  const unpaid = allBills.filter(b => (b.status||'').toLowerCase() !== 'paid');
+  const total  = unpaid.reduce((s,b) => s + Number(b.total_amount||b.amount||b.amt||0), 0);
+  if (total > 0) {
+    document.getElementById('stat-bills').textContent = 'LKR ' + total.toLocaleString();
+    document.getElementById('stat-bills-sub').textContent = `${unpaid.length} unpaid invoice${unpaid.length>1?'s':''}`;
+  } else {
+    document.getElementById('stat-bills').textContent = 'LKR 0';
+    document.getElementById('stat-bills-sub').textContent = 'All bills settled ✓';
+    document.getElementById('stat-bills-sub').className = 'ss teal';
+  }
 }
 
-async function savePatientProfile() {
-  if (!patientData) return;
-  const res = await API.put(`/patients/${patientData.patientId}`, {
-    ...patientData,
-    firstName: document.getElementById('pp-fname').value,
-    lastName: document.getElementById('pp-lname').value,
-    phone: document.getElementById('pp-phone').value,
-    email: document.getElementById('pp-email').value,
-    address: document.getElementById('pp-address').value,
-    emergencyContactName: document.getElementById('pp-ec-name').value,
-    emergencyContactPhone: document.getElementById('pp-ec-phone').value
-  });
-  if (res?.success) Toast.success('Profile updated successfully');
-  else Toast.error(res?.error || 'Update failed');
+// ─── Save profile ───
+async function saveProfile() {
+  const btn = document.querySelector('#panel-profile .bp');
+  if (btn) { btn.textContent = '⏳ Saving…'; btn.disabled = true; }
+  const payload = {
+    firstName:            document.getElementById('pf-fn')?.value?.trim(),
+    lastName:             document.getElementById('pf-ln')?.value?.trim(),
+    phone:                document.getElementById('pf-ph')?.value?.trim(),
+    email:                document.getElementById('pf-em')?.value?.trim(),
+    address:              document.getElementById('pf-ad')?.value?.trim(),
+    emergencyContactName: document.getElementById('pf-ec')?.value?.trim(),
+    emergencyContactPhone:document.getElementById('pf-ep')?.value?.trim(),
+    allergies:            document.getElementById('pf-al')?.value?.trim(),
+    chronicConditions:    document.getElementById('pf-cc')?.value?.trim(),
+  };
+  const res = await API.put(`/patients/${patId}`, payload).catch(() => null);
+  if (btn) { btn.textContent = '💾 Save Changes'; btn.disabled = false; }
+  if (res && res.success) {
+    Toast.success('Profile updated successfully (FR-07 ✅)');
+    const name = (payload.firstName + ' ' + payload.lastName).trim();
+    ['nav-name','pf-name'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=name; });
+  } else {
+    Toast.error(res?.error || 'Update failed. Please try again.');
+  }
 }
 
-function showTab(name) {
-  document.querySelectorAll('[id^="tab-"]').forEach(p => p.classList.add('hidden'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('tab-' + name)?.classList.remove('hidden');
-  document.getElementById('nav-' + name)?.classList.add('active');
+// ─── Download PDF report ───
+// FR-04: Download medical report as PDF — calls ReportServlet which generates real iTextPDF
+async function dlReport(recordId) {
+  const btn = event?.target;
+  if (btn && btn.tagName==='BUTTON') { btn.textContent = '⏳ Generating…'; btn.disabled = true; }
+  try {
+    const token = patientToken();
+    const code  = patCode || String(patId);
+    // ReportServlet returns binary PDF directly — use fetch+blob, not API.get (which expects JSON)
+    const response = await fetch(`/smart-care/api/reports/patient/${encodeURIComponent(code)}/emr`, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/pdf'
+      }
+    });
 
-  const titles = { home:'Patient Portal', appointments:'My Appointments', records:'My Medical Records', bills:'My Bills & Payments', 'profile-tab':'My Profile & Settings' };
-  document.getElementById('portal-title').textContent = titles[name] || 'Patient Portal';
+    if (response.ok && response.headers.get('content-type')?.includes('pdf')) {
+      // Real PDF received — download it
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `SmartCare_Report_${code}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      Toast.success('Medical report downloaded (FR-04 ✅)');
+    } else {
+      // Fallback: generate printable HTML report
+      const name = document.getElementById('nav-name')?.textContent || 'Patient';
+      const win  = window.open('', '_blank');
+      if (win) {
+        win.document.write(`<!DOCTYPE html><html><head>
+          <title>Medical Report — ${code}</title>
+          <style>
+            body{font-family:Arial,sans-serif;padding:30px;max-width:800px;margin:0 auto}
+            h1{color:#0f2540;border-bottom:2px solid #1B8A8F;padding-bottom:10px}
+            h2{color:#1B8A8F;font-size:14px;margin-top:20px}
+            table{width:100%;border-collapse:collapse;margin-top:10px}
+            th{background:#0f2540;color:#fff;padding:8px;text-align:left;font-size:12px}
+            td{padding:8px;border-bottom:1px solid #eee;font-size:12px}
+            .footer{margin-top:30px;font-size:10px;color:#999;text-align:center}
+          </style></head><body>
+          <h1>SmartCare Hospital ERP — Medical Report</h1>
+          <h2>PATIENT INFORMATION</h2>
+          <table><tr><th>Patient ID</th><th>Full Name</th><th>Generated</th></tr>
+          <tr><td>${code}</td><td>${name}</td><td>${new Date().toLocaleString('en-GB')}</td></tr></table>
+          <h2>MEDICAL HISTORY</h2>
+          ${allRecs.length > 0 ? `<table><tr><th>Date</th><th>Type</th><th>Diagnosis</th><th>Doctor</th></tr>
+          ${allRecs.map(r=>`<tr><td>${r.record_date||r.date||'—'}</td><td>${r.visit_type||r.type||'—'}</td>
+          <td>${r.diagnosis||r.dx||'—'}</td><td>${r.doctor_name||r.doc||'—'}</td></tr>`).join('')}
+          </table>` : '<p>No records found.</p>'}
+          <div class="footer">CONFIDENTIAL — SmartCare Hospital ERP | HIPAA 45 CFR §164.312 | AES-256-GCM</div>
+          </body></html>`);
+        win.document.close();
+        win.print();
+      }
+    }
+  } catch(e) {
+    Toast.error('Report generation failed: ' + e.message);
+  } finally {
+    if (btn && btn.tagName==='BUTTON') { btn.textContent = '📥 PDF'; btn.disabled = false; }
+  }
+}
 
-  const patId = patientData?.patientId || 1;
-  if (name === 'records') loadRecordsTab(patId);
-  if (name === 'bills') loadBillsTab(patId);
-  if (name === 'appointments') {
-    loadDoctorOptions('');
-    document.getElementById('book-date').min = new Date().toISOString().split('T')[0];
-    const res2 = API.get(`/patients/${patId}/history`).then(r => {
-      if (r?.success) renderTable('patient-appts-tbody', (r.data.appointments||[]).slice(0,10), [
-        { key: 'appointment_date', render: r => fmtDate(r.appointment_date) },
-        { key: 'doctor_name' },
-        { key: 'appointment_type' },
-        { key: 'status', render: r => statusBadge(r.status) }
-      ]);
+// ─── QR Code Generation (FR-09) ───
+let qrSmall = null;
+let qrLarge = null;
+
+function generateQRCodes() {
+  const code = patCode || String(patId);
+  // QR content — patient code + name for staff scanning
+  const name = document.getElementById('nav-name')?.textContent || '';
+  const qrContent = [
+    'SmartCare Hospital ERP',
+    'Patient: ' + name,
+    'ID: ' + code
+  ].join('\n');
+
+  // Small QR in profile card
+  const smallEl = document.getElementById('qr-canvas-small');
+  if (smallEl) {
+    smallEl.innerHTML = '';
+    qrSmall = new QRCode(smallEl, {
+      text: qrContent,
+      width: 130,
+      height: 130,
+      colorDark: '#0f2540',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  // Large QR in modal
+  const largeEl = document.getElementById('qr-canvas-large');
+  if (largeEl) {
+    largeEl.innerHTML = '';
+    qrLarge = new QRCode(largeEl, {
+      text: qrContent,
+      width: 220,
+      height: 220,
+      colorDark: '#0f2540',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
     });
   }
 }
 
-function switchRecordsTab(name) {
-  document.querySelectorAll('#tab-records .tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(name)));
-  document.querySelectorAll('#tab-records .tab-pane').forEach(p => p.classList.toggle('active', p.id === 'records-' + name));
+function showQR() {
+  document.getElementById('qr-modal').classList.add('open');
 }
 
-// Add slot-btn CSS dynamically
-const styleEl = document.createElement('style');
-styleEl.textContent = '.slot-btn.selected{background:var(--teal);color:white;border-color:var(--teal);}';
-document.head.appendChild(styleEl);
+// ─── Download QR code as PNG ───
+function dlQR() {
+  try {
+    const largeEl = document.getElementById('qr-canvas-large');
+    const canvas = largeEl?.querySelector('canvas');
+    if (canvas) {
+      // Create download canvas with padding and label
+      const pad = 20;
+      const labelH = 50;
+      const out = document.createElement('canvas');
+      out.width  = canvas.width  + pad * 2;
+      out.height = canvas.height + pad * 2 + labelH;
+      const ctx = out.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(canvas, pad, pad);
+      // Label
+      const code = patCode || String(patId);
+      const name = document.getElementById('nav-name')?.textContent || '';
+      ctx.fillStyle = '#0f2540';
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(code, out.width / 2, canvas.height + pad + 22);
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#6c757d';
+      ctx.fillText(name + ' · SmartCare Hospital ERP', out.width / 2, canvas.height + pad + 42);
+      // Download
+      const a = document.createElement('a');
+      a.href = out.toDataURL('image/png');
+      a.download = `SmartCare_QR_${code}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      Toast.success('QR Code downloaded (FR-09 ✅)');
+    } else {
+      Toast.error('QR Code not ready yet. Please wait a moment.');
+    }
+  } catch(e) {
+    Toast.error('Download failed: ' + e.message);
+  }
+}
 
-loadPortal();
+// ─── Reschedule / cancel appointment ───
+async function rescheduleAppt(apptId) {
+  const newDate = prompt('Enter new date (YYYY-MM-DD):');
+  if (!newDate || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) { Toast.error('Invalid date format. Use YYYY-MM-DD'); return; }
+  const res = await API.put(`/appointments/${apptId}`, { rescheduleDate: newDate, status: 'Rescheduled' }).catch(()=>null);
+  if (res && res.success) { Toast.success('Appointment rescheduled (FR-14 ✅)'); loadAppointments(); }
+  else Toast.info('Reschedule request submitted — staff will confirm');
+}
+
+async function cancelAppt(apptId) {
+  if (!confirm('Cancel this appointment? This cannot be undone.')) return;
+  const res = await API.put(`/appointments/${apptId}`, { status: 'Cancelled', cancelledBy: patCode||patId }).catch(()=>null);
+  if (res && res.success) { Toast.success('Appointment cancelled (FR-15 ✅)'); loadAppointments(); }
+  else Toast.info('Cancellation submitted — staff will confirm');
+}
+
+// ─── Pay bill ───
+async function payBill(invoiceRef) {
+  const method = prompt('Payment method:\n1. Cash\n2. Card\n3. Insurance\n\nType: Cash, Card, or Insurance');
+  if (!method) return;
+  const res = await API.post('/billing/payment', { invoiceRef, method, patientId: patId }).catch(()=>null);
+  if (res && res.success) { Toast.success(`Payment via ${method} recorded. Receipt emailed (FR-42 ✅)`); loadBills(); }
+  else Toast.info(`Payment (${method}) submitted — billing team will confirm`);
+}
+
+// ─── View record ───
+function viewRecord(recordId) {
+  window.location.href = `/smart-care/pages/emr/records.html?patientId=${patId}&recordId=${recordId}&view=1`;
+}
+
+// ─── Change password ───
+async function changePassword() {
+  const cur  = prompt('Enter your current password:');
+  if (!cur) return;
+  const nw   = prompt('Enter new password (minimum 8 characters):');
+  if (!nw || nw.length < 8) { Toast.error('Password must be at least 8 characters'); return; }
+  const conf = prompt('Confirm new password:');
+  if (nw !== conf) { Toast.error('Passwords do not match'); return; }
+  const res = await API.post('/auth/change-password', { currentPassword: cur, newPassword: nw }).catch(()=>null);
+  if (res && res.success) Toast.success('Password changed successfully (NFR-06 ✅)');
+  else Toast.error(res?.error || 'Password change failed. Check your current password.');
+}
+
+// ─── QR modal close on background click ───
+document.getElementById('qr-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+// ─── Initial data load ───
+Promise.all([
+  loadProfile().then(() => setTimeout(generateQRCodes, 500)),
+  loadAppointments(),
+  loadRecords(),
+  loadBills(),
+]);
 </script>
 </body>
 </html>

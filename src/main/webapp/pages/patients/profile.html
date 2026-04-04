@@ -1,151 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Care — Patient Profile</title>
 <link rel="stylesheet" href="../../css/app.css">
 <style>
-  .profile-header { background: linear-gradient(135deg,var(--teal),var(--teal-dark)); color:white; border-radius:var(--radius); padding:24px; margin-bottom:16px; display:flex; align-items:center; gap:20px; }
-  .profile-avatar { width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0; }
-  .profile-name { font-size:22px;font-weight:700; }
-  .profile-code { font-size:13px;opacity:0.8;margin-top:2px; }
-  .profile-meta { display:flex;gap:16px;margin-top:8px;font-size:13px;opacity:0.9; }
-  .allergy-tag { background:var(--danger);color:white;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600; }
-  .tab-bar { display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:16px; }
-  .tab-btn { padding:10px 20px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--gray);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s; }
-  .tab-btn.active { color:var(--teal);border-bottom-color:var(--teal);font-weight:700; }
-  .tab-pane { display:none; }
-  .tab-pane.active { display:block; }
-  .info-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px; }
-  .info-item label { font-size:11px;font-weight:600;text-transform:uppercase;color:var(--gray);letter-spacing:0.5px; }
-  .info-item p { font-size:14px;color:var(--dark);margin-top:2px; }
-  .timeline-item { display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border); }
-  .timeline-dot { width:10px;height:10px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:4px; }
-  .risk-bar { height:8px;border-radius:4px;background:var(--border);overflow:hidden; }
-  .risk-fill { height:100%;border-radius:4px;transition:width 0.6s; }
+/* ── Profile header ─────────────────────────────────────────────── */
+.profile-header {
+  background: linear-gradient(135deg, #0f2540 0%, #1B8A8F 100%);
+  color: #fff;
+  padding: 28px 32px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800;
+  border: 3px solid rgba(255,255,255,0.4);
+  flex-shrink: 0;
+}
+.profile-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.profile-code { font-size: 13px; opacity: .8; font-family: monospace; }
+.p-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; margin-left: 8px;
+}
+.p-badge-active   { background: #4CAF50; color: #fff; }
+.p-badge-inactive { background: #FF9800; color: #fff; }
+.p-badge-deceased { background: #9E9E9E; color: #fff; }
+
+/* ── Info grid ──────────────────────────────────────────────────── */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.info-card {
+  background: #fff; border-radius: 10px;
+  padding: 14px 16px; border: 1px solid #e8edf2;
+}
+.info-label {
+  font-size: 11px; color: #6c757d; text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 4px;
+}
+.info-value { font-size: 14px; font-weight: 600; color: #0f2540; }
+
+/* ── Vital grid ─────────────────────────────────────────────────── */
+.vital-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.vital-box {
+  background: #f4f8fb; border-radius: 8px;
+  padding: 12px; text-align: center;
+}
+.vital-val  { font-size: 20px; font-weight: 800; color: #0f2540; }
+.vital-lbl  { font-size: 11px; color: #6c757d; margin-top: 2px; }
+
+/* ── Section title ──────────────────────────────────────────────── */
+.section-title {
+  font-size: 15px; font-weight: 700; color: #0f2540;
+  margin: 20px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e8edf2;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── History table ──────────────────────────────────────────────── */
+.history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.history-table th {
+  background: #f4f8fb; padding: 10px 12px; text-align: left;
+  font-size: 11px; color: #6c757d; text-transform: uppercase; letter-spacing: .5px;
+}
+.history-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+.history-table tr:hover td { background: #f9fbfc; }
+
+.actions-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.empty-state { text-align: center; padding: 32px; color: #6c757d; font-size: 13px; }
+.write-only  { display: none; }
 </style>
 </head>
 <body>
 <div class="app-layout">
-  <nav class="sidebar">
-    <div class="sidebar-logo"><div style="font-size:40px">🏥</div><h1>SMART <span>CARE</span></h1></div>
-    <div class="nav-section"><div class="nav-label">Clinical</div>
-      <a class="nav-item" href="list.html"><span class="icon">👥</span> Patients</a>
-      <a class="nav-item" href="../appointments/book.html"><span class="icon">📅</span> Appointments</a>
-      <a class="nav-item" href="../emr/records.html"><span class="icon">📋</span> Medical Records</a>
-      <a class="nav-item" href="../beds/ward.html"><span class="icon">🛏️</span> Bed & Ward</a>
-    </div>
-    <div class="nav-section"><div class="nav-label">Operations</div>
-      <a class="nav-item" href="../pharmacy/dashboard.html"><span class="icon">💊</span> Pharmacy</a>
-      <a class="nav-item" href="../billing/dashboard.html"><span class="icon">💰</span> Billing</a>
-      <a class="nav-item" href="../staff/employees.html"><span class="icon">👔</span> Staff</a>
-    </div>
-  </nav>
+  <nav class="sidebar" id="sidebar"></nav>
+  <nav class="sub-sidebar" id="sub-sidebar"></nav>
 
   <div class="main-content">
     <div class="topbar">
-      <div class="flex items-center gap-3">
-        <a href="list.html" class="btn btn-secondary btn-sm">← Back</a>
-        <span class="topbar-title" id="page-title">Patient Profile</span>
-      </div>
+      <span class="topbar-title" id="topbar-breadcrumb">Patient Profile</span>
       <div class="topbar-right" id="topbar-user"></div>
     </div>
+    <div class="page-body" id="page-body">
+      <div style="text-align:center;padding:60px;color:#6c757d">Loading patient profile…</div>
+    </div>
+  </div>
+</div>
 
-    <div class="page-body">
-      <!-- Profile Header -->
-      <div class="profile-header" id="profile-header">
-        <div class="profile-avatar">👤</div>
-        <div style="flex:1">
-          <div class="profile-name" id="ph-name">Loading...</div>
-          <div class="profile-code" id="ph-code"></div>
-          <div class="profile-meta" id="ph-meta"></div>
-          <div style="margin-top:8px" id="ph-allergies"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-          <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="bookAppointment()">📅 Book Appointment</button>
-          <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="admitPatient()">🛏️ Admit Patient</button>
-          <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-color:rgba(255,255,255,0.3)" onclick="viewBills()">💰 View Bills</button>
-        </div>
-      </div>
+<!-- ═══════════════════════════════════════════════════════════
+     EDIT PROFILE MODAL
+════════════════════════════════════════════════════════════════ -->
+<div id="modal-edit" class="modal-overlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <h3>✏️ Edit Patient Profile</h3>
+      <button onclick="Modal.close('modal-edit')" class="btn btn-secondary btn-sm">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="edit-form" autocomplete="off">
 
-      <!-- Tabs -->
-      <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('overview')">📋 Overview</button>
-        <button class="tab-btn" onclick="switchTab('appointments')">📅 Appointments</button>
-        <button class="tab-btn" onclick="switchTab('emr')">🩺 Medical Records</button>
-        <button class="tab-btn" onclick="switchTab('labs')">🧪 Lab Tests</button>
-        <button class="tab-btn" onclick="switchTab('bills')">💰 Bills</button>
-      </div>
-
-      <!-- TAB: Overview -->
-      <div id="tab-overview" class="tab-pane active">
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
-          <div class="card">
-            <div class="card-header"><h3>Personal Information</h3>
-              <button class="btn btn-sm btn-secondary" onclick="openEditModal()">✏️ Edit</button>
-            </div>
-            <div class="card-body">
-              <div class="info-grid" id="info-personal"></div>
-            </div>
+        <!-- Personal -->
+        <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;
+                    letter-spacing:.5px;margin-bottom:10px">Personal Information</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">First Name <span class="required">*</span></label>
+            <input name="firstName" id="ef-firstName" class="form-control" required>
           </div>
-          <div class="card">
-            <div class="card-header"><h3>🤖 AI No-Show Risk</h3></div>
-            <div class="card-body" id="noshow-panel">
-              <p class="text-muted text-sm">Book an appointment to see risk prediction</p>
-            </div>
+          <div class="form-group">
+            <label class="form-label">Last Name <span class="required">*</span></label>
+            <input name="lastName" id="ef-lastName" class="form-control" required>
           </div>
-        </div>
-      </div>
-
-      <!-- TAB: Appointments -->
-      <div id="tab-appointments" class="tab-pane">
-        <div class="card">
-          <div class="card-header"><h3>Appointment History</h3>
-            <button class="btn btn-sm btn-primary" onclick="bookAppointment()">➕ New Appointment</button>
+          <div class="form-group">
+            <label class="form-label">Date of Birth</label>
+            <input name="dateOfBirth" id="ef-dob" type="date" class="form-control">
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Date</th><th>Time</th><th>Doctor</th><th>Type</th><th>Reason</th><th>Status</th></tr></thead>
-              <tbody id="appt-tbody"></tbody>
-            </table>
+          <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select name="gender" id="ef-gender" class="form-control">
+              <option value="">Select</option>
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
           </div>
-        </div>
-      </div>
-
-      <!-- TAB: Medical Records -->
-      <div id="tab-emr" class="tab-pane">
-        <div class="card">
-          <div class="card-header"><h3>Medical Record Timeline</h3></div>
-          <div class="card-body" id="emr-timeline"></div>
-        </div>
-      </div>
-
-      <!-- TAB: Lab Tests -->
-      <div id="tab-labs" class="tab-pane">
-        <div class="card">
-          <div class="card-header"><h3>Lab Test History</h3></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Test</th><th>Type</th><th>Ordered</th><th>Result</th><th>Normal Range</th><th>Status</th></tr></thead>
-              <tbody id="lab-tbody"></tbody>
-            </table>
+          <div class="form-group">
+            <label class="form-label">Blood Group</label>
+            <select name="bloodGroup" id="ef-bloodGroup" class="form-control">
+              <option value="">Unknown</option>
+              <option>O+</option><option>O-</option>
+              <option>A+</option><option>A-</option>
+              <option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option>
+            </select>
           </div>
-        </div>
-      </div>
-
-      <!-- TAB: Bills -->
-      <div id="tab-bills" class="tab-pane">
-        <div class="card">
-          <div class="card-header"><h3>Billing History</h3></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Bill No.</th><th>Date</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody id="bill-tbody"></tbody>
-            </table>
+          <div class="form-group">
+            <label class="form-label">Phone <span class="required">*</span></label>
+            <input name="phone" id="ef-phone" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input name="email" id="ef-email" type="email" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" id="ef-status" class="form-control">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Deceased">Deceased</option>
+            </select>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Address</label>
+            <input name="address" id="ef-address" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">City</label>
+            <input name="city" id="ef-city" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">State / Province</label>
+            <input name="state" id="ef-state" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Postal Code</label>
+            <input name="postalCode" id="ef-postalCode" class="form-control">
           </div>
         </div>
-      </div>
 
+        <!-- Clinical -->
+        <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;
+                    letter-spacing:.5px;margin:16px 0 10px;border-top:1px solid var(--border);
+                    padding-top:14px">Clinical Information</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">
+              Allergies
+              <span style="color:var(--danger);font-size:10px">(encrypted)</span>
+            </label>
+            <input name="allergies" id="ef-allergies" class="form-control"
+                   placeholder="e.g. Penicillin — or None">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chronic Conditions</label>
+            <input name="chronicConditions" id="ef-chronicConditions" class="form-control"
+                   placeholder="e.g. Diabetes — or None">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Height (cm)</label>
+            <input name="height" id="ef-height" type="number" step="0.1"
+                   min="30" max="250" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Weight (kg)</label>
+            <input name="weight" id="ef-weight" type="number" step="0.1"
+                   min="1" max="500" class="form-control">
+          </div>
+        </div>
+
+        <!-- Insurance & Emergency -->
+        <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;
+                    letter-spacing:.5px;margin:16px 0 10px;border-top:1px solid var(--border);
+                    padding-top:14px">Insurance &amp; Emergency Contact</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Insurance Provider</label>
+            <input name="insuranceProvider" id="ef-insuranceProvider" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Policy Number</label>
+            <input name="insurancePolicyNumber" id="ef-insurancePolicyNumber"
+                   class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Emergency Contact Name</label>
+            <input name="emergencyContactName" id="ef-emergencyContactName"
+                   class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Emergency Contact Phone</label>
+            <input name="emergencyContactPhone" id="ef-emergencyContactPhone"
+                   class="form-control">
+          </div>
+        </div>
+
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('modal-edit')">Cancel</button>
+      <button id="edit-submit-btn" class="btn btn-primary" onclick="saveProfile()">
+        Save Changes
+      </button>
     </div>
   </div>
 </div>
@@ -153,151 +254,362 @@
 <script src="../../js/app.js"></script>
 <script src="../../js/sidebar.js"></script>
 <script>
-const params = new URLSearchParams(window.location.search);
-const patientId = parseInt(params.get('id'));
-let patientData = null;
+/* ════════════════════════════════════════════════════════════════
+   Patient Profile — SmartCare Hospital ERP
+   FR-07: Update contact info
+   FR-71: RBAC (reads: all staff; writes: Admin + Receptionist)
+   FR-77/78: Mutations audited server-side
+   ════════════════════════════════════════════════════════════════ */
 
-if (!patientId) { Toast.error('No patient ID specified'); window.location.href = 'list.html'; }
+const WRITE_ROLES  = ['System Admin', 'Hospital Admin', 'Receptionist'];
+const params       = new URLSearchParams(window.location.search);
+const patientId    = params.get('id');
+let   patientData  = null;
+
+Auth.requireAuth();
+Sidebar.render('patients', 'patients-list');
+
+// FR-71: Determine write permission for current user
+const canWrite = WRITE_ROLES.includes(Auth.getUser().role);
+
+if (!patientId) {
+  document.getElementById('page-body').innerHTML =
+    '<div class="empty-state">❌ No patient ID specified. <a href="list.html">Back to list</a></div>';
+}
+
+// ── Load profile ──────────────────────────────────────────────────
 
 async function loadProfile() {
   const res = await API.get(`/patients/${patientId}`);
-  if (!res?.success) { Toast.error('Patient not found'); return; }
-
-  const { patient, upcomingAppointments } = res.data;
-  patientData = patient;
-  document.title = `Smart Care — ${patient.firstName} ${patient.lastName}`;
-  document.getElementById('page-title').textContent = `${patient.firstName} ${patient.lastName}`;
-
-  // Profile header
-  document.getElementById('ph-name').textContent = `${patient.firstName} ${patient.lastName}`;
-  document.getElementById('ph-code').textContent = `Patient Code: ${patient.patientCode}`;
-
-  const age = patient.dateOfBirth ? Math.floor((Date.now() - new Date(patient.dateOfBirth)) / (365.25*24*60*60*1000)) : '?';
-  document.getElementById('ph-meta').innerHTML = `
-    <span>🎂 ${age} years</span>
-    <span>⚧ ${patient.gender || '—'}</span>
-    <span>🩸 ${patient.bloodGroup || '—'}</span>
-    <span>📞 ${patient.phone}</span>
-  `;
-
-  if (patient.allergies && patient.allergies !== 'None') {
-    document.getElementById('ph-allergies').innerHTML =
-      `<span class="allergy-tag">⚠️ Allergies: ${patient.allergies}</span>`;
+  if (!res?.success) {
+    document.getElementById('page-body').innerHTML =
+      `<div class="empty-state">❌ Patient not found. <a href="list.html">Back to list</a></div>`;
+    return;
   }
-
-  // Personal info grid
-  document.getElementById('info-personal').innerHTML = [
-    ['Full Name', `${patient.firstName} ${patient.lastName}`],
-    ['Date of Birth', fmtDate(patient.dateOfBirth)],
-    ['Gender', patient.gender],
-    ['Blood Group', patient.bloodGroup || '—'],
-    ['Phone', patient.phone],
-    ['Email', patient.email || '—'],
-    ['Address', patient.address || '—'],
-    ['City', patient.city || '—'],
-    ['National ID', patient.nationalId ? '••••••' + patient.nationalId.slice(-4) : '—'],
-    ['Insurance', patient.insuranceProvider || '—'],
-    ['Chronic Conditions', patient.chronicConditions || 'None'],
-    ['Emergency Contact', patient.emergencyContactName ? `${patient.emergencyContactName} — ${patient.emergencyContactPhone}` : '—'],
-  ].map(([label, val]) => `
-    <div class="info-item">
-      <label>${label}</label>
-      <p>${val || '—'}</p>
-    </div>
-  `).join('');
-
-  // Load appointments
-  loadAppointments();
-  loadLabTests();
-  loadBills();
+  patientData = res.data.patient || res.data;
+  renderProfile(patientData);
+  loadHistory();
 }
 
-async function loadAppointments() {
-  const res = await API.get(`/patients/${patientId}/history`);
-  if (!res?.success) return;
+function renderProfile(p) {
+  const initials = ((p.firstName || '?')[0] + (p.lastName || '?')[0]).toUpperCase();
+  const age      = p.dateOfBirth
+    ? Math.floor((Date.now() - new Date(p.dateOfBirth)) / 31557600000)
+    : '—';
+  const badgeClass =
+    p.status === 'Active'   ? 'p-badge-active'   :
+    p.status === 'Deceased' ? 'p-badge-deceased'  : 'p-badge-inactive';
 
-  renderTable('appt-tbody', res.data.appointments, [
-    { key: 'appointment_date', render: r => fmtDate(r.appointment_date) },
-    { key: 'appointment_time', render: r => r.appointment_time ? r.appointment_time.toString().substring(0,5) : '—' },
-    { key: 'doctor_name' },
-    { key: 'appointment_type' },
-    { key: 'reason', render: r => r.reason ? r.reason.substring(0,40) + (r.reason.length > 40 ? '...' : '') : '—' },
-    { key: 'status', render: r => statusBadge(r.status) }
-  ]);
-}
+  document.getElementById('topbar-breadcrumb').textContent =
+    `${p.firstName} ${p.lastName} — Profile`;
 
-async function loadLabTests() {
-  const res = await API.get(`/emr/lab-orders/patient/${patientId}`);
-  if (!res?.success) return;
+  // Show write controls to permitted roles
+  const writeBtns = canWrite
+    ? `<button class="btn btn-secondary write-only" style="display:inline-flex"
+          onclick="openEditModal()">✏️ Edit Profile</button>
+       <button class="btn btn-danger write-only" style="display:inline-flex"
+          onclick="deletePatient()">🗑 Deactivate</button>`
+    : '';
 
-  renderTable('lab-tbody', res.data, [
-    { key: 'test_name' },
-    { key: 'test_type', render: r => r.test_type || '—' },
-    { key: 'test_date', render: r => fmtDate(r.test_date) },
-    { key: 'test_result', render: r => r.test_result || '—' },
-    { key: 'normal_range', render: r => r.normal_range || '—' },
-    { key: 'status', render: r => statusBadge(r.status) }
-  ]);
-}
-
-async function loadBills() {
-  const res = await API.get(`/billing/patient/${patientId}`);
-  if (!res?.success) return;
-
-  renderTable('bill-tbody', res.data, [
-    { key: 'bill_number', render: r => `<strong>${r.bill_number}</strong>` },
-    { key: 'bill_date', render: r => fmtDate(r.bill_date) },
-    { key: 'total_amount', render: r => fmtCurrency(r.total_amount) },
-    { key: 'paid_amount', render: r => fmtCurrency(r.paid_amount) },
-    { key: 'balance_amount', render: r => `<span class="${r.balance_amount > 0 ? 'text-danger fw-bold' : 'text-success'}">${fmtCurrency(r.balance_amount)}</span>` },
-    { key: 'status', render: r => statusBadge(r.status) },
-    { key: 'action', render: r => `<a href="../billing/bill.html?id=${r.bill_id}" class="btn btn-sm btn-secondary">View</a>` }
-  ]);
-}
-
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', b.getAttribute('onclick').includes(name)));
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
-
-  if (name === 'emr') loadEmrTimeline();
-}
-
-async function loadEmrTimeline() {
-  const res = await API.get(`/emr/records/${patientId}`);
-  if (!res?.success) return;
-
-  const el = document.getElementById('emr-timeline');
-  if (!res.data.length) { el.innerHTML = '<p class="text-muted">No medical records found</p>'; return; }
-
-  el.innerHTML = res.data.map(r => `
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div style="flex:1">
-        <div class="flex items-center justify-between">
-          <strong>${r.doctor_name} — ${r.specialization}</strong>
-          <span class="text-muted text-sm">${fmtDateTime(r.record_date)}</span>
+  document.getElementById('page-body').innerHTML = `
+    <!-- Header -->
+    <div class="profile-header">
+      <div class="avatar">${initials}</div>
+      <div>
+        <div class="profile-name">
+          ${p.firstName} ${p.lastName}
+          <span class="p-badge ${badgeClass}">${p.status}</span>
         </div>
-        <div style="margin-top:6px;font-size:13px">
-          <span class="text-muted">Complaint:</span> ${r.chief_complaint || '—'}<br>
-          <span class="text-muted">Diagnosis:</span> <strong>${r.diagnosis || '—'}</strong><br>
-          ${r.follow_up_date ? `<span class="text-muted">Follow-up:</span> ${fmtDate(r.follow_up_date)}` : ''}
+        <div class="profile-code">
+          ${p.patientCode} · ${age} yrs · ${p.gender || '—'} · ${p.bloodGroup || '—'}
+        </div>
+        <div style="margin-top:8px;font-size:12px;opacity:.75">
+          📅 Registered:
+          ${p.registrationDate
+            ? new Date(p.registrationDate).toLocaleDateString('en-GB',
+                {day:'2-digit',month:'short',year:'numeric'})
+            : '—'}
         </div>
       </div>
     </div>
-  `).join('');
+
+    <!-- Action Buttons -->
+    <div class="actions-bar">
+      <button class="btn btn-primary"
+        onclick="window.location.href='../appointments/book.html?patientId=${p.patientId}'">
+        📅 Book Appointment
+      </button>
+      ${writeBtns}
+      <button class="btn btn-secondary" onclick="downloadReport()">
+        📥 Download PDF
+      </button>
+      <a href="list.html" class="btn btn-secondary">← Back to List</a>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="section-title">👤 Personal Information</div>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">Phone</div>
+        <div class="info-value">${p.phone || '—'}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Email</div>
+        <div class="info-value">${p.email || '—'}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Date of Birth</div>
+        <div class="info-value">
+          ${p.dateOfBirth
+            ? new Date(p.dateOfBirth).toLocaleDateString('en-GB',
+                {day:'2-digit',month:'short',year:'numeric'})
+            : '—'}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">NIC / Passport</div>
+        <div class="info-value">${p.nationalId || '—'}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Address</div>
+        <div class="info-value">
+          ${[p.address, p.city, p.state].filter(Boolean).join(', ') || '—'}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Country</div>
+        <div class="info-value">${p.country || 'Sri Lanka'}</div>
+      </div>
+    </div>
+
+    <!-- Clinical Info -->
+    <div class="section-title">🏥 Clinical Information</div>
+    <div class="vital-grid">
+      <div class="vital-box">
+        <div class="vital-val">${p.bloodGroup || '—'}</div>
+        <div class="vital-lbl">Blood Group</div>
+      </div>
+      <div class="vital-box">
+        <div class="vital-val">${p.height ? p.height + ' cm' : '—'}</div>
+        <div class="vital-lbl">Height</div>
+      </div>
+      <div class="vital-box">
+        <div class="vital-val">${p.weight ? p.weight + ' kg' : '—'}</div>
+        <div class="vital-lbl">Weight</div>
+      </div>
+      <div class="vital-box">
+        <div class="vital-val">${p.bloodPressure ? p.bloodPressure + ' mmHg' : '—'}</div>
+        <div class="vital-lbl">Blood Pressure</div>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">Allergies</div>
+        <div class="info-value"
+             style="color:${p.allergies && p.allergies !== 'None' ? '#c62828' : 'inherit'}">
+          ${p.allergies || 'None known'}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Chronic Conditions</div>
+        <div class="info-value">${p.chronicConditions || 'None'}</div>
+      </div>
+    </div>
+
+    <!-- Insurance & Emergency -->
+    <div class="section-title">🛡️ Insurance &amp; Emergency Contact</div>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">Insurance Provider</div>
+        <div class="info-value">${p.insuranceProvider || 'None'}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Policy Number</div>
+        <div class="info-value">${p.insurancePolicyNumber || '—'}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Emergency Contact</div>
+        <div class="info-value">${p.emergencyContactName || '—'}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Emergency Phone</div>
+        <div class="info-value">${p.emergencyContactPhone || '—'}</div>
+      </div>
+    </div>
+
+    <!-- Medical History -->
+    <div class="section-title">📋 Medical History</div>
+    <div id="history-section">
+      <div class="empty-state">Loading history…</div>
+    </div>
+  `;
 }
 
-function bookAppointment() {
-  window.location.href = `../appointments/book.html?patientId=${patientId}`;
-}
-function admitPatient() {
-  window.location.href = `../beds/ward.html?admitPatientId=${patientId}`;
-}
-function viewBills() {
-  switchTab('bills');
+// ── Medical history ──────────────────────────────────────────────
+
+async function loadHistory() {
+  const res = await API.get(`/patients/${patientId}/history`);
+  const el  = document.getElementById('history-section');
+  if (!el) return;
+
+  const appts = res?.data?.appointments || res?.data || [];
+  if (!Array.isArray(appts) || !appts.length) {
+    el.innerHTML = '<div class="empty-state">No medical history records found.</div>';
+    return;
+  }
+
+  const rows = appts.map(r => `
+    <tr>
+      <td>${r.appointment_date
+        ? new Date(r.appointment_date).toLocaleDateString('en-GB',
+            {day:'2-digit',month:'short',year:'numeric'})
+        : '—'}</td>
+      <td><span class="badge badge-info">${r.appointment_type || '—'}</span></td>
+      <td>${r.reason || '—'}</td>
+      <td><span class="badge ${
+        r.status === 'Completed' ? 'badge-green' :
+        r.status === 'Cancelled' ? 'badge-gray'  :
+        r.status === 'Scheduled' ? 'badge-info'  : 'badge-yellow'
+      }">${r.status || '—'}</span></td>
+      <td>${r.doctor_name || '—'}</td>
+    </tr>`).join('');
+
+  el.innerHTML = `
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Date</th><th>Type</th><th>Reason</th>
+          <th>Status</th><th>Doctor</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
-loadProfile();
+// ── Edit modal ────────────────────────────────────────────────────
+
+function openEditModal() {
+  if (!patientData) return;
+  const p = patientData;
+
+  // Populate all form fields
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? '';
+  };
+
+  setVal('ef-firstName',              p.firstName);
+  setVal('ef-lastName',               p.lastName);
+  setVal('ef-phone',                  p.phone);
+  setVal('ef-email',                  p.email);
+  setVal('ef-gender',                 p.gender);
+  setVal('ef-bloodGroup',             p.bloodGroup);
+  setVal('ef-status',                 p.status);
+  setVal('ef-address',                p.address);
+  setVal('ef-city',                   p.city);
+  setVal('ef-state',                  p.state);
+  setVal('ef-postalCode',             p.postalCode);
+  setVal('ef-allergies',              p.allergies);
+  setVal('ef-chronicConditions',      p.chronicConditions);
+  setVal('ef-height',                 p.height ?? '');
+  setVal('ef-weight',                 p.weight ?? '');
+  setVal('ef-insuranceProvider',      p.insuranceProvider);
+  setVal('ef-insurancePolicyNumber',  p.insurancePolicyNumber);
+  setVal('ef-emergencyContactName',   p.emergencyContactName);
+  setVal('ef-emergencyContactPhone',  p.emergencyContactPhone);
+
+  // Date: convert from timestamp/ISO to yyyy-MM-dd
+  if (p.dateOfBirth) {
+    const d = new Date(p.dateOfBirth);
+    const iso = d.toISOString().split('T')[0];
+    setVal('ef-dob', iso);
+  }
+
+  Modal.open('modal-edit');
+}
+
+async function saveProfile() {
+  const data = getFormData('edit-form');
+
+  if (!data.firstName?.trim()) { Toast.error('First name is required.'); return; }
+  if (!data.phone?.trim())     { Toast.error('Phone number is required.'); return; }
+
+  // Parse numeric fields
+  ['height','weight'].forEach(k => {
+    if (data[k] === '' || data[k] == null) delete data[k];
+    else data[k] = parseFloat(data[k]);
+  });
+
+  setLoading('edit-submit-btn', true, 'Saving…');
+  const res = await API.put(`/patients/${patientId}`, data);
+  setLoading('edit-submit-btn', false, 'Save Changes');
+
+  if (res?.success) {
+    Toast.success('Profile updated successfully.');
+    Modal.close('modal-edit');
+    patientData = res.data || patientData;
+    renderProfile(patientData);
+    // Reload history in case status changed
+    loadHistory();
+  } else {
+    Toast.error(res?.error || 'Update failed. Please try again.');
+  }
+}
+
+// ── Delete (deactivate) ───────────────────────────────────────────
+
+async function deletePatient() {
+  if (!patientData) return;
+  const name = `${patientData.firstName} ${patientData.lastName}`;
+
+  // NFR-24: Confirmation before irreversible action
+  if (!confirm(
+    `Deactivate patient "${name}" (${patientData.patientCode})?\n\n` +
+    `This sets the patient status to Inactive. All medical history is preserved.`
+  )) return;
+
+  const res = await API.delete(`/patients/${patientId}`);
+  if (res?.success) {
+    Toast.success('Patient deactivated.');
+    setTimeout(() => window.location.href = 'list.html', 1500);
+  } else {
+    Toast.error(res?.error || 'Could not deactivate patient.');
+  }
+}
+
+// ── PDF report download ───────────────────────────────────────────
+
+async function downloadReport() {
+  if (!patientData) return;
+  const token = localStorage.getItem('sc_token');
+  const code  = patientData.patientCode;
+  Toast.info('Generating PDF report…');
+  try {
+    const response = await fetch(
+      `/smart-care/api/reports/patient/${encodeURIComponent(code)}/emr`,
+      { headers: { Authorization: 'Bearer ' + token, Accept: 'application/pdf' } }
+    );
+    if (response.ok && response.headers.get('content-type')?.includes('pdf')) {
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `SmartCare_Report_${code}.pdf`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      Toast.success('Report downloaded!');
+    } else {
+      Toast.error('PDF generation unavailable. Contact administrator.');
+    }
+  } catch (e) {
+    Toast.error('Download failed: ' + e.message);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+
+if (patientId) loadProfile();
 </script>
 </body>
 </html>

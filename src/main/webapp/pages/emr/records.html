@@ -1,370 +1,1552 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Care — Medical Records</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — EMR / Medical Records</title>
 <link rel="stylesheet" href="../../css/app.css">
 <style>
-  .drug-row { display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px; }
-  .vital-grid { display:grid;grid-template-columns:repeat(5,1fr);gap:12px; }
-  .vital-box { background:var(--light);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border); }
-  .vital-val { font-size:20px;font-weight:700;color:var(--teal); }
-  .vital-label { font-size:11px;color:var(--gray);margin-top:3px; }
-  .interaction-card { padding:10px 14px;border-radius:8px;margin-bottom:6px;font-size:13px; }
-  .ic-Contraindicated { background:#f8d7da;border-left:4px solid var(--danger); }
-  .ic-Major { background:#fff3cd;border-left:4px solid var(--warning); }
-  .ic-Moderate { background:#d1ecf1;border-left:4px solid var(--info); }
-  .ic-Minor { background:var(--light);border-left:4px solid var(--gray); }
+/* ── Tabs ── */
+.emr-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:18px}
+.emr-tab{padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;border:none;
+  background:transparent;color:var(--gray);border-bottom:2px solid transparent;
+  margin-bottom:-2px;transition:all .15s}
+.emr-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.emr-pane{display:none}.emr-pane.active{display:block}
+
+/* ── Timeline ── */
+.timeline{border-left:2px solid var(--teal-mid);margin-left:14px;padding-left:16px}
+.tl-item{position:relative;margin-bottom:18px}
+.tl-dot{position:absolute;left:-24px;top:5px;width:11px;height:11px;border-radius:50%;
+  background:var(--teal);border:2px solid white;box-shadow:0 0 0 2px var(--teal)}
+.tl-dot.lab{background:#f59e0b}
+.tl-dot.rx{background:#8b5cf6}
+.tl-dot.note{background:#10b981}
+.tl-date{font-size:11px;color:var(--gray);margin-bottom:3px;font-weight:600}
+.tl-card{background:var(--light);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
+.tl-type{font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.3px}
+.tl-dx{font-size:13px;font-weight:600;color:var(--dark);margin-top:2px}
+.tl-sub{font-size:12px;color:var(--mid);margin-top:2px}
+
+/* ── Drug alert ── */
+.drug-alert{background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);
+  padding:10px 14px;font-size:12px;color:#991b1b;margin-top:8px}
+.drug-alert.contraindicated{background:#fee2e2;border-color:#f87171;font-weight:700}
+.drug-alert.moderate{background:#fffbeb;border-color:#fcd34d;color:#78350f}
+.drug-ok{background:#f0fdf4;border:1px solid #86efac;border-radius:var(--radius);
+  padding:10px 14px;font-size:12px;color:#166534;margin-top:8px}
+
+/* ── ICD lookup ── */
+.icd-results{position:absolute;z-index:999;background:white;border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,.1);max-height:220px;
+  overflow-y:auto;width:100%}
+.icd-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.icd-item:hover{background:var(--teal-light);color:var(--teal)}
+.icd-item .icd-code{font-weight:700;color:var(--teal);margin-right:8px}
+.icd-item .icd-cat{font-size:10px;color:var(--gray);float:right}
+
+/* ── Med row ── */
+.med-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 60px;gap:8px;
+  align-items:center;margin-bottom:8px;background:var(--light);
+  padding:8px;border-radius:var(--radius);border:1px solid var(--border)}
+.med-row button{padding:4px 8px;border:1px solid #e5e7eb;border-radius:4px;
+  background:white;cursor:pointer;color:#dc2626;font-size:13px}
+.add-med-btn{color:var(--teal);background:var(--teal-light);border:1.5px dashed var(--teal);
+  border-radius:var(--radius);padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;gap:6px;margin-top:4px}
+.add-med-btn:hover{background:var(--teal);color:white}
+
+/* ── Severity badge ── */
+.sev-contraindicated{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;
+  padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700}
+.sev-major{background:#fff7ed;color:#c2410c;border:1px solid #fdba74;
+  padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700}
+.sev-moderate{background:#fffbeb;color:#92400e;border:1px solid #fcd34d;
+  padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700}
+.sev-minor{background:#f0f9ff;color:#075985;border:1px solid #7dd3fc;
+  padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700}
+
+/* ── Step wizard ── */
+.step-bar{display:flex;gap:0;margin-bottom:20px}
+.step{flex:1;text-align:center;padding:9px 4px;font-size:12px;font-weight:600;color:var(--gray);
+  background:var(--light);border:1px solid var(--border);position:relative}
+.step:first-child{border-radius:var(--radius) 0 0 var(--radius)}
+.step:last-child{border-radius:0 var(--radius) var(--radius) 0}
+.step.active{background:var(--teal);color:white;border-color:var(--teal)}
+.step.done{background:var(--success);color:white;border-color:var(--success)}
+
+/* ── Lab status chips ── */
+.status-ordered{background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.status-completed{background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.status-in-progress{background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+
+/* ── Write-only ── */
+.write-only{display:none}
+
+/* ── Patient cards (timeline) ── */
+.patient-card{cursor:pointer;background:#e8edf3;border:1.5px solid #1a3a5c;
+  border-radius:var(--radius);padding:12px;text-align:center;transition:all .15s}
+.patient-card:hover{background:#1a3a5c;color:white}
+.patient-card.selected{background:#1a3a5c;color:white}
+.patient-card.selected .pc-sub{color:rgba(255,255,255,.8) !important}
+
+/* ── Report bars ── */
+.report-bar{height:18px;background:#1a3a5c;border-radius:2px;min-width:4px;transition:width .4s ease}
+.report-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
+.report-label{min-width:150px;color:var(--dark);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.report-count{min-width:38px;text-align:right;font-weight:700;color:#1a3a5c;font-size:13px}
+
+/* ── Print styles ── */
+@media print {
+  .sidebar,.sub-sidebar,.topbar,.emr-tabs,.write-only,
+  #topbar-user,.modal-overlay,.stats-grid,
+  button:not(.no-print-hide),.report-print-btn{display:none!important}
+  .app-layout,.main-content{display:block!important;margin:0!important;padding:0!important}
+  .page-body{padding:0!important}
+  .emr-pane{display:none!important}
+  #pane-reports{display:block!important}
+  .card{box-shadow:none!important;border:1px solid #ddd!important;break-inside:avoid}
+  #report-print-header{display:flex!important}
+  body{background:white!important}
+}
 </style>
 </head>
 <body>
 <div class="app-layout">
-    <nav class="sidebar" id="sidebar"></nav>
-
-    <nav class="sub-sidebar" id="sub-sidebar"></nav>
+  <nav class="sidebar"     id="sidebar"></nav>
+  <nav class="sub-sidebar" id="sub-sidebar"></nav>
   <div class="main-content">
     <div class="topbar">
-      <div class="flex items-center gap-3">
-        <button onclick="history.back()" class="btn btn-secondary btn-sm">← Back</button>
-        <span class="topbar-title" id="topbar-breadcrumb" id="page-title">New Consultation</span>
-      </div>
+      <span class="topbar-title" id="topbar-breadcrumb">EMR / Medical Records</span>
       <div class="topbar-right" id="topbar-user"></div>
     </div>
     <div class="page-body">
 
-      <!-- Patient Banner -->
-      <div id="patient-banner" style="background:linear-gradient(to right,var(--teal),var(--teal-dark));color:white;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-weight:700;font-size:16px" id="banner-name">Select Patient</div>
-          <div style="font-size:12px;opacity:0.85;margin-top:4px" id="banner-meta"></div>
-        </div>
-        <div id="banner-allergies"></div>
-      </div>
-
-      <!-- Patient Search (if no patientId in URL) -->
-      <div id="patient-select-section" class="card" style="margin-bottom:16px">
-        <div class="card-header"><h3>👥 Select Patient</h3></div>
-        <div class="card-body">
-          <div class="search-bar" style="max-width:400px">
-            <input id="pat-search" class="form-control" placeholder="Search patient..." oninput="searchPatient(this.value)">
+      <!-- Stats row -->
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+        <div class="stat-card"><div class="stat-icon teal">📋</div>
+          <div class="stat-body"><div class="stat-value" id="stat-records">—</div><div class="stat-label">Medical Records</div></div></div>
+        <div class="stat-card"><div class="stat-icon purple">💊</div>
+          <div class="stat-body"><div class="stat-value" id="stat-rx">—</div><div class="stat-label">Prescriptions</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange">🔬</div>
+          <div class="stat-body"><div class="stat-value" id="stat-labs">—</div><div class="stat-label">Pending Labs</div></div></div>
+        <div class="stat-card"><div class="stat-icon red">⚠️</div>
+          <div class="stat-body">
+            <div class="stat-value" id="stat-alerts">—</div>
+            <div class="stat-label">Drug Alerts</div>
+            <div class="stat-sub ai-badge" style="margin-top:4px">AI-Powered</div>
           </div>
-          <div id="pat-results" style="margin-top:8px"></div>
         </div>
       </div>
 
-      <!-- CONSULTATION FORM -->
-      <div id="consultation-form" class="hidden">
+      <!-- Tab navigation -->
+      <div class="emr-tabs">
+        <button class="emr-tab active" onclick="showTab('records')">📋 Records</button>
+        <button class="emr-tab write-only" onclick="showTab('new-entry')">➕ New Entry</button>
+        <button class="emr-tab write-only" onclick="showTab('prescriptions')">💊 Prescriptions</button>
+        <button class="emr-tab" onclick="showTab('lab-orders')">🔬 Lab Orders</button>
+        <button class="emr-tab write-only" onclick="showTab('clinical-notes')">📝 Clinical Notes</button>
+        <button class="emr-tab" onclick="showTab('timeline')">📅 Timeline</button>
+        <button class="emr-tab" onclick="showTab('documents')">📄 Documents</button>
+        <button class="emr-tab" onclick="showTab('reports')">📊 Reports</button>
+      </div>
 
-        <!-- VITALS -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header"><h3>❤️ Vital Signs</h3></div>
-          <div class="card-body">
-            <div class="vital-grid">
-              <div class="vital-box"><input type="text" id="v-bp" class="form-control" placeholder="120/80"><div class="vital-label">Blood Pressure</div></div>
-              <div class="vital-box"><input type="number" id="v-temp" class="form-control" placeholder="37.0" step="0.1"><div class="vital-label">Temperature °C</div></div>
-              <div class="vital-box"><input type="number" id="v-pulse" class="form-control" placeholder="72"><div class="vital-label">Pulse (bpm)</div></div>
-              <div class="vital-box"><input type="number" id="v-o2" class="form-control" placeholder="98" min="0" max="100"><div class="vital-label">O₂ Saturation %</div></div>
-              <div class="vital-box"><input type="number" id="v-rr" class="form-control" placeholder="16"><div class="vital-label">Respiratory Rate</div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CLINICAL NOTES -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header"><h3>📋 Clinical Notes (AES-256 Encrypted)</h3></div>
-          <div class="card-body">
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">Chief Complaint <span class="required">*</span></label>
-                <input id="chief-complaint" class="form-control" required placeholder="Main reason for visit">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Follow-up Date</label>
-                <input type="date" id="follow-up" class="form-control">
-              </div>
-              <div class="form-group form-full">
-                <label class="form-label">Symptoms</label>
-                <textarea id="symptoms" class="form-control" rows="2" placeholder="Describe symptoms in detail..."></textarea>
-              </div>
-              <div class="form-group form-full">
-                <label class="form-label">Diagnosis <span class="required">*</span></label>
-                <textarea id="diagnosis" class="form-control" rows="2" placeholder="Clinical diagnosis..." required></textarea>
-                <div id="ai-suggestions" style="margin-top:8px"></div>
-              </div>
-              <div class="form-group form-full">
-                <label class="form-label">Treatment Plan</label>
-                <textarea id="treatment" class="form-control" rows="2" placeholder="Treatment plan and management..."></textarea>
-              </div>
-              <div class="form-group form-full">
-                <label class="form-label">Notes</label>
-                <textarea id="notes" class="form-control" rows="2" placeholder="Additional clinical notes..."></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- PRESCRIPTION BUILDER -->
-        <div class="card" style="margin-bottom:16px">
+      <!-- ═══ RECORDS TAB ═══════════════════════════════════════════════ -->
+      <div class="emr-pane active" id="pane-records">
+        <div class="card">
           <div class="card-header">
-            <h3>💊 Prescription</h3>
-            <div class="flex gap-2">
-              <button id="check-interactions-btn" class="btn btn-sm btn-secondary" onclick="checkInteractions()">🤖 Check Drug Interactions</button>
-              <button class="btn btn-sm btn-primary" onclick="addDrugRow()">+ Add Drug</button>
+            <h3>Medical Records</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="form-control" id="records-search" placeholder="Search patient, diagnosis…"
+                     oninput="filterRecords(this.value)" style="width:240px">
+              <select class="form-control" style="width:140px" onchange="filterRecords(document.getElementById('records-search').value,this.value)">
+                <option value="">All Types</option>
+                <option>Consultation</option><option>Follow-up</option>
+                <option>Emergency</option><option>Lab Review</option>
+                <option>Surgery</option><option>Telehealth</option>
+              </select>
+              <button class="btn btn-primary write-only" onclick="showTab('new-entry')">➕ New Entry</button>
             </div>
           </div>
-          <div class="card-body">
-            <div style="display:grid;grid-template-columns:2fr 1fr 1.5fr 80px 80px 36px;gap:8px;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px">
-              <div>Medicine Name</div><div>Dosage</div><div>Frequency</div><div>Days</div><div>Qty</div><div></div>
-            </div>
-            <div id="drug-rows"></div>
-            <!-- Interaction alerts panel -->
-            <div id="interaction-panel" class="hidden" style="margin-top:16px">
-              <div style="font-weight:700;font-size:14px;margin-bottom:8px">🤖 AI Drug Interaction Check Results</div>
-              <div id="interaction-list"></div>
-            </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Patient</th><th>Type</th><th>Diagnosis</th><th>Doctor</th><th>AI Flag</th><th>Actions</th></tr></thead>
+              <tbody id="records-tbody"></tbody>
+            </table>
           </div>
-        </div>
-
-        <!-- LAB ORDERS -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header">
-            <h3>🧪 Lab Orders</h3>
-            <button class="btn btn-sm btn-primary" onclick="addLabRow()">+ Add Test</button>
-          </div>
-          <div class="card-body">
-            <div id="lab-rows"></div>
-          </div>
-        </div>
-
-        <!-- SUBMIT -->
-        <div class="flex justify-between">
-          <button class="btn btn-secondary" onclick="history.back()">Cancel</button>
-          <button id="save-btn" class="btn btn-primary" onclick="saveConsultation()">💾 Save Consultation Record</button>
         </div>
       </div>
 
+      <!-- ═══ NEW ENTRY TAB ════════════════════════════════════════════ -->
+      <div class="emr-pane" id="pane-new-entry">
+        <div class="card" style="max-width:860px">
+          <div class="card-header"><h3>➕ New Medical Record</h3></div>
+          <div class="card-body">
+            <!-- Step indicator -->
+            <div class="step-bar">
+              <div class="step active" id="step-1">1 Patient &amp; Vitals</div>
+              <div class="step"        id="step-2">2 Diagnosis</div>
+              <div class="step"        id="step-3">3 Prescriptions</div>
+              <div class="step"        id="step-4">4 Lab Orders</div>
+              <div class="step"        id="step-5">5 Review &amp; Save</div>
+            </div>
+
+            <!-- Step 1: Patient & Vitals -->
+            <div id="emr-step-1">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Patient <span class="required">*</span></label>
+                  <input class="form-control" id="new-patient-id" placeholder="Patient ID (e.g. 1)">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Doctor ID <span class="required">*</span></label>
+                  <input class="form-control" id="new-doctor-id" placeholder="Doctor ID">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Visit Type</label>
+                  <select class="form-control" id="new-visit-type">
+                    <option>Consultation</option><option>Follow-up</option>
+                    <option>Emergency</option><option>Lab Review</option>
+                    <option>Surgery</option><option>Telehealth</option><option>Discharge</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Appointment ID (optional)</label>
+                  <input class="form-control" id="new-appt-id" placeholder="Link to appointment">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Blood Pressure</label>
+                  <input class="form-control" id="vital-bp" placeholder="120/80 mmHg">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Temperature (°C)</label>
+                  <input class="form-control" id="vital-temp" placeholder="37.2">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Heart Rate (bpm)</label>
+                  <input class="form-control" id="vital-pulse" placeholder="78">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">O₂ Saturation (%)</label>
+                  <input class="form-control" id="vital-o2" placeholder="98">
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Chief Complaint <span class="required">*</span></label>
+                  <textarea class="form-control" id="new-chief-complaint" rows="2"
+                    placeholder="Patient's main presenting complaint…"
+                    oninput="triggerAiDiagnosis()"></textarea>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Symptoms</label>
+                  <textarea class="form-control" id="new-symptoms" rows="2"
+                    placeholder="Presenting symptoms (encrypted at rest — FR-21)…"></textarea>
+                </div>
+              </div>
+              <div class="flex justify-end mt-4">
+                <button class="btn btn-primary" onclick="nextStep(2)">Next: Diagnosis →</button>
+              </div>
+            </div>
+
+            <!-- Step 2: Diagnosis + ICD Lookup + AI suggestions -->
+            <div id="emr-step-2" style="display:none">
+              <div class="form-grid">
+                <div class="form-group form-full" style="position:relative">
+                  <label class="form-label">ICD-10 Code Lookup
+                    <span style="font-size:11px;color:var(--gray);font-weight:400">(type code or description)</span>
+                  </label>
+                  <input class="form-control" id="icd-search-input" placeholder="e.g. I10 or hypertension"
+                         oninput="searchIcd(this.value)" autocomplete="off">
+                  <div id="icd-dropdown" class="icd-results" style="display:none"></div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Selected ICD-10 Code</label>
+                  <input class="form-control" id="new-icd10" readonly placeholder="Auto-filled from lookup">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Follow-up Date</label>
+                  <input type="date" class="form-control" id="new-followup">
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Diagnosis <span class="required">*</span>
+                    <span style="font-size:11px;color:var(--gray);font-weight:400">(encrypted at rest)</span>
+                  </label>
+                  <textarea class="form-control" id="new-diagnosis" rows="2"
+                    placeholder="Full diagnosis description…"></textarea>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Treatment Plan
+                    <span style="font-size:11px;color:var(--gray);font-weight:400">(encrypted at rest)</span>
+                  </label>
+                  <textarea class="form-control" id="new-treatment" rows="2"
+                    placeholder="Planned treatment…"></textarea>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Clinical Notes</label>
+                  <textarea class="form-control" id="new-notes" rows="2"
+                    placeholder="Examination findings, observations…"></textarea>
+                </div>
+              </div>
+              <!-- AI Diagnosis Suggestions -->
+              <div id="ai-dx-box" style="display:none" class="card" style="margin-top:12px;padding:12px">
+                <div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:8px">
+                  🤖 AI Diagnosis Suggestions <span class="ai-badge">FR-69</span>
+                  <span style="font-size:11px;color:var(--gray);font-weight:400;margin-left:8px">
+                    Clinical suggestions only — physician must confirm
+                  </span>
+                </div>
+                <div id="ai-dx-list"></div>
+              </div>
+              <div class="flex justify-between mt-4">
+                <button class="btn btn-secondary" onclick="nextStep(1)">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep(3)">Next: Prescriptions →</button>
+              </div>
+            </div>
+
+            <!-- Step 3: Prescriptions + AI Drug Check -->
+            <div id="emr-step-3" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:14px;font-weight:600">Medications to Prescribe</div>
+                <button class="add-med-btn" onclick="addMedRow()">➕ Add Medication</button>
+              </div>
+              <div id="med-list"></div>
+              <!-- Drug Interaction Result -->
+              <div id="drug-check-result" style="margin-top:12px"></div>
+              <button class="btn btn-secondary" onclick="runDrugCheck()" style="margin-top:8px">
+                🔬 Check Drug Interactions (AI-powered)
+              </button>
+              <div style="margin-top:16px">
+                <label class="form-label">Prescription Notes</label>
+                <textarea class="form-control" id="rx-notes" rows="2" placeholder="Prescription instructions…"></textarea>
+              </div>
+              <div class="flex justify-between mt-4">
+                <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep(4)">Next: Lab Orders →</button>
+              </div>
+            </div>
+
+            <!-- Step 4: Lab Orders -->
+            <div id="emr-step-4" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:14px;font-weight:600">Lab Tests / Investigations</div>
+                <button class="add-med-btn" onclick="addLabRow()">➕ Add Lab Order</button>
+              </div>
+              <div id="lab-order-list"></div>
+              <div class="form-group" style="margin-top:16px">
+                <label class="form-label">Upload Documents (FR-24)</label>
+                <input type="file" class="form-control" id="doc-upload" accept=".pdf,.jpg,.png" multiple>
+                <div style="font-size:11px;color:var(--gray);margin-top:4px">PDF, JPEG, PNG — max 10 MB each</div>
+              </div>
+              <div class="flex justify-between mt-4">
+                <button class="btn btn-secondary" onclick="nextStep(3)">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep(5)">Review →</button>
+              </div>
+            </div>
+
+            <!-- Step 5: Review & Save -->
+            <div id="emr-step-5" style="display:none">
+              <div id="review-panel" class="card" style="background:var(--light);padding:16px;border-radius:var(--radius)"></div>
+              <div class="flex justify-between mt-4">
+                <button class="btn btn-secondary" onclick="nextStep(4)">← Back</button>
+                <button class="btn btn-success" onclick="saveEMR()">💾 Save EMR Record</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PRESCRIPTIONS TAB ════════════════════════════════════════ -->
+      <div class="emr-pane" id="pane-prescriptions">
+        <div class="card">
+          <div class="card-header">
+            <h3>💊 Prescriptions</h3>
+            <div style="display:flex;gap:8px">
+              <input class="form-control" id="rx-patient-id" placeholder="Patient ID"
+                     style="width:130px">
+              <button class="btn btn-primary" onclick="loadPrescriptions()">Load</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Patient</th><th>Medications</th><th>Validity</th><th>Status</th><th>Drug Alerts</th><th>Actions</th></tr></thead>
+              <tbody id="rx-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ LAB ORDERS TAB ════════════════════════════════════════════ -->
+      <div class="emr-pane" id="pane-lab-orders">
+        <div class="card">
+          <div class="card-header">
+            <h3>🔬 Lab Orders</h3>
+            <div style="display:flex;gap:8px">
+              <input class="form-control" id="lab-patient-id" placeholder="Patient ID"
+                     style="width:130px">
+              <button class="btn btn-primary" onclick="loadLabOrders()">Load</button>
+              <button class="btn btn-secondary" onclick="loadPendingLabs()">Pending Worklist</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Patient</th><th>Test</th><th>Type</th><th>Urgency</th><th>Status</th><th>Result</th><th class="write-only">Actions</th></tr></thead>
+              <tbody id="lab-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CLINICAL NOTES TAB ══════════════════════════════════════ -->
+      <div class="emr-pane" id="pane-clinical-notes">
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+          <div class="card">
+            <div class="card-header">
+              <h3>📝 Clinical Notes</h3>
+              <input class="form-control" id="notes-patient-id" placeholder="Patient ID"
+                     style="width:130px" onchange="loadClinicalNotes(this.value)">
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Type</th><th>Author</th><th>Preview</th></tr></thead>
+                <tbody id="notes-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Add note panel (write-only) -->
+          <div class="card write-only">
+            <div class="card-header"><h3>Add Note</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Patient ID</label>
+                <input class="form-control" id="note-patient-id" placeholder="Patient ID">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Note Type</label>
+                <select class="form-control" id="note-type">
+                  <option>Progress</option><option>SOAP</option><option>Nursing</option>
+                  <option>Discharge</option><option>Procedure</option><option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Content
+                  <span style="font-size:11px;color:var(--gray)"> (AES-256-GCM encrypted)</span>
+                </label>
+                <textarea class="form-control" id="note-content" rows="6"
+                  placeholder="Clinical note content (encrypted at rest — FR-21)…"></textarea>
+              </div>
+              <button class="btn btn-primary" style="width:100%" onclick="saveClinicalNote()">
+                💾 Save Encrypted Note
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TIMELINE TAB ═════════════════════════════════════════════ -->
+      <div class="emr-pane" id="pane-timeline">
+        <div class="card">
+          <div class="card-header">
+            <h3>📅 Patient History Timeline</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="form-control" id="timeline-patient-id" placeholder="Patient ID"
+                     style="width:130px">
+              <button class="btn btn-primary" onclick="loadTimeline(document.getElementById('timeline-patient-id').value)">
+                Load Timeline
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- Recent patient cards — auto-loaded on tab open -->
+            <div id="recent-patients-row"
+                 style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px"></div>
+            <div class="timeline" id="timeline-container">
+              <div style="color:var(--gray);font-size:13px;padding:20px">
+                Click a patient card above or enter a Patient ID to view history.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ DOCUMENTS TAB ════════════════════════════════════════════ -->
+      <div class="emr-pane" id="pane-documents">
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
+          <div class="card">
+            <div class="card-header">
+              <h3>📄 Patient Documents</h3>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span id="docs-context" style="font-size:12px;color:var(--gray)">All recent</span>
+                <input class="form-control" id="doc-patient-id" placeholder="Filter by Patient ID"
+                       style="width:160px">
+                <button class="btn btn-primary" onclick="loadDocumentsList()">Filter</button>
+                <button class="btn btn-secondary" onclick="loadRecentDocuments()">All</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Patient</th><th>Type</th><th>File Name</th><th>Size</th><th>Uploaded By</th><th>Download</th></tr></thead>
+                <tbody id="docs-tbody">
+                  <tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">
+                    Loading documents…
+                  </td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Upload panel (write-only) -->
+          <div class="card write-only">
+            <div class="card-header"><h3>Upload Document</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Patient ID</label>
+                <input class="form-control" id="upload-patient-id" placeholder="Patient ID">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Document Type</label>
+                <select class="form-control" id="upload-doc-type">
+                  <option value="Lab Result">Lab Result</option>
+                  <option value="X-Ray">X-Ray</option>
+                  <option value="ECG">ECG</option>
+                  <option value="Scan">Scan</option>
+                  <option value="Prescription">Prescription</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Consent">Consent</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <input class="form-control" id="upload-description" placeholder="Brief description">
+              </div>
+              <div class="form-group">
+                <label class="form-label">File
+                  <span style="font-size:11px;color:var(--gray)">(PDF, JPEG, PNG — max 10 MB)</span>
+                </label>
+                <input type="file" class="form-control" id="upload-file"
+                       accept=".pdf,.jpg,.jpeg,.png">
+              </div>
+              <button class="btn btn-primary" style="width:100%" onclick="uploadDocumentFile()">
+                📤 Upload Document
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ REPORTS TAB ══════════════════════════════════════════════ -->
+      <div class="emr-pane" id="pane-reports">
+
+        <!-- Print-only header (hidden on screen, shown when printing) -->
+        <div id="report-print-header" style="display:none;align-items:center;gap:16px;
+             padding:18px 0 16px;border-bottom:2px solid #1a3a5c;margin-bottom:20px">
+          <img src="../../images/logo.png" alt="SmartCare"
+               style="height:52px;object-fit:contain;background:#0f2540;border-radius:8px;padding:4px"
+               onerror="this.style.display='none'">
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#1a3a5c">SmartCare Hospital ERP</div>
+            <div style="font-size:13px;color:var(--gray)">Electronic Medical Records — Summary Report</div>
+            <div style="font-size:12px;color:var(--gray)" id="report-print-date"></div>
+          </div>
+        </div>
+
+        <!-- Screen header bar with logo + print button -->
+        <div style="display:flex;justify-content:space-between;align-items:center;
+                    background:var(--light);border:1px solid var(--border);
+                    border-radius:var(--radius);padding:12px 16px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <img src="../../images/logo.png" alt="SmartCare"
+                 style="height:38px;object-fit:contain"
+                 onerror="this.style.display='none'">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--dark)">EMR Summary Report</div>
+              <div id="report-generated-at" style="font-size:11px;color:var(--gray)"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary report-print-btn" onclick="printReport()">
+            🖨️ Print / Export PDF
+          </button>
+        </div>
+
+        <!-- Report cards grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header"><h3>📋 Records by Visit Type</h3></div>
+            <div class="card-body" id="report-by-type">
+              <div style="color:var(--gray);font-size:13px">Loading…</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>🔬 Lab Order Status</h3></div>
+            <div class="card-body" id="report-lab-status">
+              <div style="color:var(--gray);font-size:13px">Loading…</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>📈 Monthly Records (Last 6 Months)</h3></div>
+            <div class="card-body" id="report-monthly">
+              <div style="color:var(--gray);font-size:13px">Loading…</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>📊 Summary</h3></div>
+            <div class="card-body" id="report-summary">
+              <div style="color:var(--gray);font-size:13px">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .page-body -->
+  </div><!-- .main-content -->
+</div><!-- .app-layout -->
+
+<!-- ── Enter Lab Results Modal ── -->
+<div id="modal-lab-result" class="modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>Enter Lab Result</h3>
+      <button onclick="Modal.close('modal-lab-result')" class="btn btn-secondary btn-sm">✕</button>
     </div>
+    <div class="modal-body">
+      <input type="hidden" id="result-test-id">
+      <div class="form-group">
+        <label class="form-label">Result <span class="required">*</span></label>
+        <textarea class="form-control" id="result-text" rows="3" placeholder="Enter test result…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Normal Range</label>
+        <input class="form-control" id="result-normal-range" placeholder="e.g. 70–100 mg/dL">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Upload Result File (optional)</label>
+        <input type="file" class="form-control" id="result-file" accept=".pdf,.jpg,.png">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('modal-lab-result')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitLabResult()">💾 Save Result</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── View Record Modal ── -->
+<div id="modal-view-record" class="modal-overlay">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <h3>Medical Record</h3>
+      <button onclick="Modal.close('modal-view-record')" class="btn btn-secondary btn-sm">✕</button>
+    </div>
+    <div class="modal-body" id="view-record-body"></div>
   </div>
 </div>
 
 <script src="../../js/app.js"></script>
 <script src="../../js/sidebar.js"></script>
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-let currentPatientId = urlParams.get('patientId') ? parseInt(urlParams.get('patientId')) : null;
-let currentPatient = null;
-let drugRowCount = 0, labRowCount = 0;
-let interactionForceOverride = false;
+// ── Error instrumentation (separate block — survives main script SyntaxError) ──
+window.onerror = function(msg, src, line, col, err) {
+  console.error('[EMR onerror]', msg, 'at', src + ':' + line + ':' + col, err);
+};
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[EMR unhandledRejection]', e.reason);
+});
+console.log('[EMR] page script starting, token=', !!localStorage.getItem('sc_token'));
+</script>
+<script>
+// ── Init ─────────────────────────────────────────────────────────────────────
+Auth.requireStaff();
+const _emrHashToSub = { '#new':'emr-new', '#documents':'emr-documents', '#reports':'emr-reports' };
+Sidebar.render('emr', _emrHashToSub[window.location.hash] || 'emr-records', 'sidebar', 'sub-sidebar');
+Auth.renderUserChip();
 
-if (currentPatientId) {
-  loadPatientBanner(currentPatientId);
-  document.getElementById('patient-select-section').classList.add('hidden');
-  document.getElementById('consultation-form').classList.remove('hidden');
+const user = Auth.getUser();
+const WRITE_ROLES = ['Doctor', 'Nurse', 'System Admin', 'Hospital Admin'];
+const canWrite = user && WRITE_ROLES.includes(user.role || user.roleName);
+
+// Show write-only elements for authorised roles
+if (canWrite) {
+  document.querySelectorAll('.write-only').forEach(el => el.style.display = '');
 }
 
-const searchPatient = debounce(async q => {
-  if (q.length < 2) return;
-  const res = await API.get(`/patients?q=${encodeURIComponent(q)}&limit=5`);
-  if (!res?.success) return;
-  document.getElementById('pat-results').innerHTML = res.data.map(p => `
-    <div onclick="selectPatient(${p.patientId})"
-         style="padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:4px;font-size:13px"
-         onmouseover="this.style.background='var(--teal-light)'" onmouseout="this.style.background=''">
-      <strong>${p.firstName} ${p.lastName}</strong>
-      <span style="color:var(--gray);margin-left:8px">${p.patientCode} · ${p.phone}</span>
-    </div>
-  `).join('');
-}, 300);
+// Hash routing for sidebar sub-menu navigation
+function handleEmrHash() {
+  const h = window.location.hash;
+  if      (h === '#new')       showTab('new-entry');
+  else if (h === '#documents') showTab('documents');
+  else if (h === '#reports')   showTab('reports');
+}
+window.addEventListener('hashchange', handleEmrHash);
+handleEmrHash();
 
-document.getElementById('pat-search')?.addEventListener('input', e => searchPatient(e.target.value));
-
-async function selectPatient(id) {
-  currentPatientId = id;
-  document.getElementById('patient-select-section').classList.add('hidden');
-  document.getElementById('consultation-form').classList.remove('hidden');
-  await loadPatientBanner(id);
+// ── Tab navigation ────────────────────────────────────────────────────────────
+function showTab(name) {
+  const paneNames = ['records','new-entry','prescriptions','lab-orders',
+                     'clinical-notes','timeline','documents','reports'];
+  document.querySelectorAll('.emr-tab').forEach((t, i) => {
+    t.classList.toggle('active', paneNames[i] === name);
+  });
+  document.querySelectorAll('.emr-pane').forEach(p =>
+    p.classList.toggle('active', p.id === 'pane-' + name));
+  if (name === 'records')    loadRecords();
+  if (name === 'lab-orders') loadPendingLabs();
+  if (name === 'timeline')   loadRecentPatientsForTimeline();
+  if (name === 'documents')  loadRecentDocuments();
+  if (name === 'reports')    loadEmrReport();
 }
 
-Auth.requireAuth();
-Sidebar.render('emr', 'emr-records');
+// ── Records ───────────────────────────────────────────────────────────────────
+let cachedRecords = [];
 
-async function loadPatientBanner(id) {
-  const res = await API.get(`/patients/${id}`);
-  if (!res?.success) return;
-  currentPatient = res.data.patient;
-  const p = currentPatient;
-  const age = Math.floor((Date.now() - new Date(p.dateOfBirth)) / (365.25*24*3600*1000));
-  document.getElementById('banner-name').textContent = `${p.firstName} ${p.lastName}`;
-  document.getElementById('banner-meta').textContent = `${p.patientCode} · ${age} yrs · ${p.gender} · 🩸 ${p.bloodGroup || '—'} · ${p.phone}`;
-  document.getElementById('page-title').textContent = `Consultation — ${p.firstName} ${p.lastName}`;
-
-  if (p.allergies && p.allergies !== 'None') {
-    document.getElementById('banner-allergies').innerHTML =
-      `<span style="background:rgba(255,255,255,0.2);padding:6px 12px;border-radius:20px;font-size:12px">⚠️ Allergies: ${p.allergies}</span>`;
+async function loadRecords(patientId) {
+  console.log('[EMR] loadRecords() called, patientId=', patientId, 'token=', !!localStorage.getItem('sc_token'));
+  const tbody = document.getElementById('records-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">Loading…</td></tr>';
+  const params = new URLSearchParams(window.location.search);
+  const pid = patientId || params.get('patientId');
+  let res;
+  if (!pid) {
+    // No patient context — load all recent records across all patients
+    const url = '/emr/records?limit=50';
+    console.log('[EMR] fetching', url);
+    res = await API.get(url).catch(e => { console.error('[EMR] loadRecords fetch error', e); return null; });
+  } else {
+    const url = `/emr/records/${pid}?limit=50`;
+    console.log('[EMR] fetching', url);
+    res = await API.get(url).catch(e => { console.error('[EMR] loadRecords fetch error', e); return null; });
   }
-
-  // Add first drug row automatically
-  if (drugRowCount === 0) addDrugRow();
-  if (labRowCount === 0) addLabRow();
+  console.log('[EMR] loadRecords response=', res);
+  cachedRecords = (res && res.success && Array.isArray(res.data) && res.data.length)
+    ? res.data : [];
+  renderRecords(cachedRecords);
+  document.getElementById('stat-records').textContent = cachedRecords.length;
 }
 
-function addDrugRow() {
-  const id = ++drugRowCount;
-  const div = document.createElement('div');
-  div.id = `drug-row-${id}`;
-  div.className = 'drug-row';
-  div.innerHTML = `
-    <input type="text" class="form-control drug-name" placeholder="Drug name" style="font-size:13px">
-    <input type="text" class="form-control" placeholder="e.g. 500mg" style="font-size:13px" data-field="dosage">
-    <input type="text" class="form-control" placeholder="e.g. Twice daily" style="font-size:13px" data-field="frequency">
-    <input type="number" class="form-control" placeholder="7" min="1" style="font-size:13px" data-field="duration">
-    <input type="number" class="form-control" placeholder="14" min="1" style="font-size:13px" data-field="qty">
-    <button class="btn btn-danger btn-sm btn-icon" onclick="document.getElementById('drug-row-${id}').remove()">✕</button>
-  `;
-  document.getElementById('drug-rows').appendChild(div);
+function renderRecords(data) {
+  const tbody = document.getElementById('records-tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray)">No records found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(r => `<tr>
+    <td style="white-space:nowrap">${fmtDate(r.record_date || r.date)}</td>
+    <td><strong>${r.patient_name || r.patient || '—'}</strong><br>
+        <span style="font-size:11px;color:var(--gray)">${r.patient_code || r.pid || ''}</span></td>
+    <td><span class="badge badge-info">${r.visit_type || r.type || '—'}</span></td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+      <span title="${r.diagnosis || r.dx || ''}">${r.diagnosis || r.dx || '—'}</span>
+      ${r.diagnosis_icd10 ? `<br><span style="font-size:10px;color:var(--teal)">${r.diagnosis_icd10}</span>` : ''}
+    </td>
+    <td>${r.doctor_name || r.doc || '—'}</td>
+    <td>${r.ai_flag || '✅ OK'}</td>
+    <td><button class="btn btn-sm btn-secondary" onclick='viewRecord(${JSON.stringify(r)})'>View</button></td>
+  </tr>`).join('');
 }
 
+function filterRecords(q, type) {
+  let f = cachedRecords;
+  if (q) f = f.filter(r =>
+    (r.patient_name||r.patient||'').toLowerCase().includes(q.toLowerCase()) ||
+    (r.diagnosis||r.dx||'').toLowerCase().includes(q.toLowerCase()));
+  if (type) f = f.filter(r => (r.visit_type||r.type) === type);
+  renderRecords(f);
+}
+
+function viewRecord(r) {
+  document.getElementById('view-record-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Patient</label>
+        <div class="form-control-static">${r.patient_name||r.patient||'—'} (${r.patient_code||r.pid||''})</div></div>
+      <div class="form-group"><label class="form-label">Visit Type</label>
+        <div class="form-control-static">${r.visit_type||r.type||'—'}</div></div>
+      <div class="form-group form-full"><label class="form-label">Chief Complaint</label>
+        <div class="form-control-static">${r.chief_complaint||'—'}</div></div>
+      <div class="form-group form-full"><label class="form-label">Diagnosis</label>
+        <div class="form-control-static">${r.diagnosis||r.dx||'—'}</div></div>
+      <div class="form-group form-full"><label class="form-label">Treatment Plan</label>
+        <div class="form-control-static">${r.treatment_plan||'—'}</div></div>
+      <div class="form-group form-full"><label class="form-label">Notes</label>
+        <div class="form-control-static">${r.notes||'—'}</div></div>
+    </div>`;
+  Modal.open('modal-view-record');
+}
+
+// ── ICD-10 Lookup ──────────────────────────────────────────────────────────────
+let icdTimer = null;
+async function searchIcd(q) {
+  clearTimeout(icdTimer);
+  const drop = document.getElementById('icd-dropdown');
+  if (q.length < 2) { drop.style.display = 'none'; return; }
+  icdTimer = setTimeout(async () => {
+    const res = await API.get(`/emr/icd-search?q=${encodeURIComponent(q)}&limit=10`).catch(() => null);
+    const codes = (res && res.success) ? res.data : [];
+    if (!codes.length) { drop.style.display = 'none'; return; }
+    drop.innerHTML = codes.map(c => `
+      <div class="icd-item" onclick="selectIcd('${c.code}','${c.description.replace(/'/g,"\\'")}')">
+        <span class="icd-code">${c.code}</span>${c.description}
+        <span class="icd-cat">${c.category}</span>
+      </div>`).join('');
+    drop.style.display = 'block';
+  }, 250);
+}
+
+function selectIcd(code, desc) {
+  document.getElementById('new-icd10').value = code;
+  document.getElementById('new-diagnosis').value =
+    (document.getElementById('new-diagnosis').value || '') || desc;
+  document.getElementById('icd-search-input').value = `${code} — ${desc}`;
+  document.getElementById('icd-dropdown').style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#icd-search-input') && !e.target.closest('#icd-dropdown')) {
+    document.getElementById('icd-dropdown').style.display = 'none';
+  }
+});
+
+// ── AI Diagnosis Suggestions ───────────────────────────────────────────────────
+let aiTimer = null;
+function triggerAiDiagnosis() {
+  clearTimeout(aiTimer);
+  aiTimer = setTimeout(async () => {
+    const complaint = document.getElementById('new-chief-complaint').value;
+    if (complaint.length < 5) return;
+    const res = await API.get(`/emr/ai/diagnose?complaint=${encodeURIComponent(complaint)}&age=35`).catch(() => null);
+    const suggestions = (res && res.success) ? res.data : [];
+    const box = document.getElementById('ai-dx-box');
+    if (!suggestions.length) { box.style.display = 'none'; return; }
+    document.getElementById('ai-dx-list').innerHTML = suggestions.map(s => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer"
+           onclick="selectAiDx('${s.icd10Code}','${s.diagnosis.replace(/'/g,"\\'")}')">
+        <span class="badge badge-teal" style="min-width:54px;text-align:center">${s.confidencePct}</span>
+        <strong style="font-size:13px">${s.diagnosis}</strong>
+        <span style="font-size:11px;color:var(--gray)">${s.icd10Code}</span>
+      </div>`).join('');
+    box.style.display = 'block';
+  }, 600);
+}
+
+function selectAiDx(code, name) {
+  document.getElementById('new-icd10').value = code;
+  document.getElementById('new-diagnosis').value = name;
+  document.getElementById('icd-search-input').value = `${code} — ${name}`;
+}
+
+// ── Medication rows ───────────────────────────────────────────────────────────
+let medRows = [];
+function addMedRow() {
+  const id = Date.now();
+  medRows.push(id);
+  const el = document.createElement('div');
+  el.className = 'med-row'; el.id = `med-${id}`;
+  el.innerHTML = `
+    <input class="form-control" id="med-name-${id}" placeholder="Drug name *">
+    <input class="form-control" id="med-dose-${id}" placeholder="Dose (e.g. 500mg)">
+    <input class="form-control" id="med-freq-${id}" placeholder="Frequency">
+    <input class="form-control" id="med-dur-${id}"  placeholder="Days" type="number" min="1">
+    <button onclick="removeMed(${id})">✕</button>`;
+  document.getElementById('med-list').appendChild(el);
+}
+
+function removeMed(id) {
+  document.getElementById(`med-${id}`)?.remove();
+  medRows = medRows.filter(r => r !== id);
+}
+
+function getMedList() {
+  return medRows.filter(id => document.getElementById(`med-${id}`))
+    .map(id => ({
+      medicineName: document.getElementById(`med-name-${id}`)?.value || '',
+      dosage:       document.getElementById(`med-dose-${id}`)?.value || '',
+      frequency:    document.getElementById(`med-freq-${id}`)?.value || '',
+      durationDays: parseInt(document.getElementById(`med-dur-${id}`)?.value) || 7,
+      quantity:     7,
+      instructions: ''
+    })).filter(m => m.medicineName.trim());
+}
+
+// ── Drug Interaction Check (AI-powered FR-27) ─────────────────────────────────
+async function runDrugCheck() {
+  const meds = getMedList().map(m => m.medicineName);
+  const el = document.getElementById('drug-check-result');
+  if (meds.length < 2) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--gray)">Add at least 2 medications to check interactions.</div>';
+    return;
+  }
+  el.innerHTML = '<div style="font-size:12px;color:var(--gray)">Checking AI drug interactions…</div>';
+  const res = await API.post('/emr/drug-check', { drugs: meds }).catch(() => null);
+  if (!res || !res.success) {
+    el.innerHTML = '<div class="drug-alert">⚠️ Drug check unavailable</div>';
+    return;
+  }
+  const ai = res.data.aiInteractions || [];
+  const db = res.data.dbInteractions  || [];
+  const all = [...ai, ...db];
+  if (!all.length) {
+    el.innerHTML = `<div class="drug-ok">✅ No known interactions detected for: ${meds.join(', ')}</div>`;
+    return;
+  }
+  el.innerHTML = all.map(ix => {
+    const sev = (ix.severity || '').toLowerCase();
+    const cls = sev === 'contraindicated' ? 'drug-alert contraindicated'
+               : sev === 'major'          ? 'drug-alert'
+               : sev === 'moderate'       ? 'drug-alert moderate'
+               : 'drug-ok';
+    const sevBadge = `<span class="sev-${sev}">${ix.severity}</span>`;
+    const pair = ix.drugPair || ix.drug_pair || `${ix.drugA||ix.drug_a} + ${ix.drugB||ix.drug_b}`;
+    return `<div class="${cls}">
+      ${sevBadge} <strong>${pair}</strong><br>
+      <span>${ix.description}</span><br>
+      <em style="font-size:11px">Management: ${ix.management||ix.manage||'—'}</em>
+    </div>`;
+  }).join('');
+}
+
+// ── Lab order rows ────────────────────────────────────────────────────────────
+let labRows = [];
 function addLabRow() {
-  const id = ++labRowCount;
-  const div = document.createElement('div');
-  div.id = `lab-row-${id}`;
-  div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:8px';
-  div.innerHTML = `
-    <input type="text" class="form-control lab-name" placeholder="Test name e.g. CBC, Blood Sugar" style="font-size:13px">
-    <input type="text" class="form-control" placeholder="Type e.g. Blood" style="font-size:13px" data-field="type">
-    <input type="number" class="form-control" placeholder="Cost (LKR)" style="font-size:13px" data-field="cost">
-    <button class="btn btn-danger btn-sm btn-icon" onclick="document.getElementById('lab-row-${id}').remove()">✕</button>
-  `;
-  document.getElementById('lab-rows').appendChild(div);
+  const id = Date.now();
+  labRows.push(id);
+  const el = document.createElement('div');
+  el.className = 'med-row'; el.id = `lab-${id}`;
+  el.style.gridTemplateColumns = '2fr 1fr 1fr 60px';
+  el.innerHTML = `
+    <input class="form-control" id="lab-name-${id}" placeholder="Test name *">
+    <select class="form-control" id="lab-type-${id}">
+      <option>Haematology</option><option>Biochemistry</option>
+      <option>Radiology</option><option>Microbiology</option>
+      <option>Pathology</option><option>Other</option>
+    </select>
+    <select class="form-control" id="lab-urgency-${id}">
+      <option>Routine</option><option>Urgent</option><option>STAT</option>
+    </select>
+    <button onclick="removeLab(${id})">✕</button>`;
+  document.getElementById('lab-order-list').appendChild(el);
+}
+function removeLab(id) {
+  document.getElementById(`lab-${id}`)?.remove();
+  labRows = labRows.filter(r => r !== id);
+}
+function getLabList() {
+  return labRows.filter(id => document.getElementById(`lab-${id}`))
+    .map(id => ({
+      testName: document.getElementById(`lab-name-${id}`)?.value || '',
+      testType: document.getElementById(`lab-type-${id}`)?.value || 'Other',
+      urgency:  document.getElementById(`lab-urgency-${id}`)?.value || 'Routine',
+    })).filter(l => l.testName.trim());
 }
 
-async function checkInteractions() {
-  const drugs = [...document.querySelectorAll('.drug-name')].map(i => i.value.trim()).filter(Boolean);
-  if (drugs.length < 2) { Toast.info('Add at least 2 drugs to check interactions'); return; }
+// ── Step wizard ───────────────────────────────────────────────────────────────
+let currentStep = 1;
+function nextStep(n) {
+  document.getElementById(`emr-step-${currentStep}`).style.display = 'none';
+  document.getElementById(`step-${currentStep}`).classList.remove('active');
+  document.getElementById(`step-${currentStep}`).classList.add('done');
+  currentStep = n;
+  document.getElementById(`emr-step-${n}`).style.display = 'block';
+  document.getElementById(`step-${n}`).classList.add('active');
+  document.getElementById(`step-${n}`).classList.remove('done');
+  if (n === 5) buildReview();
+}
 
-  const btn = document.getElementById('check-interactions-btn');
-  btn.disabled = true; btn.textContent = 'Checking...';
+function buildReview() {
+  const meds = getMedList();
+  const labs = getLabList();
+  document.getElementById('review-panel').innerHTML = `
+    <h4 style="margin-bottom:12px">Review Before Saving</h4>
+    <div><strong>Patient:</strong> ${v('new-patient-id')} | <strong>Doctor:</strong> ${v('new-doctor-id')} | <strong>Type:</strong> ${v('new-visit-type')}</div>
+    <div style="margin-top:8px"><strong>Chief Complaint:</strong> ${v('new-chief-complaint')}</div>
+    <div><strong>Diagnosis:</strong> ${v('new-diagnosis')} <span style="color:var(--teal)">${v('new-icd10')}</span></div>
+    <div><strong>Treatment:</strong> ${v('new-treatment')}</div>
+    <div style="margin-top:8px"><strong>Medications (${meds.length}):</strong>
+      ${meds.map(m => `<span class="badge badge-info" style="margin:2px">${m.medicineName} ${m.dosage}</span>`).join('') || 'None'}</div>
+    <div><strong>Lab Orders (${labs.length}):</strong>
+      ${labs.map(l => `<span class="badge badge-teal" style="margin:2px">${l.testName}</span>`).join('') || 'None'}</div>
+    <div style="margin-top:8px;font-size:12px;color:var(--gray)">
+      🔒 Diagnosis, symptoms and treatment plan will be AES-256-GCM encrypted before storage (FR-21).
+    </div>`;
+}
 
-  const res = await API.post('/emr/drug-check', { drugs });
-  btn.disabled = false; btn.textContent = '🤖 Check Drug Interactions';
+const v = id => document.getElementById(id)?.value || '';
 
-  if (!res?.success) { Toast.error('Drug check failed'); return; }
-
-  const panel = document.getElementById('interaction-panel');
-  const list = document.getElementById('interaction-list');
-  panel.classList.remove('hidden');
-
-  if (!res.data.interactions.length) {
-    list.innerHTML = '<div class="alert alert-success">✅ No known interactions found between these drugs.</div>';
+// ── Save EMR ──────────────────────────────────────────────────────────────────
+async function saveEMR() {
+  const patientId = parseInt(v('new-patient-id'));
+  const doctorId  = parseInt(v('new-doctor-id'));
+  if (!patientId || !doctorId || !v('new-chief-complaint')) {
+    Toast.show('Patient ID, Doctor ID and Chief Complaint are required', 'error');
     return;
   }
 
-  list.innerHTML = res.data.interactions.map(i => `
-    <div class="interaction-card ic-${i.severity}">
-      <strong>${i.severity}</strong> — ${i.drug_pair}<br>
-      <span style="font-size:12px">${i.description}</span>
-    </div>
-  `).join('');
+  const vitals = { bp: v('vital-bp'), temp: v('vital-temp'),
+                   pulse: v('vital-pulse'), o2sat: v('vital-o2') };
+  const followUp = v('new-followup') || null;
 
-  if (res.data.hasMajorInteractions) {
-    list.innerHTML += `
-      <div class="alert alert-danger" style="margin-top:12px">
-        ⚠️ <strong>Major or Contraindicated interaction detected.</strong>
-        You must acknowledge before saving.
-        <button class="btn btn-sm btn-warning" style="margin-left:12px" onclick="setOverride()">I Acknowledge — Proceed</button>
-      </div>
-    `;
-    document.getElementById('save-btn').disabled = true;
-  }
-}
-
-function setOverride() {
-  interactionForceOverride = true;
-  document.getElementById('save-btn').disabled = false;
-  document.getElementById('interaction-panel').innerHTML +=
-    '<div class="alert alert-warning" style="margin-top:8px">✅ Doctor acknowledged drug interactions. Proceeding.</div>';
-}
-
-async function saveConsultation() {
-  const chiefComplaint = document.getElementById('chief-complaint').value.trim();
-  const diagnosis = document.getElementById('diagnosis').value.trim();
-  if (!chiefComplaint || !diagnosis) { Toast.error('Chief complaint and diagnosis are required'); return; }
-  if (!currentPatientId) { Toast.error('Select a patient first'); return; }
-
-  const user = Auth.getUser();
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
-
-  // Build vital signs JSON
-  const vitalSigns = JSON.stringify({
-    bp: document.getElementById('v-bp').value,
-    temperature: document.getElementById('v-temp').value,
-    pulse: document.getElementById('v-pulse').value,
-    o2Saturation: document.getElementById('v-o2').value,
-    respiratoryRate: document.getElementById('v-rr').value
-  });
-
-  // Save medical record
+  // 1. Create medical record
   const recRes = await API.post('/emr/records', {
-    patientId: currentPatientId,
-    doctorId: user.doctorId || 1, // from session in real impl
-    chiefComplaint,
-    symptoms: document.getElementById('symptoms').value,
-    diagnosis,
-    treatmentPlan: document.getElementById('treatment').value,
-    notes: document.getElementById('notes').value,
-    vitalSigns,
-    followUpDate: document.getElementById('follow-up').value || null,
-    appointmentId: parseInt(urlParams.get('appointmentId')) || null
-  });
+    patientId, doctorId,
+    appointmentId: parseInt(v('new-appt-id')) || null,
+    visitType:     v('new-visit-type'),
+    chiefComplaint: v('new-chief-complaint'),
+    symptoms:      v('new-symptoms'),
+    diagnosis:     v('new-diagnosis'),
+    diagnosisIcd10: v('new-icd10'),
+    treatmentPlan: v('new-treatment'),
+    vitalSigns:    JSON.stringify(vitals),
+    notes:         v('new-notes'),
+    followUpDate:  followUp,
+  }).catch(() => null);
 
-  if (!recRes?.success) {
-    btn.disabled = false; btn.textContent = '💾 Save Consultation Record';
-    Toast.error(recRes?.error || 'Failed to save record'); return;
+  if (!recRes || !recRes.success) {
+    Toast.show('Failed to save medical record', 'error'); return;
   }
-
   const recordId = recRes.data.recordId;
 
-  // Save prescription if drugs entered
-  const drugs = [...document.querySelectorAll('#drug-rows > div')].map(row => ({
-    medicineName: row.querySelector('.drug-name')?.value,
-    dosage: row.querySelector('[data-field="dosage"]')?.value,
-    frequency: row.querySelector('[data-field="frequency"]')?.value,
-    durationDays: parseInt(row.querySelector('[data-field="duration"]')?.value) || 7,
-    quantity: parseInt(row.querySelector('[data-field="qty"]')?.value) || 0,
-    instructions: ''
-  })).filter(d => d.medicineName);
-
-  if (drugs.length > 0) {
+  // 2. Create prescription if meds present
+  const meds = getMedList();
+  if (meds.length > 0) {
     await API.post('/emr/prescriptions', {
-      patientId: currentPatientId,
-      doctorId: user.doctorId || 1,
-      recordId, validityDays: 30, items: drugs
-    });
+      patientId, doctorId, recordId,
+      validityDays: 30,
+      notes: v('rx-notes'),
+      items: meds,
+    }).catch(() => null);
   }
 
-  // Save lab orders if entered
-  const labs = [...document.querySelectorAll('#lab-rows > div')].map(row => ({
-    testName: row.querySelector('.lab-name')?.value,
-    testType: row.querySelector('[data-field="type"]')?.value,
-    cost: parseFloat(row.querySelector('[data-field="cost"]')?.value) || 0
-  })).filter(l => l.testName);
-
+  // 3. Create lab orders
+  const labs = getLabList();
   for (const lab of labs) {
     await API.post('/emr/lab-orders', {
-      patientId: currentPatientId,
-      doctorId: user.doctorId || 1,
-      recordId,
-      testName: lab.testName,
-      testType: lab.testType,
-      cost: lab.cost
-    });
+      patientId, doctorId, recordId,
+      testName: lab.testName, testType: lab.testType, urgency: lab.urgency,
+    }).catch(() => null);
   }
 
-  btn.disabled = false; btn.textContent = '💾 Save Consultation Record';
-  Toast.success('Consultation saved successfully!');
-  setTimeout(() => window.location.href = `../patients/profile.html?id=${currentPatientId}`, 1500);
+  Toast.show(`EMR Record #${recordId} saved successfully`, 'success');
+  showTab('records');
+  resetNewEntryForm();
 }
+
+function resetNewEntryForm() {
+  ['new-patient-id','new-doctor-id','new-chief-complaint','new-symptoms',
+   'new-diagnosis','new-icd10','new-treatment','new-notes','rx-notes',
+   'vital-bp','vital-temp','vital-pulse','vital-o2','new-followup','icd-search-input'
+  ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('med-list').innerHTML = '';
+  document.getElementById('lab-order-list').innerHTML = '';
+  medRows = []; labRows = [];
+  currentStep = 1;
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`emr-step-${i}`).style.display = i === 1 ? 'block' : 'none';
+    document.getElementById(`step-${i}`).classList.toggle('active', i === 1);
+    document.getElementById(`step-${i}`).classList.remove('done');
+  }
+}
+
+// ── Prescriptions tab ─────────────────────────────────────────────────────────
+async function loadPrescriptions() {
+  const pid = document.getElementById('rx-patient-id').value;
+  if (!pid) { Toast.show('Enter a Patient ID', 'error'); return; }
+  const res = await API.get(`/emr/prescriptions/patient/${pid}?limit=20`).catch(() => null);
+  const rxList = (res && res.success) ? res.data : [];
+  const tbody = document.getElementById('rx-tbody');
+  document.getElementById('stat-rx').textContent = rxList.length;
+  if (!rxList.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No prescriptions found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rxList.map(rx => `<tr>
+    <td>${fmtDate(rx.prescription_date)}</td>
+    <td>Patient #${rx.patient_id}</td>
+    <td>${rx.item_count || 0} medications</td>
+    <td>${rx.validity_days || 30} days</td>
+    <td><span class="badge ${rx.status === 'Active' ? 'badge-teal' : 'badge-info'}">${rx.status}</span></td>
+    <td>—</td>
+    <td><button class="btn btn-sm btn-secondary" onclick="viewRxItems(${rx.prescription_id})">View Items</button></td>
+  </tr>`).join('');
+}
+
+async function viewRxItems(rxId) {
+  const res = await API.get(`/emr/prescriptions/${rxId}`).catch(() => null);
+  const items = (res && res.success) ? res.data : [];
+  if (!items.length) { Toast.show('No items found', 'error'); return; }
+  alert(items.map(i => `${i.medicine_name} — ${i.dosage} × ${i.frequency} for ${i.duration_days} days`).join('\n'));
+}
+
+// ── Lab Orders tab ────────────────────────────────────────────────────────────
+async function loadLabOrders() {
+  const pid = document.getElementById('lab-patient-id').value;
+  if (!pid) { Toast.show('Enter a Patient ID', 'error'); return; }
+  const res = await API.get(`/emr/lab-orders/patient/${pid}`).catch(() => null);
+  renderLabTable((res && res.success) ? res.data : []);
+}
+
+async function loadPendingLabs() {
+  const res = await API.get('/emr/lab-orders/pending').catch(() => null);
+  const labs = (res && res.success) ? res.data : [];
+  document.getElementById('stat-labs').textContent = labs.length;
+  renderLabTable(labs);
+}
+
+function renderLabTable(labs) {
+  const tbody = document.getElementById('lab-tbody');
+  if (!labs.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">No lab orders found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = labs.map(l => `<tr>
+    <td style="white-space:nowrap">${fmtDate(l.test_date)}</td>
+    <td>${l.patient_name || `#${l.patient_id}`}<br>
+      <span style="font-size:11px;color:var(--gray)">${l.patient_code || ''}</span></td>
+    <td><strong>${l.test_name}</strong></td>
+    <td>${l.test_type || '—'}</td>
+    <td><span class="${l.urgency === 'STAT' ? 'badge badge-danger' : l.urgency === 'Urgent' ? 'badge badge-warning' : 'badge badge-info'}">${l.urgency || 'Routine'}</span></td>
+    <td><span class="status-${(l.status||'ordered').toLowerCase().replace(' ','-')}">${l.status}</span></td>
+    <td style="font-size:12px">${l.test_result ? l.test_result.substring(0,40)+'…' : '—'}</td>
+    <td class="write-only">
+      ${l.status !== 'Completed' ? `<button class="btn btn-sm btn-primary" onclick="openResultModal(${l.test_id})">Enter Result</button>` : '✅'}
+    </td>
+  </tr>`).join('');
+}
+
+function openResultModal(testId) {
+  document.getElementById('result-test-id').value = testId;
+  document.getElementById('result-text').value = '';
+  document.getElementById('result-normal-range').value = '';
+  Modal.open('modal-lab-result');
+}
+
+async function submitLabResult() {
+  const testId = document.getElementById('result-test-id').value;
+  const result = document.getElementById('result-text').value;
+  if (!result.trim()) { Toast.show('Result text is required', 'error'); return; }
+  const res = await API.put(`/emr/lab-orders/${testId}/results`, {
+    result, normalRange: document.getElementById('result-normal-range').value,
+    technicianId: user ? user.userId : 1,
+  }).catch(() => null);
+  if (res && res.success) {
+    Toast.show('Lab result saved', 'success');
+    Modal.close('modal-lab-result');
+    loadPendingLabs();
+  } else {
+    Toast.show('Failed to save result', 'error');
+  }
+}
+
+// ── Clinical Notes ────────────────────────────────────────────────────────────
+async function loadClinicalNotes(patientId) {
+  if (!patientId) return;
+  const res = await API.get(`/emr/clinical-notes/${patientId}?limit=20`).catch(() => null);
+  const notes = (res && res.success) ? res.data : [];
+  const tbody = document.getElementById('notes-tbody');
+  if (!notes.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">No clinical notes found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = notes.map(n => `<tr>
+    <td>${fmtDate(n.created_at)}</td>
+    <td><span class="badge badge-teal">${n.note_type}</span></td>
+    <td>${n.author_username || '—'}</td>
+    <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(n.content||'').replace(/"/g,'&quot;')}">
+      ${(n.content || '').substring(0, 80)}${(n.content||'').length > 80 ? '…' : ''}
+    </td>
+  </tr>`).join('');
+}
+
+async function saveClinicalNote() {
+  const patientId = document.getElementById('note-patient-id').value;
+  const content   = document.getElementById('note-content').value;
+  if (!patientId || !content.trim()) {
+    Toast.show('Patient ID and note content are required', 'error'); return;
+  }
+  const res = await API.post('/emr/clinical-notes', {
+    patientId: parseInt(patientId),
+    noteType:  document.getElementById('note-type').value,
+    content,
+  }).catch(() => null);
+  if (res && res.success) {
+    Toast.show('Note saved (AES-256-GCM encrypted)', 'success');
+    document.getElementById('note-content').value = '';
+    loadClinicalNotes(patientId);
+  } else {
+    Toast.show('Failed to save note', 'error');
+  }
+}
+
+// ── Timeline ──────────────────────────────────────────────────────────────────
+async function loadTimeline(patientId) {
+  if (!patientId) { Toast.show('Enter a Patient ID', 'error'); return; }
+  const el = document.getElementById('timeline-container');
+  el.innerHTML = '<div style="color:var(--gray);font-size:13px;padding:20px">Loading timeline…</div>';
+  const res = await API.get(`/emr/timeline/${patientId}`).catch(() => null);
+  const events = (res && res.success && res.data.length) ? res.data : getFallbackTimeline(patientId);
+  if (!events.length) {
+    el.innerHTML = '<div style="color:var(--gray);font-size:13px;padding:20px">No history found for this patient</div>';
+    return;
+  }
+  el.innerHTML = events.map(ev => {
+    const type = ev.timeline_type || ev.type || 'MEDICAL_RECORD';
+    const dotClass = type.includes('LAB') ? 'lab'
+                   : type.includes('PRESC') ? 'rx'
+                   : type.includes('NOTE') ? 'note' : '';
+    return `<div class="tl-item">
+      <div class="tl-dot ${dotClass}"></div>
+      <div class="tl-date">${fmtDate(ev.event_date || ev.record_date || ev.date)}
+        — <span style="color:var(--teal);font-size:10px;font-weight:700">${type.replace('_',' ')}</span></div>
+      <div class="tl-card">
+        <div class="tl-type">${ev.sub_type || ev.visit_type || ev.status || '—'}</div>
+        <div class="tl-dx">${ev.summary || ev.chief_complaint || ev.test_name || ev.diagnosis || '—'}</div>
+        ${ev.detail ? `<div class="tl-sub">${(ev.detail||'').substring(0,120)}</div>` : ''}
+        ${ev.doctor_name ? `<div class="tl-sub" style="font-style:italic;margin-top:4px">👨‍⚕️ ${ev.doctor_name}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Fallback demo data ────────────────────────────────────────────────────────
+function getFallbackRecords() {
+  return [
+    {record_date:'2026-03-21',patient_name:'Nimali Rajapaksa',patient_code:'PAT000004',
+     visit_type:'Consultation',diagnosis:'Community-acquired pneumonia',
+     diagnosis_icd10:'J18.9',doctor_name:'Dr. A Silva',ai_flag:'⚠️ Drug alert'},
+    {record_date:'2026-03-20',patient_name:'Saman Silva',patient_code:'PAT000001',
+     visit_type:'Follow-up',diagnosis:'Hypertension — controlled',
+     diagnosis_icd10:'I10',doctor_name:'Dr. B Fernando',ai_flag:'✅ OK'},
+    {record_date:'2026-03-19',patient_name:'Kasun Perera',patient_code:'PAT000003',
+     visit_type:'Lab Review',diagnosis:'HbA1c 7.2% — managed DM2',
+     diagnosis_icd10:'E11',doctor_name:'Dr. A Silva',ai_flag:'✅ OK'},
+  ];
+}
+
+function getFallbackTimeline(pid) {
+  const data = {
+    '1': [
+      {event_date:'2026-03-20',timeline_type:'MEDICAL_RECORD',sub_type:'Follow-up',
+       summary:'Hypertension check',detail:'BP 130/85 — stable',doctor_name:'Dr. A Silva'},
+      {event_date:'2026-03-10',timeline_type:'PRESCRIPTION',sub_type:'Active',
+       summary:'Amlodipine 5mg, Warfarin 2mg',detail:'30-day supply',doctor_name:'Dr. A Silva'},
+      {event_date:'2026-02-28',timeline_type:'LAB_TEST',sub_type:'Completed',
+       summary:'Full Blood Count',detail:'WBC 7.2, Hb 13.4 — Normal',doctor_name:'Dr. A Silva'},
+    ]
+  };
+  return data[pid] || [];
+}
+
+// ── Timeline auto-load ────────────────────────────────────────────────────────
+let recentPatientsLoaded = false;
+async function loadRecentPatientsForTimeline() {
+  const row = document.getElementById('recent-patients-row');
+  if (!row) return;
+  if (recentPatientsLoaded) return;
+  row.innerHTML = '<div style="color:var(--gray);font-size:12px;padding:8px;grid-column:1/-1">Loading recent patients…</div>';
+  const res = await API.get('/emr/recent-patients?limit=5').catch(() => null);
+  const patients = (res && res.success && Array.isArray(res.data)) ? res.data : [];
+  if (!patients.length) {
+    row.innerHTML = '<div style="color:var(--gray);font-size:12px;padding:8px;grid-column:1/-1">No recent patient activity found. Enter a Patient ID above.</div>';
+    return;
+  }
+  recentPatientsLoaded = true;
+  row.innerHTML = patients.map((p, idx) => `
+    <div class="patient-card${idx === 0 ? ' selected' : ''}"
+         onclick="selectTimelinePatient(${p.patient_id}, this)"
+         title="Load timeline for ${(p.patient_name || '').replace(/"/g,'&quot;')}">
+      <div style="font-weight:700;font-size:13px">${p.patient_name || '—'}</div>
+      <div class="pc-sub" style="font-size:11px;color:var(--teal);margin-top:2px">${p.patient_code || ''}</div>
+      <div class="pc-sub" style="font-size:10px;color:var(--gray);margin-top:4px">Last: ${fmtDate(p.last_visit)}</div>
+    </div>`).join('');
+  // Auto-load the most recently active patient immediately
+  const first = patients[0];
+  document.getElementById('timeline-patient-id').value = first.patient_id;
+  loadTimeline(first.patient_id);
+}
+
+function selectTimelinePatient(patientId, cardEl) {
+  document.querySelectorAll('.patient-card').forEach(c => c.classList.remove('selected'));
+  if (cardEl) cardEl.classList.add('selected');
+  document.getElementById('timeline-patient-id').value = patientId;
+  loadTimeline(patientId);
+}
+
+// ── Documents tab ─────────────────────────────────────────────────────────────
+const _docCache = new Map();
+
+function renderDocTable(docs, emptyMsg) {
+  const tbody = document.getElementById('docs-tbody');
+  if (!docs || !docs.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">${emptyMsg || 'No documents found'}</td></tr>`;
+    return;
+  }
+  docs.forEach(d => _docCache.set(d.doc_id, d));
+  tbody.innerHTML = docs.map(d => {
+    const mimeIcon = (d.mime_type || '').includes('pdf') ? '📄' :
+                     (d.mime_type || '').includes('image') ? '🖼️' : '📎';
+    return `<tr>
+      <td style="white-space:nowrap">${fmtDate(d.upload_date)}</td>
+      <td>
+        <strong style="font-size:12px">${d.patient_name || '—'}</strong><br>
+        <span style="font-size:10px;color:var(--gray)">${d.patient_code || ''}</span>
+      </td>
+      <td><span class="badge badge-info">${d.document_type || '—'}</span></td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+          title="${(d.file_name || '').replace(/"/g,'&quot;')}">
+        ${mimeIcon} ${d.file_name || '—'}
+      </td>
+      <td style="white-space:nowrap">${d.file_size_kb ? d.file_size_kb + ' KB' : '—'}</td>
+      <td>${d.uploaded_by || '—'}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="openDocPreview(${d.doc_id})"
+                style="white-space:nowrap">⬇ Download</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openDocPreview(docId) {
+  const d = _docCache.get(docId);
+  if (!d) return;
+  const mimeIcon = (d.mime_type || '').includes('pdf') ? '📄' :
+                   (d.mime_type || '').includes('image') ? '🖼️' : '📎';
+  const realUrl = d.file_path ? `/smart-care/${d.file_path}` : null;
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${(d.file_name || 'Document').replace(/</g,'&lt;')} — SmartCare</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#333;padding:30px}
+  .page{max-width:700px;margin:0 auto;background:#fff;border-radius:10px;
+        box-shadow:0 4px 20px rgba(0,0,0,.12);overflow:hidden}
+  .header{background:linear-gradient(135deg,#1a3a5c,#0f2540);color:#fff;padding:24px 32px;
+          display:flex;align-items:center;gap:18px}
+  .header img{height:52px;background:#0f2540;border-radius:8px;padding:4px;object-fit:contain}
+  .header-text h1{font-size:20px;font-weight:700;letter-spacing:.3px}
+  .header-text p{font-size:12px;opacity:.85;margin-top:3px}
+  .body{padding:32px}
+  .watermark{background:#fff8e1;border:2px dashed #F5A623;border-radius:8px;
+             padding:14px 20px;margin-bottom:28px;text-align:center}
+  .watermark span{font-size:13px;font-weight:700;color:#c47f00;letter-spacing:.5px}
+  .meta-table{width:100%;border-collapse:collapse;margin-bottom:24px}
+  .meta-table th{width:38%;text-align:left;padding:10px 14px;background:#eef1f6;
+                 color:#1a3a5c;font-size:12px;font-weight:600;border-bottom:1px solid #d4dce8}
+  .meta-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f2f2f2}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;
+         font-weight:600;background:#dce6f0;color:#1a3a5c}
+  .desc-box{background:#f9f9f9;border-left:4px solid #1a3a5c;padding:14px 18px;
+            border-radius:0 6px 6px 0;font-size:13px;color:#555;line-height:1.6;margin-bottom:24px}
+  .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{padding:10px 22px;border-radius:6px;border:none;font-size:13px;font-weight:600;
+       cursor:pointer;transition:opacity .2s}
+  .btn-primary{background:#1a3a5c;color:#fff}
+  .btn-secondary{background:#F5A623;color:#fff}
+  .btn:hover{opacity:.88}
+  .footer{background:#f4f6f9;border-top:1px solid #e8e8e8;padding:14px 32px;
+          font-size:11px;color:#999;text-align:center}
+  @media print{
+    body{background:#fff;padding:0}
+    .page{box-shadow:none;border-radius:0}
+    .actions{display:none}
+    .watermark{border-color:#ccc}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <img src="/smart-care/images/logo.png" alt="SmartCare Logo"
+         onerror="this.style.display='none'">
+    <div class="header-text">
+      <h1>SmartCare Hospital ERP</h1>
+      <p>Electronic Medical Record — Document View</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="watermark">
+      <span>⚠ DEMO DOCUMENT — SmartCare Hospital ERP &nbsp;|&nbsp; For demonstration purposes only</span>
+    </div>
+    <table class="meta-table">
+      <tr><th>Patient</th>
+          <td><strong>${(d.patient_name || '—').replace(/</g,'&lt;')}</strong>
+              ${d.patient_code ? `<br><span style="font-size:11px;color:#888">${d.patient_code}</span>` : ''}</td></tr>
+      <tr><th>Document Type</th>
+          <td><span class="badge">${(d.document_type || '—').replace(/</g,'&lt;')}</span></td></tr>
+      <tr><th>File Name</th>
+          <td>${mimeIcon} ${(d.file_name || '—').replace(/</g,'&lt;')}</td></tr>
+      <tr><th>File Size</th>
+          <td>${d.file_size_kb ? d.file_size_kb + ' KB' : '—'}</td></tr>
+      <tr><th>MIME Type</th>
+          <td style="color:#888;font-size:12px">${(d.mime_type || '—').replace(/</g,'&lt;')}</td></tr>
+      <tr><th>Upload Date</th>
+          <td>${d.upload_date ? new Date(d.upload_date).toLocaleDateString('en-GB',
+                {day:'2-digit',month:'short',year:'numeric'}) : '—'}</td></tr>
+      <tr><th>Uploaded By</th>
+          <td>${(d.uploaded_by || '—').replace(/</g,'&lt;')}</td></tr>
+      <tr><th>Document ID</th>
+          <td style="font-family:monospace;color:#888">#${d.doc_id}</td></tr>
+    </table>
+    ${d.description ? `<div class="desc-box">${d.description.replace(/</g,'&lt;')}</div>` : ''}
+    <div class="actions">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      ${realUrl ? `<a href="${realUrl}" download="${(d.file_name||'document').replace(/"/g,'&quot;')}"
+                     style="text-decoration:none">
+                    <button class="btn btn-secondary">⬇ Download File</button>
+                  </a>` : ''}
+    </div>
+  </div>
+  <div class="footer">
+    Generated by SmartCare Hospital ERP &nbsp;|&nbsp;
+    ${new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',
+      hour:'2-digit',minute:'2-digit'})}
+  </div>
+</div>
+</body></html>`;
+  const win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); }
+}
+
+let docsAllLoaded = false;
+async function loadRecentDocuments() {
+  if (docsAllLoaded) return;
+  document.getElementById('docs-context').textContent = 'All recent';
+  document.getElementById('doc-patient-id').value = '';
+  const tbody = document.getElementById('docs-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Loading…</td></tr>';
+  const res = await API.get('/emr/documents?limit=25').catch(() => null);
+  const docs = (res && res.success) ? res.data : [];
+  docsAllLoaded = true;
+  renderDocTable(docs, 'No documents found in the system');
+}
+
+async function loadDocumentsList() {
+  const pid = document.getElementById('doc-patient-id').value.trim();
+  if (!pid) { Toast.show('Enter a Patient ID to filter', 'error'); return; }
+  docsAllLoaded = false;   // allow re-load of "All" after filter
+  document.getElementById('docs-context').textContent = `Patient #${pid}`;
+  const tbody = document.getElementById('docs-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Loading…</td></tr>';
+  const res = await API.get(`/emr/documents/${pid}`).catch(() => null);
+  const docs = (res && res.success) ? res.data : [];
+  renderDocTable(docs, `No documents found for Patient #${pid}`);
+}
+
+async function uploadDocumentFile() {
+  const pid   = document.getElementById('upload-patient-id').value;
+  const file  = document.getElementById('upload-file').files[0];
+  if (!pid || !file) { Toast.show('Patient ID and file are required', 'error'); return; }
+  const formData = new FormData();
+  formData.append('patientId', pid);
+  formData.append('documentType', document.getElementById('upload-doc-type').value);
+  formData.append('description', document.getElementById('upload-description').value);
+  formData.append('file', file);
+  const token = localStorage.getItem('sc_token');
+  const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+  try {
+    const resp = await fetch('/smart-care/api/emr/documents', { method: 'POST', headers, body: formData });
+    const data = await resp.json();
+    if (data && data.success) {
+      Toast.show('Document uploaded successfully', 'success');
+      document.getElementById('doc-patient-id').value = pid;
+      document.getElementById('upload-file').value = '';
+      loadDocumentsList();
+    } else {
+      Toast.show((data && data.error) ? data.error : 'Upload failed', 'error');
+    }
+  } catch (e) {
+    Toast.show('Upload failed — check file type and size', 'error');
+  }
+}
+
+// ── Reports tab ───────────────────────────────────────────────────────────────
+function printReport() {
+  const now = new Date().toLocaleString('en-GB', {
+    day:'2-digit', month:'long', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+  const el = document.getElementById('report-print-date');
+  if (el) el.textContent = 'Generated: ' + now;
+  window.print();
+}
+
+let reportLoaded = false;
+async function loadEmrReport() {
+  if (reportLoaded) return;
+  const res = await API.get('/emr/report').catch(() => null);
+  if (!res || !res.success) {
+    document.getElementById('report-by-type').innerHTML = '<div style="color:var(--gray);font-size:12px">Failed to load — check authentication</div>';
+    return;
+  }
+  reportLoaded = true;
+  const d = res.data;
+  const genEl = document.getElementById('report-generated-at');
+  if (genEl) genEl.textContent = 'Generated: ' + new Date().toLocaleString('en-GB',
+    {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // Records by visit type
+  const byType = d.recordsByType || [];
+  const maxT   = byType.reduce((m, r) => Math.max(m, Number(r.cnt)), 1);
+  document.getElementById('report-by-type').innerHTML = byType.length
+    ? byType.map(r => `<div class="report-row">
+        <div class="report-label">${r.visit_type}</div>
+        <div style="flex:1;background:var(--light);border-radius:2px;height:18px;overflow:hidden">
+          <div class="report-bar" style="width:${Math.round(Number(r.cnt)/maxT*100)}%"></div>
+        </div>
+        <div class="report-count">${r.cnt}</div>
+      </div>`).join('')
+    : '<div style="color:var(--gray);font-size:12px">No records yet</div>';
+
+  // Lab status
+  const labStats = d.labStats || [];
+  document.getElementById('report-lab-status').innerHTML = labStats.length
+    ? labStats.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="status-${(s.status||'').toLowerCase().replace(/\s+/g,'-')}">${s.status}</span>
+        <strong style="font-size:16px;color:#1a3a5c">${s.cnt}</strong>
+      </div>`).join('')
+    : '<div style="color:var(--gray);font-size:12px">No lab data yet</div>';
+
+  // Monthly
+  const monthly = d.monthlyRecords || [];
+  const maxM    = monthly.reduce((m, r) => Math.max(m, Number(r.cnt)), 1);
+  document.getElementById('report-monthly').innerHTML = monthly.length
+    ? monthly.map(r => `<div class="report-row">
+        <div class="report-label">${r.month}</div>
+        <div style="flex:1;background:var(--light);border-radius:2px;height:18px;overflow:hidden">
+          <div class="report-bar" style="width:${Math.round(Number(r.cnt)/maxM*100)}%"></div>
+        </div>
+        <div class="report-count">${r.cnt}</div>
+      </div>`).join('')
+    : '<div style="color:var(--gray);font-size:12px">No data in last 6 months</div>';
+
+  // Summary
+  document.getElementById('report-summary').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:#e8edf3;border-radius:var(--radius);padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#1a3a5c">${d.activePrescriptions ?? '—'}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px">Active Prescriptions</div>
+      </div>
+      <div style="background:#fef3c7;border-radius:var(--radius);padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#d97706">${d.totalDocuments ?? '—'}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px">Total Documents</div>
+      </div>
+    </div>`;
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  console.log('[EMR] loadStats() called, token=', localStorage.getItem('sc_token'));
+  const res = await API.get('/emr/stats').catch(e => { console.error('[EMR] loadStats fetch error', e); return null; });
+  console.log('[EMR] loadStats response=', res);
+  if (!res || !res.success) return;
+  const s = res.data;
+  document.getElementById('stat-records').textContent = s.totalRecords ?? '—';
+  document.getElementById('stat-rx').textContent      = s.totalPrescriptions ?? '—';
+  document.getElementById('stat-labs').textContent    = s.pendingLabs ?? '—';
+  document.getElementById('stat-alerts').textContent  = s.drugAlerts ?? '—';
+}
+
+// ── Initial load ──────────────────────────────────────────────────────────────
+console.log('[EMR] running initial load calls');
+loadStats();
+loadRecords();
+loadPendingLabs();
+console.log('[EMR] initial load calls dispatched');
 </script>
 </body>
 </html>

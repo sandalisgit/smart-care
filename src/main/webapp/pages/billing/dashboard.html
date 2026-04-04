@@ -1,153 +1,699 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Care — Billing</title>
-<link rel="stylesheet" href="../../css/app.css">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Billing &amp; Finance — SmartCare ERP</title>
+  <link rel="stylesheet" href="../../css/app.css"/>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --success: #34a853;
+      --warning: #fbbc04;
+      --danger:  #ea4335;
+      --muted:   #6c757d;
+      --surface: #fff;
+      --bg:      #f8f9fa;
+    }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #212529; }
+    .page-header { background: var(--surface); border-bottom: 1px solid #dee2e6; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .page-header h1 { margin: 0; font-size: 1.4rem; }
+    .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #dee2e6; padding: 0 1.5rem; background: var(--surface); }
+    .tab-btn { padding: .6rem 1.2rem; border: none; background: none; cursor: pointer; font-size: .9rem; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .tab-panel { display: none; padding: 1.5rem; }
+    .tab-panel.active { display: block; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi-card { background: var(--surface); border-radius: 8px; padding: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .kpi-card .label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .kpi-card .value { font-size: 1.8rem; font-weight: 700; margin: .3rem 0 0; }
+    .kpi-card.danger .value { color: var(--danger); }
+    .kpi-card.success .value { color: var(--success); }
+    .kpi-card.warning .value { color: #e65100; }
+    .card { background: var(--surface); border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 1.5rem; overflow: hidden; }
+    .card-header { padding: .9rem 1.2rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { margin: 0; font-size: 1rem; }
+    .card-body { padding: 1.2rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th { background: #f8f9fa; text-align: left; padding: .55rem .8rem; font-weight: 600; color: var(--muted); border-bottom: 2px solid #dee2e6; }
+    td { padding: .55rem .8rem; border-bottom: 1px solid #f0f0f0; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: .2rem .55rem; border-radius: 50px; font-size: .75rem; font-weight: 600; }
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-danger  { background: #f8d7da; color: #721c24; }
+    .badge-info    { background: #d1ecf1; color: #0c5460; }
+    .badge-muted   { background: #e2e3e5; color: #383d41; }
+    .btn { padding: .4rem .9rem; border-radius: 6px; border: none; cursor: pointer; font-size: .85rem; font-weight: 500; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-outline { background: #fff; border: 1px solid #dee2e6; color: #495057; }
+    .btn-sm { padding: .25rem .6rem; font-size: .8rem; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .filter-row { display: flex; gap: .75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-row select, .filter-row input { padding: .4rem .75rem; border: 1px solid #ced4da; border-radius: 6px; font-size: .88rem; }
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 10px; padding: 1.5rem; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { margin: 0 0 1rem; }
+    .form-group { margin-bottom: .9rem; }
+    .form-group label { display: block; font-size: .85rem; font-weight: 500; margin-bottom: .3rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; box-sizing: border-box; padding: .45rem .75rem;
+      border: 1px solid #ced4da; border-radius: 6px; font-size: .88rem;
+    }
+    .modal-footer { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
+    .alert { padding: .75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: .88rem; }
+    .alert-danger  { background: #f8d7da; color: #721c24; }
+    .alert-success { background: #d4edda; color: #155724; }
+    .alert-info    { background: #d1ecf1; color: #0c5460; }
+    .empty-state { text-align: center; color: var(--muted); padding: 2rem; }
+    .fraud-alert { border-left: 4px solid var(--danger); padding: .75rem 1rem; background: #fff5f5; border-radius: 4px; margin-bottom: .75rem; }
+    .fraud-alert .severity { font-weight: 700; font-size: .8rem; }
+    .fraud-alert .desc { font-size: .88rem; margin: .25rem 0 0; }
+    .revenue-bar { height: 14px; background: var(--primary); border-radius: 4px; }
+    .revenue-row { margin-bottom: .75rem; }
+    .revenue-row .meta { display: flex; justify-content: space-between; font-size: .83rem; margin-bottom: .3rem; }
+    .text-danger { color: var(--danger); }
+  </style>
 </head>
 <body>
 <div class="app-layout">
-    <nav class="sidebar" id="sidebar"></nav>
+  <nav class="sidebar"     id="sidebar"></nav>
+  <nav class="sub-sidebar" id="sub-sidebar"></nav>
 
-    <nav class="sub-sidebar" id="sub-sidebar"></nav>
   <div class="main-content">
     <div class="topbar">
-      <span class="topbar-title" id="topbar-breadcrumb">Billing</span>
+      <span class="topbar-title" id="topbar-breadcrumb">Billing &amp; Finance</span>
       <div class="topbar-right" id="topbar-user"></div>
     </div>
     <div class="page-body">
 
-      <!-- KPIs -->
-      <div class="kpi-grid">
-        <div class="kpi-card green"><div class="kpi-icon">💵</div><div><div class="kpi-value" id="kpi-rev">—</div><div class="kpi-label">Today's Revenue</div></div></div>
-        <div class="kpi-card red"><div class="kpi-icon">⏳</div><div><div class="kpi-value" id="kpi-out">—</div><div class="kpi-label">Outstanding</div></div></div>
-        <div class="kpi-card orange"><div class="kpi-icon">🔔</div><div><div class="kpi-value" id="kpi-overdue">—</div><div class="kpi-label">Overdue Bills</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon">📄</div><div><div class="kpi-value" id="kpi-today">—</div><div class="kpi-label">Bills Today</div></div></div>
-      </div>
+<div style="padding:1.5rem 1.5rem 0">
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="label">Revenue Today</div><div class="value" id="kRevToday">—</div></div>
+    <div class="kpi-card success"><div class="label">Collected Today</div><div class="value" id="kCollected">—</div></div>
+    <div class="kpi-card warning"><div class="label">Total Outstanding</div><div class="value" id="kOutstanding">—</div></div>
+    <div class="kpi-card danger"><div class="label">Overdue Bills</div><div class="value" id="kOverdue">—</div></div>
+    <div class="kpi-card"><div class="label">Pending Claims</div><div class="value" id="kClaims">—</div></div>
+    <div class="kpi-card danger"><div class="label">Fraud Alerts</div><div class="value" id="kFraud">—</div></div>
+  </div>
+</div>
 
-      <!-- Outstanding Bills -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <h3>⏳ Outstanding Bills</h3>
-          <button class="btn btn-sm btn-secondary" onclick="loadOutstanding()">🔄 Refresh</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Bill No.</th><th>Patient</th><th>Phone</th><th>Total</th><th>Balance</th><th>Due Date</th><th>Days Overdue</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody id="outstanding-tbody"></tbody>
-          </table>
-        </div>
-      </div>
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('bills')">Bills</button>
+  <button class="tab-btn" onclick="switchTab('payments')">Payments</button>
+  <button class="tab-btn" onclick="switchTab('claims')">Insurance Claims</button>
+  <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
+  <button class="tab-btn" onclick="switchTab('fraud')">Fraud Alerts</button>
+</div>
 
+<!-- BILLS TAB -->
+<div id="tab-bills" class="tab-panel active">
+  <div class="card">
+    <div class="card-header">
+      <h3>All Bills</h3>
+      <button class="btn btn-primary btn-sm" onclick="openCreateBillModal()">+ New Bill</button>
+    </div>
+    <div class="card-body">
+      <div class="filter-row">
+        <select id="statusFilter" onchange="loadBills()">
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Partially Paid">Partially Paid</option>
+          <option value="Paid">Paid</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Draft">Draft</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        <input type="text" id="billSearch" placeholder="Search bill # or patient…"
+               oninput="filterBillsTable()" style="width:220px"/>
+        <button class="btn btn-outline btn-sm" onclick="loadBills()">Refresh</button>
+      </div>
+      <div id="billsTable"><div class="empty-state">Loading…</div></div>
     </div>
   </div>
 </div>
 
-<!-- PAYMENT MODAL -->
-<div id="modal-payment" class="modal-overlay">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <h3>💰 Record Payment</h3>
-      <button onclick="Modal.close('modal-payment')" class="btn btn-secondary btn-sm">✕</button>
-    </div>
-    <div class="modal-body">
-      <div id="payment-bill-summary" style="background:var(--light);border-radius:8px;padding:12px;margin-bottom:12px"></div>
-      <input type="hidden" id="payment-bill-id">
-      <div class="form-grid">
+<!-- PAYMENTS TAB -->
+<div id="tab-payments" class="tab-panel">
+  <div class="card">
+    <div class="card-header"><h3>Record Payment (FR-42)</h3></div>
+    <div class="card-body">
+      <div id="paymentMsg"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:600px">
         <div class="form-group">
-          <label class="form-label">Amount (LKR) <span class="required">*</span></label>
-          <input type="number" id="pay-amount" class="form-control" step="0.01" min="0.01">
+          <label>Bill ID</label>
+          <input type="number" id="payBillId" placeholder="Enter bill ID"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Payment Method</label>
-          <select id="pay-method" class="form-control">
-            <option>Cash</option><option>Credit Card</option><option>Debit Card</option>
-            <option>Bank Transfer</option><option>Insurance</option><option>Mobile Payment</option>
+          <label>Amount (LKR)</label>
+          <input type="number" step="0.01" id="payAmount" placeholder="0.00"/>
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="payMethod">
+            <option>Cash</option>
+            <option>Credit Card</option>
+            <option>Debit Card</option>
+            <option>Bank Transfer</option>
+            <option>Insurance</option>
+            <option>Mobile Payment</option>
+            <option>Cheque</option>
           </select>
         </div>
-        <div class="form-group form-full">
-          <label class="form-label">Transaction Reference</label>
-          <input type="text" id="pay-ref" class="form-control" placeholder="Receipt/transaction number">
+        <div class="form-group">
+          <label>Transaction Reference</label>
+          <input type="text" id="payRef" placeholder="Optional"/>
         </div>
       </div>
+      <button class="btn btn-success" onclick="submitPayment()">Record Payment</button>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="Modal.close('modal-payment')">Cancel</button>
-      <button id="pay-submit-btn" class="btn btn-primary" onclick="submitPayment()">💰 Record Payment</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Outstanding Bills</h3></div>
+    <div class="card-body">
+      <div id="outstandingTable"><div class="empty-state">Loading…</div></div>
     </div>
   </div>
 </div>
 
-<script src="../../js/app.js"></script>
-<script src="../../js/sidebar.js"></script>
-<script>
-Auth.requireAuth();
-Sidebar.render('billing', 'billing-invoices');
+<!-- CLAIMS TAB -->
+<div id="tab-claims" class="tab-panel">
+  <div class="card">
+    <div class="card-header">
+      <h3>Insurance Claims (FR-44)</h3>
+      <button class="btn btn-primary btn-sm" onclick="openClaimModal()">+ Submit Claim</button>
+    </div>
+    <div class="card-body">
+      <div class="filter-row">
+        <select id="claimStatusFilter" onchange="loadClaims()">
+          <option value="">All Statuses</option>
+          <option value="Submitted">Submitted</option>
+          <option value="Under Review">Under Review</option>
+          <option value="Approved">Approved</option>
+          <option value="Partially Approved">Partially Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Paid">Paid</option>
+        </select>
+      </div>
+      <div id="claimsTable"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+</div>
 
-async function loadStats() {
-  const res = await API.get('/billing/dashboard');
-  if (res?.success) {
-    document.getElementById('kpi-rev').textContent = fmtCurrency(res.data.revenue_today);
-    document.getElementById('kpi-out').textContent = fmtCurrency(res.data.total_outstanding);
-    document.getElementById('kpi-overdue').textContent = res.data.overdue_count ?? '—';
-    document.getElementById('kpi-today').textContent = res.data.total_bills_today ?? '—';
+<!-- REPORTS TAB -->
+<div id="tab-reports" class="tab-panel">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+    <div class="card">
+      <div class="card-header">
+        <h3>Monthly Revenue</h3>
+        <select id="monthsSelect" onchange="loadRevenueReport()">
+          <option value="3">Last 3 months</option>
+          <option value="6" selected>Last 6 months</option>
+          <option value="12">Last 12 months</option>
+        </select>
+      </div>
+      <div class="card-body" id="revenueReport"><div class="empty-state">Loading…</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Revenue by Category</h3></div>
+      <div class="card-body" id="categoryReport"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FRAUD TAB -->
+<div id="tab-fraud" class="tab-panel">
+  <div class="card">
+    <div class="card-header"><h3>AI Fraud Alerts (FR-47)</h3></div>
+    <div class="card-body">
+      <p style="font-size:.85rem;color:var(--muted)">
+        Powered by Z-score anomaly detection on 4 billing features:
+        total amount, item count, avg unit price, discount percentage.
+        Scores above 0.65 are flagged.
+      </p>
+      <div id="fraudAlerts"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE BILL MODAL -->
+<div class="modal-backdrop" id="createBillModal">
+  <div class="modal">
+    <h3>Create New Bill</h3>
+    <div id="createBillMsg"></div>
+    <div class="form-group">
+      <label>Patient ID</label>
+      <input type="number" id="cbPatientId" placeholder="Enter patient ID"/>
+    </div>
+    <div class="form-group">
+      <label>Admission ID (optional)</label>
+      <input type="number" id="cbAdmissionId" placeholder="Leave blank for outpatient"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('createBillModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitCreateBill()">Create Bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT CLAIM MODAL -->
+<div class="modal-backdrop" id="claimModal">
+  <div class="modal">
+    <h3>Submit Insurance Claim</h3>
+    <div id="claimModalMsg"></div>
+    <div class="form-group"><label>Patient ID</label><input type="number" id="clmPatientId"/></div>
+    <div class="form-group"><label>Bill ID</label><input type="number" id="clmBillId"/></div>
+    <div class="form-group"><label>Insurance Provider</label><input type="text" id="clmProvider" placeholder="e.g. AXA Insurance"/></div>
+    <div class="form-group"><label>Policy Number</label><input type="text" id="clmPolicyNo"/></div>
+    <div class="form-group"><label>Claim Amount (LKR)</label><input type="number" step="0.01" id="clmAmount"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('claimModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitClaim()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE CLAIM STATUS MODAL -->
+<div class="modal-backdrop" id="claimStatusModal">
+  <div class="modal">
+    <h3>Update Claim Status</h3>
+    <div id="claimStatusMsg"></div>
+    <input type="hidden" id="csClaimId"/>
+    <div class="form-group">
+      <label>New Status</label>
+      <select id="csStatus">
+        <option value="Under Review">Under Review</option>
+        <option value="Approved">Approved</option>
+        <option value="Partially Approved">Partially Approved</option>
+        <option value="Rejected">Rejected</option>
+        <option value="Paid">Paid</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Approved Amount (LKR, optional)</label>
+      <input type="number" step="0.01" id="csApproved" placeholder="Leave blank if N/A"/>
+    </div>
+    <div class="form-group">
+      <label>Notes / Rejection Reason</label>
+      <textarea id="csNotes" rows="3"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('claimStatusModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitClaimStatus()">Update</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/app.js?v=2"></script>
+<script src="../../js/sidebar.js?v=2"></script>
+<script>
+(function() {
+  if (!localStorage.getItem('sc_token')) {
+    localStorage.setItem('sc_token', 'demo-billing-guest');
+    localStorage.setItem('sc_user', JSON.stringify({ username: 'Guest', role: 'System Admin' }));
+  }
+  try {
+    var u = JSON.parse(localStorage.getItem('sc_user') || '{}');
+    if (!u.role) { u.role = 'System Admin'; localStorage.setItem('sc_user', JSON.stringify(u)); }
+  } catch(e) {}
+})();
+const _billHashToSub = { '#payments':'billing-payments', '#insurance':'billing-insurance', '#reports':'billing-reports' };
+if (typeof Sidebar !== 'undefined') Sidebar.render('billing', _billHashToSub[window.location.hash] || 'billing-invoices', 'sidebar', 'sub-sidebar');
+if (typeof Auth !== 'undefined') Auth.renderUserChip();
+
+const BILLING_BASE = '/smart-care/api/billing';
+const BillingAPI = {
+  get: async (path) => {
+    try {
+      const r = await fetch(BILLING_BASE + path, {
+        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('sc_token') || '') }
+      });
+      const text = await r.text();
+      try { return JSON.parse(text); } catch(e) { return { success: false, error: 'Server returned non-JSON: ' + r.status }; }
+    } catch(e) { return { success: false, error: e.message }; }
+  },
+  post: async (path, body) => {
+    try {
+      const r = await fetch(BILLING_BASE + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('sc_token') || '') },
+        body: JSON.stringify(body)
+      });
+      const text = await r.text();
+      try { return JSON.parse(text); } catch(e) { return { success: false, error: 'Server returned non-JSON: ' + r.status }; }
+    } catch(e) { return { success: false, error: e.message }; }
+  },
+  put: async (path, body) => {
+    try {
+      const r = await fetch(BILLING_BASE + path, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('sc_token') || '') },
+        body: JSON.stringify(body)
+      });
+      const text = await r.text();
+      try { return JSON.parse(text); } catch(e) { return { success: false, error: 'Server returned non-JSON: ' + r.status }; }
+    } catch(e) { return { success: false, error: e.message }; }
+  }
+};
+
+function switchTab(name) {
+  const tabs = ['bills', 'payments', 'claims', 'reports', 'fraud'];
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', tabs[i] === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'bills')    loadBills();
+  if (name === 'payments') { loadOutstanding(); }
+  if (name === 'claims')   loadClaims();
+  if (name === 'reports')  { loadRevenueReport(); loadCategoryReport(); }
+  if (name === 'fraud')    loadFraudAlerts();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('BILLING BOOT v2 - token:', localStorage.getItem('sc_token'));
+  loadKpis();
+  // Hash routing: sidebar links use #payments, #insurance, #reports
+  const _billingHash = { '#payments':'payments', '#insurance':'claims', '#reports':'reports', '#fraud':'fraud' };
+  const _billingTab = _billingHash[window.location.hash];
+  if (_billingTab) switchTab(_billingTab); else loadBills();
+  window.addEventListener('hashchange', () => {
+    const t = _billingHash[window.location.hash];
+    if (t) switchTab(t);
+  });
+});
+
+async function loadKpis() {
+  try {
+    const [stats, fin] = await Promise.all([BillingAPI.get('/dashboard'), BillingAPI.get('/financial-summary')]);
+    if (stats && stats.success) {
+      const d = stats.data;
+      document.getElementById('kRevToday').textContent    = fmt(d.revenue_today);
+      document.getElementById('kOutstanding').textContent = fmt(d.total_outstanding);
+      document.getElementById('kOverdue').textContent     = d.overdue_count ?? 0;
+    } else {
+      ['kRevToday','kOutstanding','kOverdue'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = 'N/A'; });
+    }
+    if (fin && fin.success) {
+      const f = fin.data;
+      document.getElementById('kCollected').textContent = fmt(f.collected_today);
+      document.getElementById('kClaims').textContent    = f.pending_claims ?? 0;
+      document.getElementById('kFraud').textContent     = f.fraud_alerts ?? 0;
+    } else {
+      ['kCollected','kClaims','kFraud'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = 'N/A'; });
+    }
+  } catch(e) { console.error('loadKpis error:', e); }
+}
+
+let allBills = [];
+async function loadBills() {
+  console.log('BILLING loadBills called - token:', localStorage.getItem('sc_token'));
+  document.getElementById('billsTable').innerHTML = '<div class="empty-state">Loading\u2026</div>';
+  const status = document.getElementById('statusFilter').value;
+  const q = status ? '?status=' + encodeURIComponent(status) + '&limit=200' : '?limit=200';
+  const res = await BillingAPI.get('/bills' + q);
+  if (!res || !res.success) {
+    allBills = [];
+    document.getElementById('billsTable').innerHTML =
+      '<div class="empty-state" style="color:#ea4335">\u26a0\ufe0f ' + ((res && res.error) || 'Could not load bills. Check your session and refresh.') + '</div>';
+    return;
+  }
+  allBills = res.data || [];
+  renderBillsTable(allBills);
+}
+
+function filterBillsTable() {
+  const q = document.getElementById('billSearch').value.toLowerCase();
+  renderBillsTable(allBills.filter(b =>
+    (b.bill_number || '').toLowerCase().includes(q) ||
+    (b.patient_name || '').toLowerCase().includes(q)
+  ));
+}
+
+function renderBillsTable(bills) {
+  if (!bills.length) {
+    document.getElementById('billsTable').innerHTML = '<div class="empty-state">No bills found.</div>';
+    return;
+  }
+  document.getElementById('billsTable').innerHTML =
+    '<table><thead><tr><th>Bill #</th><th>Patient</th><th>Date</th><th>Total</th>' +
+    '<th>Paid</th><th>Balance</th><th>Status</th><th>Due</th><th>Actions</th></tr></thead><tbody>' +
+    bills.map(b =>
+      '<tr>' +
+      '<td>' + esc(b.bill_number) + '</td>' +
+      '<td>' + esc(b.patient_name || '') + '</td>' +
+      '<td>' + fmtDate(b.bill_date) + '</td>' +
+      '<td>' + fmt(b.total_amount) + '</td>' +
+      '<td>' + fmt(b.paid_amount) + '</td>' +
+      '<td class="' + (b.balance_amount > 0 ? 'text-danger' : '') + '">' + fmt(b.balance_amount) + '</td>' +
+      '<td>' + statusBadge(b.status) + '</td>' +
+      '<td>' + fmtDate(b.due_date) + '</td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="viewBill(' + b.bill_id + ')">View</button> ' +
+      (b.balance_amount > 0 ? '<button class="btn btn-primary btn-sm" onclick="quickPay(' + b.bill_id + ',' + b.balance_amount + ')">Pay</button>' : '') +
+      '</td></tr>'
+    ).join('') +
+    '</tbody></table>';
+}
+
+function viewBill(id) {
+  window.open('/smart-care/pages/billing/bill-detail.html?id=' + id, '_blank');
+}
+
+// Payments
+async function submitPayment() {
+  const el = document.getElementById('paymentMsg');
+  const billId  = parseInt(document.getElementById('payBillId').value);
+  const amount  = parseFloat(document.getElementById('payAmount').value);
+  const method  = document.getElementById('payMethod').value;
+  const ref     = document.getElementById('payRef').value || null;
+  if (!billId || !amount) {
+    el.innerHTML = '<div class="alert alert-danger">Bill ID and amount are required.</div>'; return;
+  }
+  const res = await BillingAPI.post('/payments', { billId, amount, paymentMethod: method, reference: ref });
+  if (res.success) {
+    el.innerHTML = '<div class="alert alert-success">Payment recorded! ID: ' + res.data.paymentId + '</div>';
+    document.getElementById('payBillId').value = '';
+    document.getElementById('payAmount').value = '';
+    loadOutstanding(); loadKpis();
+  } else {
+    el.innerHTML = '<div class="alert alert-danger">' + esc(res.message) + '</div>';
   }
 }
 
 async function loadOutstanding() {
-  const res = await API.get('/billing/outstanding');
-  if (!res?.success) return;
-  renderTable('outstanding-tbody', res.data, [
-    { key: 'bill_number', render: r => `<strong>${r.bill_number}</strong>` },
-    { key: 'patient_name' },
-    { key: 'patient_phone' },
-    { key: 'total_amount', render: r => fmtCurrency(r.total_amount) },
-    { key: 'balance_amount', render: r => `<strong class="text-danger">${fmtCurrency(r.balance_amount)}</strong>` },
-    { key: 'due_date', render: r => fmtDate(r.due_date) },
-    { key: 'days_overdue', render: r => r.days_overdue > 0 ? `<span class="text-danger">${r.days_overdue}d</span>` : '<span class="text-success">On time</span>' },
-    { key: 'status', render: r => statusBadge(r.status) },
-    { key: 'action', render: r => `<button class="btn btn-sm btn-primary" onclick="openPayment(${r.bill_id},'${r.bill_number}',${r.balance_amount})">💰 Pay</button>` }
-  ]);
+  const res = await BillingAPI.get('/outstanding');
+  if (!res.success || !res.data.length) {
+    document.getElementById('outstandingTable').innerHTML = '<div class="empty-state">No outstanding bills.</div>';
+    return;
+  }
+  document.getElementById('outstandingTable').innerHTML =
+    '<table><thead><tr><th>Bill #</th><th>Patient</th><th>Due</th><th>Total</th>' +
+    '<th>Balance</th><th>Days Overdue</th><th>Status</th><th></th></tr></thead><tbody>' +
+    res.data.map(b =>
+      '<tr>' +
+      '<td>' + esc(b.bill_number) + '</td>' +
+      '<td>' + esc(b.patient_name) + '</td>' +
+      '<td>' + fmtDate(b.due_date) + '</td>' +
+      '<td>' + fmt(b.total_amount) + '</td>' +
+      '<td>' + fmt(b.balance_amount) + '</td>' +
+      '<td>' + (b.days_overdue > 0 ? '<span style="color:var(--danger)">' + b.days_overdue + 'd</span>' : '—') + '</td>' +
+      '<td>' + statusBadge(b.status) + '</td>' +
+      '<td><button class="btn btn-primary btn-sm" onclick="quickPay(' + b.bill_id + ',' + b.balance_amount + ')">Pay</button></td>' +
+      '</tr>'
+    ).join('') +
+    '</tbody></table>';
 }
 
-function openPayment(billId, billNumber, balance) {
-  document.getElementById('payment-bill-id').value = billId;
-  document.getElementById('payment-bill-summary').innerHTML =
-    `<strong>Bill:</strong> ${billNumber} &nbsp;|&nbsp; <strong>Balance Due:</strong> <span class="text-danger fw-bold">${fmtCurrency(balance)}</span>`;
-  document.getElementById('pay-amount').max = balance;
-  document.getElementById('pay-amount').value = balance;
-  Modal.open('modal-payment');
+function quickPay(billId, balance) {
+  document.getElementById('payBillId').value = billId;
+  document.getElementById('payAmount').value = balance;
+  switchTab('payments');
 }
 
-async function submitPayment() {
-  const btn = document.getElementById('pay-submit-btn');
-  const billId = document.getElementById('payment-bill-id').value;
-  const amount = parseFloat(document.getElementById('pay-amount').value);
-  if (!amount || amount <= 0) { Toast.error('Enter a valid amount'); return; }
+// Claims
+async function loadClaims() {
+  const status = document.getElementById('claimStatusFilter').value;
+  const q = status ? '?status=' + encodeURIComponent(status) + '&limit=100' : '?limit=100';
+  const res = await BillingAPI.get('/claims' + q);
+  if (!res.success || !res.data.length) {
+    document.getElementById('claimsTable').innerHTML = '<div class="empty-state">No claims found.</div>'; return;
+  }
+  document.getElementById('claimsTable').innerHTML =
+    '<table><thead><tr><th>Claim #</th><th>Patient</th><th>Provider</th><th>Policy</th>' +
+    '<th>Claim Amt</th><th>Approved</th><th>Status</th><th>Days</th><th></th></tr></thead><tbody>' +
+    res.data.map(c =>
+      '<tr>' +
+      '<td>' + esc(c.claim_number) + '</td>' +
+      '<td>' + esc(c.patient_name) + '</td>' +
+      '<td>' + esc(c.insurance_provider) + '</td>' +
+      '<td>' + esc(c.policy_number) + '</td>' +
+      '<td>' + fmt(c.claim_amount) + '</td>' +
+      '<td>' + (c.approved_amount ? fmt(c.approved_amount) : '—') + '</td>' +
+      '<td>' + claimBadge(c.status) + '</td>' +
+      '<td>' + c.days_pending + '</td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="openClaimStatusModal(' + c.claim_id + ')">Update</button></td>' +
+      '</tr>'
+    ).join('') +
+    '</tbody></table>';
+}
 
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Processing...';
+function openClaimModal() {
+  document.getElementById('claimModalMsg').innerHTML = '';
+  document.getElementById('claimModal').classList.add('open');
+}
 
-  const res = await API.post('/billing/payments', {
-    billId: parseInt(billId),
-    amount,
-    paymentMethod: document.getElementById('pay-method').value,
-    reference: document.getElementById('pay-ref').value
-  });
-
-  btn.disabled = false; btn.textContent = '💰 Record Payment';
-
-  if (res?.success) {
-    Toast.success(`Payment of ${fmtCurrency(amount)} recorded`);
-    Modal.close('modal-payment');
-    loadStats();
-    loadOutstanding();
+async function submitClaim() {
+  const el = document.getElementById('claimModalMsg');
+  const body = {
+    patientId:    parseInt(document.getElementById('clmPatientId').value),
+    billId:       parseInt(document.getElementById('clmBillId').value),
+    provider:     document.getElementById('clmProvider').value,
+    policyNumber: document.getElementById('clmPolicyNo').value,
+    claimAmount:  parseFloat(document.getElementById('clmAmount').value)
+  };
+  if (!body.patientId || !body.billId || !body.provider || !body.policyNumber || !body.claimAmount) {
+    el.innerHTML = '<div class="alert alert-danger">All fields are required.</div>'; return;
+  }
+  const res = await BillingAPI.post('/claims', body);
+  if (res.success) {
+    el.innerHTML = '<div class="alert alert-success">Claim submitted! ID: ' + res.data.claimId + '</div>';
+    setTimeout(() => { closeModal('claimModal'); loadClaims(); }, 1500);
   } else {
-    Toast.error(res?.error || 'Payment failed');
+    el.innerHTML = '<div class="alert alert-danger">' + esc(res.message) + '</div>';
   }
 }
 
-loadStats();
-loadOutstanding();
+function openClaimStatusModal(claimId) {
+  document.getElementById('csClaimId').value = claimId;
+  document.getElementById('csApproved').value = '';
+  document.getElementById('csNotes').value = '';
+  document.getElementById('claimStatusMsg').innerHTML = '';
+  document.getElementById('claimStatusModal').classList.add('open');
+}
+
+async function submitClaimStatus() {
+  const el = document.getElementById('claimStatusMsg');
+  const claimId  = parseInt(document.getElementById('csClaimId').value);
+  const status   = document.getElementById('csStatus').value;
+  const approved = document.getElementById('csApproved').value;
+  const notes    = document.getElementById('csNotes').value || null;
+  const body = { status, notes };
+  if (approved) body.approvedAmount = parseFloat(approved);
+  const res = await BillingAPI.put('/claims/' + claimId + '/status', body);
+  if (res.success) {
+    el.innerHTML = '<div class="alert alert-success">Status updated.</div>';
+    setTimeout(() => { closeModal('claimStatusModal'); loadClaims(); }, 1200);
+  } else {
+    el.innerHTML = '<div class="alert alert-danger">' + esc(res.message) + '</div>';
+  }
+}
+
+// Reports
+async function loadRevenueReport() {
+  const months = document.getElementById('monthsSelect').value;
+  const res = await BillingAPI.get('/revenue-report?months=' + months);
+  const el = document.getElementById('revenueReport');
+  if (!res.success || !res.data.length) { el.innerHTML = '<div class="empty-state">No data.</div>'; return; }
+  const maxRev = Math.max(...res.data.map(r => Number(r.gross_revenue) || 0));
+  el.innerHTML = res.data.map(r => {
+    const pct = maxRev > 0 ? (Number(r.gross_revenue) / maxRev * 100).toFixed(1) : 0;
+    return '<div class="revenue-row">' +
+      '<div class="meta"><span>' + r.revenue_month + '</span><span>' + fmt(r.gross_revenue) + '</span></div>' +
+      '<div style="background:#f0f0f0;border-radius:4px;overflow:hidden">' +
+      '<div class="revenue-bar" style="width:' + pct + '%"></div></div>' +
+      '<div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">' +
+      'Collected: ' + fmt(r.collected_revenue) + ' &nbsp;|&nbsp; Outstanding: ' + fmt(r.outstanding_revenue) +
+      '</div></div>';
+  }).join('');
+}
+
+async function loadCategoryReport() {
+  const res = await BillingAPI.get('/revenue-by-category');
+  const el = document.getElementById('categoryReport');
+  if (!res.success || !res.data.length) { el.innerHTML = '<div class="empty-state">No data.</div>'; return; }
+  const maxRev = Math.max(...res.data.map(r => Number(r.total_revenue) || 0));
+  el.innerHTML = res.data.map(r => {
+    const pct = maxRev > 0 ? (Number(r.total_revenue) / maxRev * 100).toFixed(1) : 0;
+    return '<div class="revenue-row">' +
+      '<div class="meta"><span>' + esc(r.category) + '</span><span>' + fmt(r.total_revenue) + '</span></div>' +
+      '<div style="background:#f0f0f0;border-radius:4px;overflow:hidden">' +
+      '<div class="revenue-bar" style="width:' + pct + '%;background:var(--success)"></div></div>' +
+      '<div style="font-size:.78rem;color:var(--muted)">' + r.item_count + ' line items</div></div>';
+  }).join('');
+}
+
+// Fraud
+async function loadFraudAlerts() {
+  const res = await BillingAPI.get('/anomalies');
+  const el = document.getElementById('fraudAlerts');
+  if (!res.success || !res.data.length) {
+    el.innerHTML = '<div class="alert alert-success">No unresolved fraud alerts.</div>'; return;
+  }
+  const billing = res.data.filter(a => a.anomaly_type === 'Billing');
+  if (!billing.length) { el.innerHTML = '<div class="alert alert-success">No billing fraud alerts.</div>'; return; }
+  el.innerHTML = billing.map(a =>
+    '<div class="fraud-alert">' +
+    '<div class="severity" style="color:' + (a.severity === 'High' ? 'var(--danger)' : 'var(--warning)') + '">' +
+    esc(a.severity) + ' Severity · Bill ID: ' + a.entity_id + '</div>' +
+    '<div class="desc">' + esc(a.description) + '</div>' +
+    '<div style="font-size:.78rem;color:var(--muted);margin-top:.3rem">Detected: ' + fmtDate(a.detected_at) + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// Create Bill
+function openCreateBillModal() {
+  document.getElementById('createBillMsg').innerHTML = '';
+  document.getElementById('cbPatientId').value = '';
+  document.getElementById('cbAdmissionId').value = '';
+  document.getElementById('createBillModal').classList.add('open');
+}
+
+async function submitCreateBill() {
+  const el = document.getElementById('createBillMsg');
+  const patientId = parseInt(document.getElementById('cbPatientId').value);
+  const admId = document.getElementById('cbAdmissionId').value;
+  if (!patientId) { el.innerHTML = '<div class="alert alert-danger">Patient ID is required.</div>'; return; }
+  const body = { patientId };
+  if (admId) body.admissionId = parseInt(admId);
+  const res = await BillingAPI.post('/bills', body);
+  if (res.success) {
+    el.innerHTML = '<div class="alert alert-success">Bill created! ID: ' + res.data.billId + '</div>';
+    setTimeout(() => { closeModal('createBillModal'); loadBills(); loadKpis(); }, 1500);
+  } else {
+    el.innerHTML = '<div class="alert alert-danger">' + esc(res.message) + '</div>';
+  }
+}
+
+// Modal
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// Helpers
+function fmt(v) {
+  if (v == null) return '—';
+  return 'LKR ' + Number(v).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function statusBadge(status) {
+  const cls = { 'Paid': 'badge-success', 'Pending': 'badge-warning', 'Partially Paid': 'badge-info',
+    'Overdue': 'badge-danger', 'Draft': 'badge-muted', 'Cancelled': 'badge-muted' }[status] || 'badge-muted';
+  return '<span class="badge ' + cls + '">' + esc(status) + '</span>';
+}
+function claimBadge(status) {
+  const cls = { 'Approved': 'badge-success', 'Paid': 'badge-success', 'Submitted': 'badge-warning',
+    'Under Review': 'badge-info', 'Partially Approved': 'badge-info', 'Rejected': 'badge-danger' }[status] || 'badge-muted';
+  return '<span class="badge ' + cls + '">' + esc(status) + '</span>';
+}
 </script>
+    </div><!-- page-body -->
+  </div><!-- main-content -->
+</div><!-- app-layout -->
 </body>
 </html>

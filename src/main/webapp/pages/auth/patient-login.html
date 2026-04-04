@@ -1,146 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Care &mdash; Patient Login</title>
-<link rel="stylesheet" href="../../css/app.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Care — Patient Login</title>
 <style>
-  .demo-patients { background:var(--teal-light);border:1px solid var(--teal-mid);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:18px;font-size:12px; }
-  .demo-patients h4 { font-weight:700;color:var(--teal-darker);margin-bottom:8px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px; }
-  .pat-row { display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--teal-mid);font-size:11px; }
-  .pat-row:last-child { border-bottom:none; }
-  .pat-id { font-family:monospace;color:var(--teal-darker);font-weight:700; }
-  .pat-use { background:var(--teal);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;font-weight:600; }
-  .pat-use:hover { background:var(--teal-dark); }
-  .info-note { background:var(--info-light);border:1px solid #BEE5EB;color:#0C5460;padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;margin-bottom:16px; }
-  .error-box { background:var(--red-light);border:1px solid #F5C6CB;color:#721C24;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px;display:none; }
+  :root {
+    --navy: #1B2A4A;
+    --navy-dark: #131F38;
+    --navy-light: #243552;
+    --teal: #1B8A8F;
+    --teal-light: #20A0A6;
+    --accent: #26a6b2;
+    --red: #DC3545;
+    --red-light: #FFF0F0;
+    --gray: #6C757D;
+    --mid: #495057;
+    --dark: #1A2332;
+    --bg: #F0F4F8;
+    --white: #FFFFFF;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 12px 40px rgba(0,0,0,0.15);
+    --border: #DEE2E6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .auth-layout {
+    display: flex;
+    max-width: 860px;
+    width: 100%;
+    box-shadow: var(--shadow);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .auth-left {
+    background: linear-gradient(160deg, var(--navy) 0%, var(--navy-dark) 100%);
+    padding: 52px 38px;
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Decorative circle */
+  .auth-left::after {
+    content: '';
+    position: absolute;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(79,195,200,0.08);
+    bottom: -60px; right: -80px;
+    pointer-events: none;
+  }
+  .auth-left::before {
+    content: '';
+    position: absolute;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(79,195,200,0.06);
+    bottom: 80px; right: 60px;
+    pointer-events: none;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .brand-logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--teal), var(--accent));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .brand-text h1 {
+    font-size: 20px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.3px;
+  }
+  .brand-text h1 .t { color: #26a6b2; }
+  .brand-text h1 .o { color: #f5950f; }
+  .brand-text p { color: rgba(255,255,255,0.45); font-size: 10px; }
+
+  .tagline {
+    font-size: 28px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+  .tagline em {
+    color: var(--accent);
+    font-style: italic;
+    display: block;
+  }
+  .tagline-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.50);
+    line-height: 1.6;
+    margin-bottom: 36px;
+  }
+
+  .feature-box {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .feature-box h4 { font-size: 12px; font-weight: 700; color: white; display: flex; gap: 8px; align-items: center; }
+  .feature-box h4 .fi { font-size: 14px; }
+  .feature-box p { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 3px; padding-left: 22px; }
+
+  .register-cta {
+    margin-top: 24px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+  }
+  .register-cta p { color: rgba(255,255,255,0.55); font-size: 11px; margin-bottom: 10px; }
+  .btn-register {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-register:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
+
+  .back-link { margin-top: auto; padding-top: 24px; }
+  .back-link a { color: rgba(255,255,255,0.4); font-size: 11px; text-decoration: none; transition: color 0.2s; }
+  .back-link a:hover { color: rgba(255,255,255,0.7); }
+
+  /* ── RIGHT PANEL ── */
+  .auth-right {
+    background: var(--white);
+    padding: 48px 44px;
+    flex: 1;
+  }
+
+  .right-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .right-brand {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 2px;
+  }
+  .right-brand .t { color: #26a6b2; }
+  .right-brand .o { color: #f5950f; }
+  .right-sub { font-size: 11px; color: var(--gray); margin-bottom: 10px; }
+  .right-title { font-size: 17px; font-weight: 700; color: var(--dark); }
+
+  /* Demo accounts */
+  .demo-creds {
+    background: #F8FFFE;
+    border: 1px solid #C8EEEF;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+  .demo-creds h4 {
+    font-weight: 700;
+    color: var(--teal);
+    margin-bottom: 8px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .cred-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid #E0F3F4;
+    font-size: 11px;
+  }
+  .cred-row:last-child { border-bottom: none; }
+  .cred-name { color: var(--navy); font-weight: 600; min-width: 120px; }
+  .cred-info { font-family: monospace; color: var(--mid); flex: 1; font-size: 10px; }
+  .cred-use {
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 9px;
+    font-size: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .cred-use:hover { background: var(--navy); }
+
+  .error-box {
+    background: var(--red-light);
+    border: 1px solid #F5C6CB;
+    color: #721C24;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--mid); display: block; margin-bottom: 5px; }
+  .req { color: var(--red); }
+  .form-control {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 13px;
+    font-size: 13px;
+    color: var(--dark);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    background: #FAFBFC;
+  }
+  .form-control:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(27,138,143,0.12);
+    background: white;
+  }
+  .form-control::placeholder { color: #ADB5BD; }
+
+  .pwd-wrapper { position: relative; }
+  .pwd-toggle {
+    position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--gray); font-size: 14px;
+  }
+
+  .btn {
+    padding: 10px 18px; border: none; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 7px; width: 100%;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+    font-size: 14px;
+    padding: 13px;
+    letter-spacing: 0.2px;
+  }
+  .btn-primary:hover { background: var(--navy-dark); }
+
+  .divider { border: none; border-top: 1px solid #EEF0F2; margin: 20px 0; }
+
+  .security-badge {
+    display: flex; align-items: center; gap: 8px;
+    justify-content: center; font-size: 11px; color: var(--gray);
+    margin-top: 4px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #28A745; flex-shrink: 0; }
+  .security-badge a { color: var(--teal); text-decoration: none; font-size: 10px; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 680px) {
+    .auth-layout { flex-direction: column; }
+    .auth-left { width: 100%; padding: 32px 24px; }
+    .auth-right { padding: 30px 22px; }
+  }
 </style>
 </head>
 <body>
-<div class="auth-layout patient">
-  <div class="auth-left" style="background:linear-gradient(135deg,var(--teal-darker),var(--dark))">
-    <div class="brand"><h1><span class="t">Smart</span><span class="o">Care</span></h1><p>Patient Portal</p></div>
-    <div class="tagline">Your health,<br><em>in your hands</em></div>
-    <p class="desc">Sign in to access appointments, EMR records, prescriptions and manage bills.</p>
-    <div style="margin-top:32px;display:flex;flex-direction:column;gap:12px">
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128197;</span> Book &amp; manage appointments</div>
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128203;</span> View medical records &amp; prescriptions</div>
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128179;</span> View &amp; track your bills</div>
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px"><span style="font-size:20px">&#128241;</span> Your unique patient QR code</div>
+<div class="auth-layout">
+
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="brand">
+      <div class="brand-logo" style="background:none;padding:0;box-shadow:none"><img src="/smart-care/images/logo.png" alt="SmartCare" style="width:54px;height:54px;object-fit:contain"></div>
+      <div class="brand-text">
+        <h1><span class="t">Smart</span><span class="o">Care</span></h1>
+        <p>AI-Powered Hospital ERP</p>
+      </div>
+    </div>
+
+    <div class="tagline">Your health,<em>in your hands</em></div>
+    <p class="tagline-sub">An AI powered Hospital ERP system that integrates patient care, hospital operations, and security into a single intelligent platform.</p>
+
+    <div class="feature-box">
+      <h4><span class="fi">🔐</span> Sign In</h4>
+      <p>Sign in to access appointments, EMR records, prescriptions and manage bills.</p>
+    </div>
+
+    <div class="register-cta">
+      <p>Not a registered patient? Go ahead and Sign Up</p>
+      <a class="btn-register" href="patient-signup.html">→ Register</a>
+    </div>
+
+    <div class="back-link">
+      <a href="../../index.html" onclick="localStorage.removeItem('sc_token'); localStorage.removeItem('sc_user'); sessionStorage.clear();">← Back to Staff Login</a>
     </div>
   </div>
+
+  <!-- RIGHT PANEL -->
   <div class="auth-right">
-    <div style="display:inline-flex;align-items:center;gap:8px;background:var(--teal-light);border:1px solid var(--teal-mid);color:var(--teal-darker);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:20px">
-      &#127973; Patient Login
-    </div>
-    <h2 class="auth-card-title">Sign in to Patient Portal</h2>
-    <p class="auth-card-sub">Enter your Patient ID and registered full name &mdash; no password needed.</p>
-
-    <div class="demo-patients">
-      <h4>Sample Patient Accounts &mdash; click Use to fill</h4>
-      <div class="pat-row"><span class="pat-id">PAT000001</span><span>Saman Silva</span><button class="pat-use" onclick="fillPatient('PAT000001','Saman Silva')">Use</button></div>
-      <div class="pat-row"><span class="pat-id">PAT000002</span><span>Dilini Fernando</span><button class="pat-use" onclick="fillPatient('PAT000002','Dilini Fernando')">Use</button></div>
-      <div class="pat-row"><span class="pat-id">PAT000003</span><span>Kasun Perera</span><button class="pat-use" onclick="fillPatient('PAT000003','Kasun Perera')">Use</button></div>
-      <div class="pat-row"><span class="pat-id">PAT000004</span><span>Nimali Rajapaksa</span><button class="pat-use" onclick="fillPatient('PAT000004','Nimali Rajapaksa')">Use</button></div>
-      <div class="pat-row"><span class="pat-id">PAT000005</span><span>Tharindu Bandara</span><button class="pat-use" onclick="fillPatient('PAT000005','Tharindu Bandara')">Use</button></div>
+    <div class="right-header">
+      <p class="right-sub">Patient Login</p>
+      <div class="right-brand"><span class="t" style="color:#26a6b2">Smart</span><span class="o" style="color:#f5950f">Care</span></div>
+      <p class="right-sub">AI-Powered Hospital ERP</p>
+      <p class="right-title">Sign in to your account</p>
     </div>
 
-    <div class="info-note">
-      &#8505;&#65039; Patient login uses your <strong>Patient ID</strong> and <strong>registered full name</strong> only &mdash; no password required.
-      Your data is protected by TLS 1.3 encryption and sessions expire after 15 minutes of inactivity.
+    <div class="demo-creds">
+      <h4>Demo Patient Accounts</h4>
+      <div id="demo-list"><div style="color:#6c757d;font-size:11px;padding:4px 0">Loading...</div></div>
+      <div style="margin-top:8px;font-size:11px;color:#6c757d">Password for all demo accounts: <strong>Admin@2026!</strong></div>
     </div>
 
-    <div class="error-box" id="error-box"></div>
+    <div id="error-box" class="error-box"></div>
 
     <div class="form-group">
       <label class="form-label">Patient ID <span class="req">*</span></label>
-      <input id="inp-patient-id" type="text" class="form-control" placeholder="e.g. PAT000001" autocomplete="off" style="text-transform:uppercase">
-      <div class="form-hint">Your Patient ID is printed on your registration card or appointment letter.</div>
+      <input id="inp-patientid" class="form-control" placeholder="e.g. PAT000001" autocomplete="off" maxlength="20">
     </div>
     <div class="form-group">
-      <label class="form-label">Full Name (as registered) <span class="req">*</span></label>
-      <input id="inp-full-name" type="text" class="form-control" placeholder="e.g. Saman Silva" autocomplete="name">
-      <div class="form-hint">Enter your full name exactly as registered (case-insensitive).</div>
+      <label class="form-label">Full Name <span class="req">*</span></label>
+      <input id="inp-name" class="form-control" placeholder="e.g. Saman Silva" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password <span style="color:var(--gray);font-weight:400">(if set during signup)</span></label>
+      <div class="pwd-wrapper">
+        <input id="inp-password" type="password" class="form-control" placeholder="Enter your password">
+        <button type="button" class="pwd-toggle" onclick="togglePwd()">👁</button>
+      </div>
     </div>
 
-    <button id="signin-btn" class="btn btn-primary btn-full btn-lg" onclick="doPatientLogin()">&#128274; Sign In to Patient Portal</button>
-    <hr class="auth-divider">
-    <p style="text-align:center;font-size:13px;color:var(--gray)">
-      Not a registered patient? <a href="patient-signup.html" style="color:var(--orange);font-weight:700">&rarr; Register Now</a>
-    </p>
-    <p style="text-align:center;font-size:13px;color:var(--gray);margin-top:8px">
-      Staff member? <a href="../../index.html" style="color:var(--teal);font-weight:600">Staff Login &rarr;</a>
-    </p>
-    <div class="auth-footer" style="margin-top:24px">
-      <div class="security-badge" style="justify-content:center">
-        <div class="dot"></div>
-        <span>TLS 1.3 Encrypted &middot; Session expires after 15 minutes</span>
-      </div>
+    <button id="signin-btn" class="btn btn-primary" onclick="doLogin()">→ Sign In</button>
+
+    <hr class="divider">
+    <div class="security-badge">
+      <div class="dot"></div>
+      <span>TLS 1.3 Encrypted &nbsp;·&nbsp; <a href="#">bcrypt Password Hashing</a></span>
     </div>
   </div>
 </div>
+
 <script src="../../js/app.js"></script>
 <script>
-const DEMO_PATIENTS = [
-  { id:'PAT000001', name:'Saman Silva',      dob:'1985-04-12', phone:'+94771234567', gender:'Male',   blood:'O+' },
-  { id:'PAT000002', name:'Dilini Fernando',  dob:'1992-07-23', phone:'+94772345678', gender:'Female', blood:'A+' },
-  { id:'PAT000003', name:'Kasun Perera',     dob:'1978-11-05', phone:'+94773456789', gender:'Male',   blood:'B+' },
-  { id:'PAT000004', name:'Nimali Rajapaksa', dob:'1995-02-18', phone:'+94774567890', gender:'Female', blood:'AB+'},
-  { id:'PAT000005', name:'Tharindu Bandara', dob:'1988-09-30', phone:'+94775678901', gender:'Male',   blood:'O-' },
-];
+// Populate demo accounts from the database
+async function loadDemoPatients() {
+  const list = document.getElementById('demo-list');
+  try {
+    const res = await API.get('/auth/demo-patients');
+    if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      list.innerHTML = res.data.map(p => {
+        const fullName = p.firstName + ' ' + p.lastName;
+        return `<div class="cred-row">
+          <span class="cred-name">${fullName}</span>
+          <span class="cred-info">${p.patientCode}</span>
+          <button class="cred-use" onclick="fillCreds('${p.patientCode}','${fullName}')">Use</button>
+        </div>`;
+      }).join('');
+    } else {
+      list.innerHTML = '<div style="color:#6c757d;font-size:11px;padding:4px 0">No active patients found.</div>';
+    }
+  } catch (e) {
+    list.innerHTML = '<div style="color:#6c757d;font-size:11px;padding:4px 0">Could not load demo accounts.</div>';
+  }
+}
+loadDemoPatients();
 
-function fillPatient(id, name) {
-  document.getElementById('inp-patient-id').value = id;
-  document.getElementById('inp-full-name').value  = name;
+// Clear any existing session when landing on login page
+// Only clear localStorage (not sessionStorage) on login page load
+// sessionStorage must NOT be cleared here — it would break the login redirect
+localStorage.removeItem('sc_token');
+localStorage.removeItem('sc_user');
+
+// If already logged in via sessionStorage, go straight to portal
+if (sessionStorage.getItem('sc_token')) {
+  window.location.href = '../patients/patient-portal.html';
+}
+
+function fillCreds(id, name) {
+  document.getElementById('inp-patientid').value = id;
+  document.getElementById('inp-name').value = name;
   document.getElementById('error-box').style.display = 'none';
 }
 
-document.getElementById('inp-full-name').addEventListener('keypress', e => { if (e.key === 'Enter') doPatientLogin(); });
-document.getElementById('inp-patient-id').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('inp-full-name').focus(); });
+function togglePwd() {
+  const inp = document.getElementById('inp-password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
 
-async function doPatientLogin() {
-  const patientId = document.getElementById('inp-patient-id').value.trim().toUpperCase();
-  const fullName  = document.getElementById('inp-full-name').value.trim();
-  const errorBox  = document.getElementById('error-box');
-  errorBox.style.display = 'none';
+document.getElementById('inp-password').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('inp-name').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
 
-  if (!patientId || !fullName) { errorBox.textContent = 'Please enter your Patient ID and full name.'; errorBox.style.display = 'block'; return; }
-  if (!/^PAT\d{6}$/.test(patientId)) { errorBox.textContent = 'Patient ID format is invalid. It should look like PAT000001.'; errorBox.style.display = 'block'; return; }
+async function doLogin() {
+  const patientId = document.getElementById('inp-patientid').value.trim().toUpperCase();
+  const fullName  = document.getElementById('inp-name').value.trim();
+  const password  = document.getElementById('inp-password').value;
+  const errBox = document.getElementById('error-box');
+  errBox.style.display = 'none';
 
-  setLoading('signin-btn', true, 'Signing in...');
+  if (!patientId) { errBox.textContent = 'Please enter your Patient ID.'; errBox.style.display = 'block'; return; }
+  if (!patientId.startsWith('PAT') && !patientId.startsWith('PT-')) { errBox.textContent = 'Patient ID must start with PAT (e.g. PAT000001).'; errBox.style.display = 'block'; return; }
+  if (!fullName) { errBox.textContent = 'Please enter your registered full name.'; errBox.style.display = 'block'; return; }
+  // Password is optional — only validate length if the user actually typed something
+  if (password && password.length < 8) { errBox.textContent = 'Password must be at least 8 characters.'; errBox.style.display = 'block'; return; }
 
-  // Try live API
-  const res = await API.post('/auth/patient-login', { patientId, fullName });
-  if (res && res.success) {
-    const names = fullName.split(' ');
-    const user = {
-      username: res.data.patientCode, userId: res.data.patientId, role: 'Patient',
-      patientId: res.data.patientId, patientCode: res.data.patientCode,
-      firstName: res.data.firstName, lastName: res.data.lastName,
-    };
-    Auth.setSession(res.data.token, user);
-    setLoading('signin-btn', false, '&#128274; Sign In to Patient Portal');
-    window.location.href = '../patients/patient-portal.html';
+  const btn = document.getElementById('signin-btn');
+  btn.innerHTML = '<span class="spinner"></span> Signing in...';
+  btn.disabled = true;
+
+  const res = await API.post('/auth/patient-login', { patientId, fullName, password }).catch(() => null);
+  btn.innerHTML = '→ Sign In';
+  btn.disabled = false;
+
+  if (!res) {
+    errBox.textContent = 'Could not connect to the server. Please check your connection and try again.';
+    errBox.style.display = 'block';
     return;
   }
 
-  // Demo fallback
-  const found = DEMO_PATIENTS.find(p => p.id === patientId && p.name.toLowerCase() === fullName.toLowerCase());
-  setLoading('signin-btn', false, '&#128274; Sign In to Patient Portal');
-
-  if (found) {
-    const names = found.name.split(' ');
-    const user = {
-      username: found.id, userId: 0, role: 'Patient',
-      patientId: found.id, patientCode: found.id,
-      firstName: names[0], lastName: names.slice(1).join(' '),
-      dob: found.dob, phone: found.phone, gender: found.gender, blood: found.blood,
-    };
-    Auth.setSession('demo-patient-token-' + Date.now(), user);
+  if (res.success) {
+    sessionStorage.setItem('sc_token', res.data.token);
+    sessionStorage.setItem('sc_user', JSON.stringify({
+        username:    (res.data.firstName || '') + ' ' + (res.data.lastName || ''),
+        firstName:   res.data.firstName  || '',
+        lastName:    res.data.lastName   || '',
+        role:        'Patient',
+        patientId:   res.data.patientId,
+        patientCode: res.data.patientCode || '',
+        userId:      res.data.patientId
+      }));
     window.location.href = '../patients/patient-portal.html';
   } else {
-    errorBox.textContent = 'Patient not found. Please check that your Patient ID and full name match exactly as registered.';
-    errorBox.style.display = 'block';
+    errBox.textContent = res.error || 'Login failed. Please check your Patient ID and full name.';
+    errBox.style.display = 'block';
   }
 }
 </script>

@@ -109,3 +109,44 @@ INSERT IGNORE INTO drug_interactions (drug_a, drug_b, severity, description) VAL
 ('SSRIs', 'MAOIs', 'Contraindicated', 'Serotonin syndrome — potentially fatal');
 
 SELECT 'Smart Care additional schema applied successfully!' AS Status;
+
+-- ─── AI Diagnosis Suggestions Log (FR-69) ────────────────────────────────────
+CREATE TABLE IF NOT EXISTS ai_diagnosis_suggestions (
+    suggestion_id    INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id       INT NOT NULL,
+    doctor_id        INT NOT NULL,
+    chief_complaint  TEXT,
+    suggested_diagnosis VARCHAR(255),
+    confidence_score DECIMAL(5,4),
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id),
+    FOREIGN KEY (doctor_id)  REFERENCES users(user_id)
+);
+
+-- ─── Ward Occupancy Snapshots for WardOccupancyPredictor (FR-56) ─────────────
+CREATE TABLE IF NOT EXISTS ward_occupancy_snapshots (
+    snapshot_id   INT AUTO_INCREMENT PRIMARY KEY,
+    ward_id       INT NOT NULL,
+    snap_date     DATE NOT NULL,
+    total_beds    INT NOT NULL,
+    occupied_beds INT NOT NULL,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_ward_date (ward_id, snap_date),
+    FOREIGN KEY (ward_id) REFERENCES wards(ward_id)
+);
+
+-- ─── Dispensing Log for DemandForecaster (FR-38, FR-40) ──────────────────────
+CREATE TABLE IF NOT EXISTS dispensing_log (
+    log_id          INT AUTO_INCREMENT PRIMARY KEY,
+    prescription_id INT,
+    medication_id   INT NOT NULL,
+    pharmacist_id   INT NOT NULL,
+    patient_id      INT NOT NULL,
+    quantity        INT NOT NULL,
+    stock_before    INT NOT NULL,
+    stock_after     INT NOT NULL,
+    dispensed_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (medication_id)   REFERENCES medications(medication_id),
+    FOREIGN KEY (pharmacist_id)   REFERENCES users(user_id),
+    FOREIGN KEY (patient_id)      REFERENCES patients(patient_id)
+);
