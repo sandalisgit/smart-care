@@ -276,6 +276,87 @@ public class BedDAO {
         return list;
     }
 
+    public List<Map<String, Object>> getTransferHistory(int limit) throws SQLException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        int safeLimit = (limit > 0 && limit <= 500) ? limit : 20;
+        String sql = "SELECT t.transfer_id, t.admission_id, t.transfer_reason, t.transfer_date AS transferred_at, " +
+                "CONCAT(p.first_name,' ',p.last_name) AS patient_name, p.patient_id, " +
+                "wf.ward_name AS from_ward, bf.bed_number AS from_bed, " +
+                "wt.ward_name AS to_ward, bt.bed_number AS to_bed, " +
+            "COALESCE(CONCAT(e.first_name,' ',e.last_name), u.username, 'System') AS transferred_by_name " +
+                "FROM bed_transfers t " +
+                "JOIN admissions a ON t.admission_id=a.admission_id " +
+                "JOIN patients p ON a.patient_id=p.patient_id " +
+                "LEFT JOIN beds bf ON t.from_bed_id=bf.bed_id " +
+                "LEFT JOIN rooms rf ON bf.room_id=rf.room_id " +
+                "LEFT JOIN wards wf ON rf.ward_id=wf.ward_id " +
+                "LEFT JOIN beds bt ON t.to_bed_id=bt.bed_id " +
+                "LEFT JOIN rooms rt ON bt.room_id=rt.room_id " +
+                "LEFT JOIN wards wt ON rt.ward_id=wt.ward_id " +
+                "LEFT JOIN users u ON t.transferred_by=u.user_id " +
+            "LEFT JOIN employees e ON e.user_id=u.user_id " +
+                "ORDER BY t.transfer_date DESC LIMIT ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, safeLimit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(rsToMap(rs));
+            }
+        } catch (SQLException e) {
+            // Older DB snapshots may not yet include bed_transfers.
+            if (e.getMessage() != null && e.getMessage().contains("bed_transfers")) {
+                return list;
+            }
+            throw e;
+        }
+        return list;
+    }
+
+    public List<Map<String, Object>> getUtilisationReport(String ward, int days) throws SQLException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        int safeDays = (days > 0 && days <= 365) ? days : 30;
+        boolean hasWard = ward != null && !ward.isBlank();
+
+        String baseSql = "SELECT w.ward_id, w.ward_name, w.ward_type, w.total_beds, " +
+                "SUM(CASE WHEN h.record_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY) THEN h.occupied_beds ELSE 0 END) AS occupied_days, " +
+                "ROUND((SUM(CASE WHEN h.record_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY) THEN h.occupied_beds ELSE 0 END) / (w.total_beds * ?)) * 100, 1) AS utilisation_pct " +
+                "FROM wards w LEFT JOIN bed_occupancy_history h ON w.ward_id=h.ward_id ";
+        String sql = hasWard
+                ? baseSql + "WHERE w.is_active=TRUE AND w.ward_name LIKE ? GROUP BY w.ward_id, w.ward_name, w.ward_type, w.total_beds ORDER BY w.ward_name"
+                : baseSql + "WHERE w.is_active=TRUE GROUP BY w.ward_id, w.ward_name, w.ward_type, w.total_beds ORDER BY w.ward_name";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+            ps.setInt(i++, safeDays);
+            ps.setInt(i++, safeDays);
+            ps.setInt(i++, safeDays);
+            if (hasWard) ps.setString(i, "%" + ward + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(rsToMap(rs));
+            }
+        }
+
+        if (list.isEmpty()) {
+            // Fallback when history table has no records yet.
+            String fallbackSql = "SELECT ward_id, ward_name, ward_type, total_beds, " +
+                    "(total_beds - available_beds) * ? AS occupied_days, " +
+                    "ROUND(((total_beds - available_beds) / total_beds) * 100, 1) AS utilisation_pct " +
+                    "FROM wards WHERE is_active=TRUE" + (hasWard ? " AND ward_name LIKE ?" : "") + " ORDER BY ward_name";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(fallbackSql)) {
+                ps.setInt(1, safeDays);
+                if (hasWard) ps.setString(2, "%" + ward + "%");
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) list.add(rsToMap(rs));
+                }
+            }
+        }
+
+        return list;
+    }
+
     // =====================================================================
     // DAILY SNAPSHOT FOR AI MODEL
     // =====================================================================

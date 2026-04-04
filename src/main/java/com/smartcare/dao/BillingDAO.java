@@ -239,6 +239,35 @@ public class BillingDAO {
         return list;
     }
 
+    public List<Map<String, Object>> getBills(String status, int limit) throws SQLException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        int safeLimit = (limit > 0 && limit <= 500) ? limit : 200;
+
+        String baseSql = "SELECT b.bill_id, b.bill_number, b.bill_date, b.total_amount, " +
+                "b.paid_amount, b.balance_amount, b.status, b.due_date, " +
+                "CONCAT(p.first_name,' ',p.last_name) AS patient_name " +
+                "FROM bills b JOIN patients p ON b.patient_id=p.patient_id ";
+
+        String sql;
+        boolean hasStatus = status != null && !status.isBlank();
+        if (hasStatus) {
+            sql = baseSql + "WHERE b.status=? ORDER BY b.bill_date DESC LIMIT ?";
+        } else {
+            sql = baseSql + "ORDER BY b.bill_date DESC LIMIT ?";
+        }
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+            if (hasStatus) ps.setString(i++, status);
+            ps.setInt(i, safeLimit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(rsToMap(rs));
+            }
+        }
+        return list;
+    }
+
     /** Outstanding bills for accounts receivable dashboard */
     public List<Map<String, Object>> getOutstandingBills(int limit) throws SQLException {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -267,6 +296,39 @@ public class BillingDAO {
             if (rs.next()) stats = rsToMap(rs);
         }
         return stats;
+    }
+
+    public Map<String, Object> getFinancialSummary() throws SQLException {
+        Map<String, Object> summary = new LinkedHashMap<>();
+
+        String collectedSql = "SELECT COALESCE(SUM(amount),0) AS collected_today FROM payments WHERE DATE(payment_date)=CURDATE()";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(collectedSql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                summary.put("collected_today", rs.getObject("collected_today"));
+            }
+        }
+
+        String claimsSql = "SELECT COUNT(*) AS pending_claims FROM insurance_claims WHERE status IN ('Submitted','Under Review','Partially Approved')";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(claimsSql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                summary.put("pending_claims", rs.getInt("pending_claims"));
+            }
+        }
+
+        String fraudSql = "SELECT COUNT(*) AS fraud_alerts FROM anomaly_detections WHERE anomaly_type='Billing' AND is_resolved=FALSE";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(fraudSql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                summary.put("fraud_alerts", rs.getInt("fraud_alerts"));
+            }
+        }
+
+        return summary;
     }
 
     // =====================================================================

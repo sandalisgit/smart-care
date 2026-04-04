@@ -106,7 +106,14 @@
 (function() {
   const token = localStorage.getItem('sc_token') || sessionStorage.getItem('sc_token');
   const user  = localStorage.getItem('sc_user')  || sessionStorage.getItem('sc_user');
-  if (!token) { window.location.href = '/smart-care/'; return; }
+  if (!token || token.startsWith('demo-')) {
+    localStorage.removeItem('sc_token');
+    localStorage.removeItem('sc_user');
+    sessionStorage.removeItem('sc_token');
+    sessionStorage.removeItem('sc_user');
+    window.location.href = '/smart-care/';
+    return;
+  }
   // Sync to both storages to ensure compatibility
   if (token) { localStorage.setItem('sc_token', token); sessionStorage.setItem('sc_token', token); }
   if (user)  { localStorage.setItem('sc_user',  user);  sessionStorage.setItem('sc_user',  user);  }

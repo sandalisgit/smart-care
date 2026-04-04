@@ -148,14 +148,21 @@
 <script src="../../js/app.js"></script>
 <script src="../../js/sidebar.js"></script>
 <script>
-Auth.requireStaff();
-const _staffHashToSub = { '#create':'staff-create', '#scheduling':'staff-scheduling',
-  '#attendance':'staff-attendance', '#leave':'staff-leave', '#reports':'staff-reports' };
-Sidebar.render('staff', _staffHashToSub[window.location.hash] || 'staff-profiles', 'sidebar', 'sub-sidebar');
-Auth.renderUserChip();
+if (typeof Auth === 'undefined' || typeof Sidebar === 'undefined') {
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="background:#c00;color:#fff;padding:12px 20px;font-size:13px;' +
+    'font-family:monospace;z-index:9999;position:fixed;top:0;left:0;right:0">' +
+    'SmartCare: app.js or sidebar.js failed to load - refresh the page</div>');
+} else {
+  Auth.requireStaff();
+  const _staffHashToSub = { '#create':'staff-create', '#scheduling':'staff-scheduling',
+    '#attendance':'staff-attendance', '#leave':'staff-leave', '#reports':'staff-reports' };
+  Sidebar.render('staff', _staffHashToSub[window.location.hash] || 'staff-profiles', 'sidebar', 'sub-sidebar');
+  Auth.renderUserChip();
+}
 
 const shiftBadge  = s => ({Day:'<span class="badge badge-teal">Day</span>',Night:'<span class="badge" style="background:#1a2332;color:#FFD080">Night</span>',Leave:'<span class="badge badge-yellow">Leave</span>'}[s]||s);
-const statusBadge = s => ({'On Duty':'<span class="badge badge-green">On Duty</span>','On Leave':'<span class="badge badge-yellow">On Leave</span>','Off Duty':'<span class="badge badge-gray">Off</span>'}[s]||s);
+const staffStatusBadge = s => ({'On Duty':'<span class="badge badge-green">On Duty</span>','On Leave':'<span class="badge badge-yellow">On Leave</span>','Off Duty':'<span class="badge badge-gray">Off</span>'}[s]||s);
 
 let cachedStaff = [];
 
@@ -177,7 +184,7 @@ function renderStaff(data) {
     <td>${s.department || s.department_name || s.dept || '—'}</td>
     <td>${s.phone || s.contact_number || '—'}</td>
     <td>${shiftBadge(s.current_shift || s.shift || 'Day')}</td>
-    <td>${statusBadge(s.duty_status || s.status || 'On Duty')}</td>
+    <td>${staffStatusBadge(s.duty_status || s.status || 'On Duty')}</td>
     <td>
       <button class="btn btn-sm btn-secondary" onclick="viewStaff('${s.user_id || s.employee_id || s.id}')">View</button>
       <button class="btn btn-sm btn-primary"   onclick="editStaff('${s.user_id || s.employee_id || s.id}')">Edit</button>

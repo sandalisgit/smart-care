@@ -600,20 +600,12 @@
 <script>
 // ── Bootstrap ──────────────────────────────────────────────────────────────
 (function pharmBoot() {
-  // Inject a demo token if no session exists so the page can render its UI.
-  // The API calls will still return 401 data errors, but the sidebar and
-  // layout will be visible rather than blank.
   if (typeof Auth === 'undefined' || typeof Sidebar === 'undefined') {
     document.body.insertAdjacentHTML('afterbegin',
       '<div style="background:#c00;color:#fff;padding:12px 20px;font-size:13px;' +
       'font-family:monospace;z-index:9999;position:fixed;top:0;left:0;right:0">' +
       'SmartCare: app.js or sidebar.js failed to load — press Ctrl+Shift+R</div>');
     return;
-  }
-  if (!localStorage.getItem('sc_token')) {
-    // No active session — store a demo token so Sidebar/Auth helpers work
-    Auth.setSession('demo-pharm-' + Date.now(),
-      { username: 'demo', userId: 0, role: 'Pharmacist', permissions: ['all'] });
   }
   Auth.requireStaff();
   const _pharmHashToSub = { '#dispense':'pharmacy-dispense', '#orders':'pharmacy-orders', '#reports':'pharmacy-reports' };

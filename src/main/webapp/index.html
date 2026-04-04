@@ -229,13 +229,8 @@ async function doLogin() {
   const res = await API.post('/auth/login', { username, password });
   btn.innerHTML = 'Sign In'; btn.disabled = false;
   if (!res) {
-    const du = { 'admin':{role:'System Admin',userId:1},'dr.silva':{role:'Doctor',userId:2},'pharmacist':{role:'Pharmacist',userId:3},'billing':{role:'Billing Clerk',userId:4},'reception':{role:'Receptionist',userId:5},'nurse':{role:'Nurse',userId:6},'hr':{role:'HR Manager',userId:7} };
-    const dp = { 'admin':'Admin@2026!','dr.silva':'Doctor@2026!','pharmacist':'Pharmacy@2026!','billing':'Billing@2026!','reception':'Reception@2026!','nurse':'Nurse@2026!','hr':'HR@2026!' };
-    const d = du[username.toLowerCase()];
-    if (d && dp[username.toLowerCase()]===password) {
-      Auth.setSession('demo-'+Date.now(), { username, userId:d.userId, role:d.role, permissions:['all'] });
-      go(d.role);
-    } else { eb.textContent='Invalid username or password.'; eb.style.display='block'; }
+    eb.textContent = 'Unable to reach server. Please try again.';
+    eb.style.display = 'block';
     return;
   }
   if (res.success) {

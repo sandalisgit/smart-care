@@ -20,12 +20,27 @@ public class PharmacyServlet extends HttpServlet {
         String path = req.getPathInfo();
         try {
             if ("/dashboard".equals(path))  { resp.getWriter().write(JsonUtil.success(pharmacyDAO.getDashboardStats())); return; }
+            if ("/categories".equals(path)) { resp.getWriter().write(JsonUtil.success(pharmacyDAO.getCategories())); return; }
             if ("/low-stock".equals(path))  { resp.getWriter().write(JsonUtil.success(pharmacyDAO.getLowStockItems())); return; }
             if ("/expiring".equals(path))   { resp.getWriter().write(JsonUtil.success(pharmacyDAO.getExpiringItems())); return; }
             if ("/items".equals(path))      { resp.getWriter().write(JsonUtil.success(pharmacyDAO.getAllItems(req.getParameter("category")))); return; }
             if ("/prescriptions".equals(path)) { resp.getWriter().write(JsonUtil.success(pharmacyDAO.getPendingPrescriptions())); return; }
+            if ("/ai/demand-forecast".equals(path)) {
+                int horizon = parseIntOrDefault(req.getParameter("horizon"), 7);
+                int topN = parseIntOrDefault(req.getParameter("topN"), 8);
+                resp.getWriter().write(JsonUtil.success(pharmacyDAO.getDemandForecast(horizon, topN))); return;
+            }
             resp.setStatus(404); resp.getWriter().write(JsonUtil.error("Not found"));
         } catch (Exception e) { resp.setStatus(500); resp.getWriter().write(JsonUtil.error(e.getMessage())); }
+    }
+
+    private int parseIntOrDefault(String raw, int defaultValue) {
+        try {
+            if (raw == null || raw.isBlank()) return defaultValue;
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException ex) {
+            return defaultValue;
+        }
     }
 
     @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {

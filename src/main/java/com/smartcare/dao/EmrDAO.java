@@ -17,6 +17,61 @@ import java.util.*;
  */
 public class EmrDAO {
 
+    public List<Map<String, Object>> getRecentRecords(int limit) throws SQLException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        int safeLimit = (limit > 0 && limit <= 500) ? limit : 50;
+        String sql = "SELECT mr.record_id, mr.record_date, mr.chief_complaint, mr.diagnosis, mr.treatment_plan, mr.notes, " +
+                "CONCAT(p.first_name,' ',p.last_name) AS patient_name, p.patient_code, p.patient_id, " +
+                "CONCAT(e.first_name,' ',e.last_name) AS doctor_name, 'Consultation' AS visit_type " +
+                "FROM medical_records mr " +
+                "JOIN patients p ON mr.patient_id=p.patient_id " +
+                "JOIN doctors d ON mr.doctor_id=d.doctor_id " +
+                "JOIN employees e ON d.employee_id=e.employee_id " +
+                "ORDER BY mr.record_date DESC LIMIT ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, safeLimit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = rsToMap(rs);
+                    try {
+                        row.put("diagnosis", EncryptionService.decrypt((String) row.get("diagnosis")));
+                    } catch (Exception ignore) { }
+                    try {
+                        row.put("treatment_plan", EncryptionService.decrypt((String) row.get("treatment_plan")));
+                    } catch (Exception ignore) { }
+                    list.add(row);
+                }
+            }
+        }
+        return list;
+    }
+
+    public Map<String, Object> getStats() throws SQLException {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        try (Connection conn = DBConnection.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM medical_records");
+                 ResultSet rs = ps.executeQuery()) {
+                stats.put("totalRecords", rs.next() ? rs.getInt(1) : 0);
+            }
+            try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM prescriptions WHERE status='Active'");
+                 ResultSet rs = ps.executeQuery()) {
+                stats.put("totalPrescriptions", rs.next() ? rs.getInt(1) : 0);
+            }
+            try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM lab_tests WHERE status IN ('Ordered','Sample Collected','In Progress')");
+                 ResultSet rs = ps.executeQuery()) {
+                stats.put("pendingLabs", rs.next() ? rs.getInt(1) : 0);
+            }
+            try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM drug_interactions WHERE severity IN ('Contraindicated','Major')");
+                 ResultSet rs = ps.executeQuery()) {
+                stats.put("drugAlerts", rs.next() ? rs.getInt(1) : 0);
+            } catch (SQLException missingTable) {
+                stats.put("drugAlerts", 0);
+            }
+        }
+        return stats;
+    }
+
     // =====================================================================
     // MEDICAL RECORDS
     // =====================================================================

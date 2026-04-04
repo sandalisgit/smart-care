@@ -184,11 +184,18 @@
 <script src="../../js/app.js"></script>
 <script src="../../js/sidebar.js"></script>
 <script>
-Auth.requireStaff();
-const _secHashToSub = { '#users':'security-users', '#rbac':'security-rbac',
-  '#anomaly':'security-anomaly', '#hipaa':'security-hipaa' };
-Sidebar.render('security', _secHashToSub[window.location.hash] || 'security-audit', 'sidebar', 'sub-sidebar');
-Auth.renderUserChip();
+if (typeof Auth === 'undefined' || typeof Sidebar === 'undefined') {
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="background:#c00;color:#fff;padding:12px 20px;font-size:13px;' +
+    'font-family:monospace;z-index:9999;position:fixed;top:0;left:0;right:0">' +
+    'SmartCare: app.js or sidebar.js failed to load - refresh the page</div>');
+} else {
+  Auth.requireStaff();
+  const _secHashToSub = { '#users':'security-users', '#rbac':'security-rbac',
+    '#anomaly':'security-anomaly', '#hipaa':'security-hipaa' };
+  Sidebar.render('security', _secHashToSub[window.location.hash] || 'security-audit', 'sidebar', 'sub-sidebar');
+  Auth.renderUserChip();
+}
 document.getElementById('audit-date').value = new Date().toISOString().split('T')[0];
 
 // Hash routing for sidebar sub-menu navigation
@@ -379,15 +386,6 @@ async function loadSecurityStats() {
 
 // ── Initial load ──────────────────────────────────────────────────────────
 Promise.all([loadAuditLog(), loadUsers(), loadAnomalies(), loadSecurityStats()]);
-  { ts:'09:42:11', user:'dr.silva', role:'Doctor', action:'VIEW patient record PAT000001', module:'EMR', ip:'192.168.1.12', sev:'Info',     hash:'a3f8...d291' },
-  { ts:'09:38:04', user:'admin',    role:'System Admin', action:'LOGIN successful',        module:'Auth', ip:'192.168.1.5',  sev:'Info',     hash:'b7c2...e104' },
-  { ts:'09:31:22', user:'pharmacist',role:'Pharmacist', action:'DISPENSE prescription RX-2026-1841', module:'Pharmacy', ip:'192.168.1.18', sev:'Info', hash:'c1d9...f820' },
-  { ts:'09:25:00', user:'billing',  role:'Billing Clerk', action:'CREATE invoice INV-2026-2243', module:'Billing', ip:'192.168.1.22', sev:'Info', hash:'d4e7...a341' },
-  { ts:'09:14:55', user:'UNKNOWN',  role:'—', action:'FAILED login attempt ×3 from IP 192.168.1.45', module:'Auth', ip:'192.168.1.45', sev:'Critical', hash:'e2b3...c910' },
-  { ts:'08:58:12', user:'dr.silva', role:'Doctor', action:'PRESCRIBE Amoxicillin for PAT000004', module:'EMR', ip:'192.168.1.12', sev:'Info', hash:'f6a1...d502' },
-  { ts:'08:45:30', user:'nurse',    role:'Nurse', action:'UPDATE bed status BED-G-A-14 → Occupied', module:'Beds', ip:'192.168.1.30', sev:'Info', hash:'g3c8...e774' },
-  { ts:'08:31:00', user:'admin',    role:'System Admin', action:'EXPORT audit log (PDF)', module:'Security', ip:'192.168.1.5', sev:'Warning', hash:'h9d4...b213' },
-];
 
 // HIPAA Checklist (static — defined by system design)
 const hipaaItems = [
@@ -424,49 +422,6 @@ async function downloadHIPAAReport() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   if (btn) { btn.disabled = false; btn.textContent = '📥 Download PDF Report'; }
   Toast.success('HIPAA PDF report download started — FR-80 ✅');
-  const res = null; // skip old fallback path
-  if (false && res && res.success && res.data?.downloadUrl) {
-  if (res && res.success && res.data?.downloadUrl) {
-    const a = document.createElement('a');
-    a.href = res.data.downloadUrl; a.download = 'SmartCare_HIPAA_Compliance_Report.pdf';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    Toast.success('HIPAA compliance report downloaded — FR-80 ✅');
-  } else {
-    // Generate from page data (printable)
-    const met    = hipaaItems.filter(h => h.ok).length;
-    const total  = hipaaItems.length;
-    const pct    = Math.round(met/total*100);
-    const rows   = hipaaItems.map(h =>
-      `<tr><td>${h.ref}</td><td>${h.ctrl}</td><td>${h.status}</td>
-       <td style="color:${h.ok?'green':'orange'}">${h.ok?'✓ Met':'⚠ Partial'}</td></tr>`
-    ).join('');
-    const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>HIPAA Compliance Report — SmartCare</title>
-    <style>body{font-family:Arial,sans-serif;padding:30px;max-width:900px;margin:0 auto}
-    h2{color:#0f2540}table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f4f8fb;font-weight:700}
-    .score{font-size:28px;font-weight:800;color:${pct>=90?'green':pct>=70?'orange':'red'}}</style></head>
-    <body>
-    <h2>🏥 SmartCare — HIPAA 45 CFR §164.312 Compliance Report</h2>
-    <p><strong>Generated:</strong> ${new Date().toLocaleString('en-GB')}</p>
-    <p><strong>Prepared by:</strong> ${Auth.getUser()?.username || 'System Admin'} 
-       &nbsp;|&nbsp; <strong>System:</strong> SmartCare Hospital ERP v1.0</p>
-    <p>Compliance Score: <span class="score">${pct}%</span> (${met}/${total} controls met)</p>
-    <hr>
-    <table>
-      <thead><tr><th>CFR Reference</th><th>Control</th><th>Implementation</th><th>Status</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <br>
-    <p style="font-size:11px;color:#666">
-      FR-80: On-demand HIPAA 45 CFR §164.312 compliance report — SmartCare Hospital ERP<br>
-      NFR-30: All technical safeguard controls implemented as design benchmarks.<br>
-      This report is generated from live system configuration data.
-    </p>
-    <scr` + `ipt>window.print();</scr` + `ipt>
-    </body></html>`);
-    win.document.close();
-  }
 }
 
 // FR-77 / FR-78: Export tamper-evident audit log

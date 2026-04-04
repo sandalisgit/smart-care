@@ -109,14 +109,29 @@ const Sidebar = {
     { id:'doc-profile',   icon:'👤', text:'Profile',       href:'../staff/doctor-dashboard.html#profile',  panelId:'profile' },
   ],
 
+  normalizeRole(role) {
+    const raw = String(role || '').trim();
+    if (!raw) return 'System Admin';
+    const aliases = {
+      'Admin': 'System Admin',
+      'Billing Admin': 'Billing Clerk',
+      'HospitalAdministrator': 'Hospital Admin'
+    };
+    return aliases[raw] || raw;
+  },
+
   getModulesForRole(role) {
-    if (!role || role === 'Patient') return [];
-    return this.allModules.filter(m => m.roles.includes(role));
+    const normalizedRole = this.normalizeRole(role);
+    if (normalizedRole === 'Patient') return [];
+    const modules = this.allModules.filter(m => m.roles.includes(normalizedRole));
+    // Defensive fallback: never render an empty sidebar for authenticated staff.
+    if (modules.length) return modules;
+    return this.allModules.filter(m => m.roles.includes('System Admin'));
   },
 
   render(activeModuleId, activeSubId, mainId='sidebar', subId='sub-sidebar') {
     const user = Auth.getUser();
-    const role = user.role || 'System Admin';
+    const role = this.normalizeRole(user.role || user.roleName);
 
     // Doctor portal uses its own sidebar
     if (role === 'Doctor') {

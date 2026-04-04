@@ -311,10 +311,7 @@
 <script src="../../js/sidebar.js?v=2"></script>
 <script>
 (function() {
-  if (!localStorage.getItem('sc_token')) {
-    localStorage.setItem('sc_token', 'demo-billing-guest');
-    localStorage.setItem('sc_user', JSON.stringify({ username: 'Guest', role: 'System Admin' }));
-  }
+  Auth.requireStaff();
   try {
     var u = JSON.parse(localStorage.getItem('sc_user') || '{}');
     if (!u.role) { u.role = 'System Admin'; localStorage.setItem('sc_user', JSON.stringify(u)); }

@@ -33,6 +33,19 @@ public class EmrServlet extends HttpServlet {
         try {
             if (path == null) { resp.setStatus(400); resp.getWriter().write(JsonUtil.error("Path required")); return; }
 
+            // GET /api/emr/stats
+            if ("/stats".equals(path)) {
+                resp.getWriter().write(JsonUtil.success(emrDAO.getStats()));
+                return;
+            }
+
+            // GET /api/emr/records?limit=50
+            if ("/records".equals(path)) {
+                int limit = parseIntParam(req.getParameter("limit"), 50);
+                resp.getWriter().write(JsonUtil.success(emrDAO.getRecentRecords(limit)));
+                return;
+            }
+
             // GET /api/emr/records/{patientId}
             if (path.startsWith("/records/")) {
                 int patientId = Integer.parseInt(path.substring("/records/".length()));

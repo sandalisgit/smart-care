@@ -339,6 +339,28 @@ CREATE TABLE admissions (
     INDEX idx_admission_date (admission_date)
 );
 
+-- Patient bed transfers (for ward movement history)
+CREATE TABLE bed_transfers (
+    transfer_id INT PRIMARY KEY AUTO_INCREMENT,
+    admission_id INT NOT NULL,
+    from_bed_id INT NOT NULL,
+    from_ward_id INT NOT NULL,
+    to_bed_id INT NOT NULL,
+    to_ward_id INT NOT NULL,
+    transfer_reason VARCHAR(255),
+    transferred_by INT NOT NULL,
+    transfer_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (admission_id) REFERENCES admissions(admission_id) ON DELETE CASCADE,
+    FOREIGN KEY (from_bed_id) REFERENCES beds(bed_id),
+    FOREIGN KEY (to_bed_id) REFERENCES beds(bed_id),
+    FOREIGN KEY (from_ward_id) REFERENCES wards(ward_id),
+    FOREIGN KEY (to_ward_id) REFERENCES wards(ward_id),
+    FOREIGN KEY (transferred_by) REFERENCES users(user_id),
+    INDEX idx_transfer_date (transfer_date),
+    INDEX idx_transfer_admission (admission_id)
+);
+
 -- Appointments
 CREATE TABLE appointments (
     appointment_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -1469,6 +1491,34 @@ BEGIN
         );
         SET i = i + 1;
     END WHILE;
+
+    -- ============================================
+    -- BED TRANSFERS (80 records)
+    -- ============================================
+    INSERT INTO bed_transfers (
+        admission_id, from_bed_id, from_ward_id, to_bed_id, to_ward_id,
+        transfer_reason, transferred_by, transfer_date, notes
+    )
+    SELECT
+        a.admission_id,
+        a.bed_id,
+        a.ward_id,
+        CASE WHEN a.bed_id < 300 THEN a.bed_id + 1 ELSE a.bed_id - 1 END,
+        CASE WHEN a.ward_id < 30 THEN a.ward_id + 1 ELSE a.ward_id - 1 END,
+        ELT(FLOOR(1 + RAND() * 6),
+            'Clinical escalation',
+            'Closer nursing observation',
+            'Ward balancing',
+            'Post-operative monitoring',
+            'Isolation requirement',
+            'Doctor requested transfer'),
+        FLOOR(1 + RAND() * 120),
+        DATE_ADD(a.admission_date, INTERVAL FLOOR(1 + RAND() * 10) DAY),
+        'Auto-generated transfer history for analytics and dashboard'
+    FROM admissions a
+    WHERE a.bed_id IS NOT NULL AND a.ward_id IS NOT NULL
+    ORDER BY RAND()
+    LIMIT 80;
     
     -- ============================================
     -- SERVICES (100 records)
@@ -2177,6 +2227,7 @@ SELECT
     SELECT 'patients', COUNT(*) FROM patients UNION ALL
     SELECT 'appointments', COUNT(*) FROM appointments UNION ALL
     SELECT 'admissions', COUNT(*) FROM admissions UNION ALL
+    SELECT 'bed_transfers', COUNT(*) FROM bed_transfers UNION ALL
     SELECT 'medical_records', COUNT(*) FROM medical_records UNION ALL
     SELECT 'prescriptions', COUNT(*) FROM prescriptions UNION ALL
     SELECT 'prescription_items', COUNT(*) FROM prescription_items UNION ALL

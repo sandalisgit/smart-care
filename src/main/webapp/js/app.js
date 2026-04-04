@@ -71,7 +71,10 @@ const API = {
 const Auth = {
   getUser() { try { return JSON.parse(localStorage.getItem('sc_user') || '{}'); } catch { return {}; } },
   setSession(token, user) { localStorage.setItem('sc_token', token); localStorage.setItem('sc_user', JSON.stringify(user)); },
-  isLoggedIn() { return !!localStorage.getItem('sc_token'); },
+  isLoggedIn() {
+    const token = localStorage.getItem('sc_token') || '';
+    return !!token && !token.startsWith('demo-');
+  },
   isPatient() { return this.getUser().role === 'Patient'; },
   logout() {
     const token = localStorage.getItem('sc_token');

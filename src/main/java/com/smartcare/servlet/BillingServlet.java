@@ -12,14 +12,21 @@ import java.util.*;
 
 /** Billing & Finance REST API */
 @WebServlet("/api/billing/*")
-class BillingServlet extends HttpServlet {
+public class BillingServlet extends HttpServlet {
     private final BillingDAO billingDAO = new BillingDAO();
 
     @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json;charset=UTF-8");
         String path = req.getPathInfo();
         try {
+            if ("/bills".equals(path)) {
+                String status = req.getParameter("status");
+                int limit = parseIntOrDefault(req.getParameter("limit"), 200);
+                resp.getWriter().write(JsonUtil.success(billingDAO.getBills(status, limit)));
+                return;
+            }
             if ("/dashboard".equals(path)) { resp.getWriter().write(JsonUtil.success(billingDAO.getDashboardStats())); return; }
+            if ("/financial-summary".equals(path)) { resp.getWriter().write(JsonUtil.success(billingDAO.getFinancialSummary())); return; }
             if ("/outstanding".equals(path)) { resp.getWriter().write(JsonUtil.success(billingDAO.getOutstandingBills(50))); return; }
             if (path != null && path.startsWith("/patient/")) {
                 int pid = Integer.parseInt(path.substring("/patient/".length()));
@@ -74,6 +81,15 @@ class BillingServlet extends HttpServlet {
 
             resp.setStatus(404); resp.getWriter().write(JsonUtil.error("Not found"));
         } catch (Exception e) { resp.setStatus(500); resp.getWriter().write(JsonUtil.error(e.getMessage())); }
+    }
+
+    private int parseIntOrDefault(String raw, int defaultValue) {
+        try {
+            if (raw == null || raw.isBlank()) return defaultValue;
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException ex) {
+            return defaultValue;
+        }
     }
 
     private String getClientIp(HttpServletRequest req) { String f = req.getHeader("X-Forwarded-For"); return f != null ? f.split(",")[0].trim() : req.getRemoteAddr(); }
