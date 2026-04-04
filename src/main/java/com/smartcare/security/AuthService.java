@@ -204,14 +204,15 @@ public class AuthService {
 
     public static PatientLoginResult patientLogin(String patientCode, String fullName, String ipAddress) {
         PatientLoginResult result = new PatientLoginResult();
-        if (!patientCode.toUpperCase().trim().startsWith("PAT")) {
-            result.errorMessage = "Invalid Patient ID. Patient IDs must start with PAT (e.g. PAT000001).";
+        String normalizedPatientCode = patientCode.toUpperCase().trim();
+        if (!(normalizedPatientCode.startsWith("PAT") || normalizedPatientCode.startsWith("PT"))) {
+            result.errorMessage = "Invalid Patient ID. Use PAT000001 or PT-2026-000001 format.";
             return result;
         }
         try (Connection conn = DBConnection.getConnection()) {
             String sql = "SELECT patient_id, patient_code, first_name, last_name, status FROM patients WHERE patient_code=? AND status='Active'";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, patientCode.toUpperCase().trim());
+                ps.setString(1, normalizedPatientCode);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) { result.errorMessage = "Patient ID not found or account is inactive."; return result; }
                     int pid = rs.getInt("patient_id");
@@ -229,7 +230,7 @@ public class AuthService {
                         ps2.setString(1, token); ps2.setInt(2, pid); ps2.setString(3, ipAddress); ps2.executeUpdate();
                     } catch (SQLException se) { log.warning("patient_sessions: " + se.getMessage()); }
                     result.success = true; result.sessionToken = token; result.patientId = pid;
-                    result.patientCode = patientCode.toUpperCase().trim();
+                    result.patientCode = normalizedPatientCode;
                     result.firstName = dbFirst; result.lastName = dbLast;
                     AuditService.log(0, "PATIENT_LOGIN_SUCCESS", "patients", pid, null, null, ipAddress);
                     return result;

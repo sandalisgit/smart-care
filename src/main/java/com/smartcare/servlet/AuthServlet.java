@@ -149,12 +149,13 @@ public class AuthServlet extends HttpServlet {
             String patientId = body.get("patientId");
             String fullName  = body.get("fullName");
             if (isBlank(patientId) || isBlank(fullName)) { resp.setStatus(400); resp.getWriter().write(JsonUtil.error("Patient ID and full name required.")); return; }
-            if (!patientId.toUpperCase().trim().startsWith("PAT")) {
+            String normalizedPatientId = patientId.toUpperCase().trim();
+            if (!(normalizedPatientId.startsWith("PAT") || normalizedPatientId.startsWith("PT"))) {
                 resp.setStatus(400);
-                resp.getWriter().write(JsonUtil.error("Invalid Patient ID format. Patient IDs start with PAT (e.g. PAT000001)."));
+                resp.getWriter().write(JsonUtil.error("Invalid Patient ID format. Use PAT000001 or PT-2026-000001 format."));
                 return;
             }
-            AuthService.PatientLoginResult result = AuthService.patientLogin(patientId.trim(), fullName.trim(), getClientIp(req));
+            AuthService.PatientLoginResult result = AuthService.patientLogin(normalizedPatientId, fullName.trim(), getClientIp(req));
             if (result.success) {
                 resp.setStatus(200);
                 resp.getWriter().write(JsonUtil.success("Patient login successful", Map.of(

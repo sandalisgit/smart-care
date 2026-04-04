@@ -29,7 +29,8 @@ public class AuthFilter implements Filter {
             "/api/auth/mfa-verify",
             "/api/auth/mfa-setup-verify",
             "/api/auth/mfa-enroll",
-            "/api/auth/patient-login"
+            "/api/auth/patient-login",
+            "/api/patients/signup"
     );
 
     @Override

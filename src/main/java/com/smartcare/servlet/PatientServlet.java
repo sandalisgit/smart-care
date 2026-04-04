@@ -7,10 +7,14 @@ import com.smartcare.model.Patient;
 import com.smartcare.security.AuditService;
 import com.smartcare.security.AuthService;
 import com.smartcare.util.JsonUtil;
+import com.smartcare.util.DBConnection;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.sql.Date;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
 
 /**
@@ -102,6 +106,14 @@ public class PatientServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json;charset=UTF-8");
+        String pathInfo = req.getPathInfo();
+
+        // Public endpoint: POST /api/patients/signup (no staff login required)
+        if ("/signup".equals(pathInfo)) {
+            handlePublicSignup(req, resp);
+            return;
+        }
+
         AuthService.SessionInfo session = (AuthService.SessionInfo) req.getAttribute("session");
 
         try {
@@ -132,6 +144,110 @@ public class PatientServlet extends HttpServlet {
                     "patientCode", created.getPatientCode()
             )));
 
+        } catch (Exception e) {
+            resp.setStatus(500);
+            resp.getWriter().write(JsonUtil.error("Registration failed: " + e.getMessage()));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void handlePublicSignup(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        try {
+            String body = req.getReader().lines().reduce("", String::concat);
+            Map<String, Object> data = JsonUtil.fromJson(body, Map.class);
+
+            String firstName = str(data.get("firstName"));
+            String lastName = str(data.get("lastName"));
+            String phone = str(data.get("phone"));
+            String username = str(data.get("username"));
+            String password = str(data.get("password"));
+            String email = str(data.get("email"));
+            String nationalId = str(data.get("nationalId"));
+
+            if (isBlank(firstName) || isBlank(lastName) || isBlank(phone)) {
+                resp.setStatus(400);
+                resp.getWriter().write(JsonUtil.error("First name, last name, and phone are required"));
+                return;
+            }
+            if (isBlank(username) || isBlank(password)) {
+                resp.setStatus(400);
+                resp.getWriter().write(JsonUtil.error("Username and password are required"));
+                return;
+            }
+
+            if (!username.matches("^[a-z0-9.]{4,20}$")) {
+                resp.setStatus(400);
+                resp.getWriter().write(JsonUtil.error("Username must be 4-20 chars: lowercase letters, numbers and dots only."));
+                return;
+            }
+            if (password.length() < 8) {
+                resp.setStatus(400);
+                resp.getWriter().write(JsonUtil.error("Password must be at least 8 characters."));
+                return;
+            }
+
+            // Pre-check unique username for patient portal accounts
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM patient_accounts WHERE username=?")) {
+                ps.setString(1, username);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        resp.setStatus(409);
+                        resp.getWriter().write(JsonUtil.error("Username already exists. Please choose another."));
+                        return;
+                    }
+                }
+            }
+
+            if (!isBlank(nationalId) && patientDAO.nationalIdExists(nationalId, null)) {
+                resp.setStatus(409);
+                resp.getWriter().write(JsonUtil.error("NIC/Passport already registered."));
+                return;
+            }
+
+            Patient patient = new Patient();
+            patient.setFirstName(firstName);
+            patient.setLastName(lastName);
+            patient.setPhone(phone);
+            patient.setEmail(email);
+            patient.setAddress(str(data.get("address")));
+            patient.setGender(str(data.get("gender")));
+            patient.setBloodGroup(str(data.get("bloodGroup")));
+            patient.setNationalId(nationalId);
+            patient.setAllergies(str(data.get("allergies")));
+            patient.setChronicConditions(str(data.get("conditions")));
+
+            String dob = str(data.get("dateOfBirth"));
+            if (!isBlank(dob)) {
+                patient.setDateOfBirth(Date.valueOf(dob));
+            }
+
+            String height = str(data.get("height"));
+            if (!isBlank(height)) patient.setHeight(Double.parseDouble(height));
+            String weight = str(data.get("weight"));
+            if (!isBlank(weight)) patient.setWeight(Double.parseDouble(weight));
+
+            int newId = patientDAO.createPatient(patient);
+
+            // Create patient portal account credentials
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "INSERT INTO patient_accounts (patient_id, username, password_hash) VALUES(?,?,?)")) {
+                ps.setInt(1, newId);
+                ps.setString(2, username);
+                ps.setString(3, AuthService.hashPassword(password));
+                ps.executeUpdate();
+            }
+
+            Patient created = patientDAO.getById(newId);
+            resp.setStatus(201);
+            resp.getWriter().write(JsonUtil.success("Patient registered successfully", Map.of(
+                    "patientId", newId,
+                    "patientCode", created.getPatientCode()
+            )));
+        } catch (IllegalArgumentException e) {
+            resp.setStatus(400);
+            resp.getWriter().write(JsonUtil.error("Invalid date format. Expected YYYY-MM-DD."));
         } catch (Exception e) {
             resp.setStatus(500);
             resp.getWriter().write(JsonUtil.error("Registration failed: " + e.getMessage()));
@@ -181,5 +297,13 @@ public class PatientServlet extends HttpServlet {
     private String getClientIp(HttpServletRequest req) {
         String fwd = req.getHeader("X-Forwarded-For");
         return fwd != null ? fwd.split(",")[0].trim() : req.getRemoteAddr();
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.isBlank();
+    }
+
+    private String str(Object o) {
+        return o == null ? null : String.valueOf(o).trim();
     }
 }
