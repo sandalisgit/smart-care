@@ -25,12 +25,12 @@ INSERT IGNORE INTO roles (role_name, description, permissions) VALUES
 -- 3. Demo staff accounts with bcrypt cost-12 hashes
 --    Passwords: Admin@2026! / Doctor@2026! / Pharm@2026! / Billing@2026! / Recept@2026!
 INSERT IGNORE INTO users (username, email, password_hash, role_id, is_active) VALUES
-('admin',       'admin@hospital.lk',       '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='System Admin'   LIMIT 1), TRUE),
-('dr.silva',    'dr.silva@hospital.lk',    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Doctor'          LIMIT 1), TRUE),
-('pharmacist',  'pharmacist@hospital.lk',  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Pharmacist'       LIMIT 1), TRUE),
-('billing',     'billing@hospital.lk',     '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Billing Clerk'    LIMIT 1), TRUE),
-('reception',   'reception@hospital.lk',   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Receptionist'     LIMIT 1), TRUE),
-('nurse',       'nurse@hospital.lk',       '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5ztOv7uOVh9Zm', (SELECT role_id FROM roles WHERE role_name='Nurse'            LIMIT 1), TRUE);
+('admin',       'admin@hospital.lk',       '$2a$12$ExqODWeYvaco1RCwMliZB.nJXtKQThGpH06sF8SgGt5WqfgZTOdt6', (SELECT role_id FROM roles WHERE role_name='System Admin'   LIMIT 1), TRUE),
+('dr.silva',    'dr.silva@hospital.lk',    '$2a$12$JS89npX25R6cJQ/badz/m.rSUaqaEO7cVqj5SW/WvbQQ4uFvYqHLa', (SELECT role_id FROM roles WHERE role_name='Doctor'          LIMIT 1), TRUE),
+('pharmacist',  'pharmacist@hospital.lk',  '$2a$12$0IuvAgfOupJWL4yCM9PsV.wNy7RyrZ73VRw7raOBRNfFeKTgT1AEi', (SELECT role_id FROM roles WHERE role_name='Pharmacist'       LIMIT 1), TRUE),
+('billing',     'billing@hospital.lk',     '$2a$12$darWV9MdNfvu1HJxeLH8seNZicMneEymLgadY3HVjgs/MXpYJ1912', (SELECT role_id FROM roles WHERE role_name='Billing Clerk'    LIMIT 1), TRUE),
+('reception',   'reception@hospital.lk',   '$2a$12$Uw3pcUsVvbUlmaX5FFE8yOpsRiBJ99r.nqFmyEN6Fco0xxd2/WqH2', (SELECT role_id FROM roles WHERE role_name='Receptionist'     LIMIT 1), TRUE),
+('nurse',       'nurse@hospital.lk',       '$2a$12$zHa13wI1GWrIeOTZF3iixuxzEWb2yX6Hk4XtIEb9p9vfvwCT5rQV6', (SELECT role_id FROM roles WHERE role_name='Nurse'            LIMIT 1), TRUE);
 
 -- NOTE: The hash above is the bcrypt(cost=12) of "Admin@2026!" used as a placeholder.
 -- For production, generate individual hashes using AuthService.hashPassword() or:

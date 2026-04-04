@@ -175,19 +175,16 @@ const MAX_ATTEMPTS   = 3;
 let   currentSecret  = '';
 let   currentQrUri   = '';
 
-// Get logged-in user (works even if accessed directly after login)
-const loggedInUser = Auth.getUser() || mfaUser;
+// Get logged-in user from MFA session context first
+const loggedInUser = {
+  username: mfaUser.username || Auth.getUser().username,
+  role: mfaUser.role || Auth.getUser().role,
+  userId: mfaUser.userId || Auth.getUser().userId
+};
 
-// Only redirect if truly not logged in and no MFA token
-if (!mfaToken && !loggedInUser.username) {
+// MFA page requires a valid temp MFA token from /auth/login
+if (!mfaToken || !loggedInUser.username || !loggedInUser.userId) {
   window.location.href = '/smart-care/';
-}
-
-// If accessed directly after login (no mfaToken), create a demo token for setup
-if (!mfaToken && loggedInUser.username) {
-  mfaToken = 'direct-setup-' + Date.now();
-  sessionStorage.setItem('sc_mfa_token', mfaToken);
-  sessionStorage.setItem('sc_mfa_user', JSON.stringify(loggedInUser));
 }
 
 // Show user info
@@ -196,8 +193,8 @@ const displayUser = loggedInUser.username || mfaUser.username || 'User';
 const displayRole = loggedInUser.role     || mfaUser.role     || 'Staff';
 if (displayUser) el.textContent = `👤 ${displayUser} · ${displayRole}`;
 
-// Always show setup tab when accessed directly
-showTab('setup');
+// Show tab based on server response mode
+showTab(mfaMode === 'verify' ? 'verify' : 'setup');
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
 function showTab(tab) {
@@ -211,12 +208,21 @@ function showTab(tab) {
 
 // ─── QR Code loading (calls real server endpoint) ────────────────────────────
 async function loadQR() {
+  if (!mfaToken || !loggedInUser.userId) {
+    showErr('MFA session expired. Please log in again.');
+    setTimeout(() => {
+      sessionStorage.clear();
+      window.location.href = '/smart-care/';
+    }, 1500);
+    return;
+  }
+
   if (currentQrUri) { renderQR(currentQrUri); return; } // already loaded
 
   const res = await API.post('/auth/mfa-enroll', {
     tempToken: mfaToken,
-    username:  mfaUser.username || '',
-    userId:    mfaUser.userId   || 0
+    username:  loggedInUser.username || '',
+    userId:    loggedInUser.userId   || 0
   }).catch(() => null);
 
   if (res && res.success) {

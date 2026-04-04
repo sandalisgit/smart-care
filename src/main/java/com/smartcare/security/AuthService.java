@@ -244,8 +244,6 @@ public class AuthService {
     public static String generateMfaSecret(int userId, String username) {
         GoogleAuthenticatorKey key = gAuth.createCredentials();
         String secret = key.getKey();
-        try (Connection conn = DBConnection.getConnection()) { enrollSecret(conn, userId, secret); }
-        catch (Exception e) { log.severe("Secret storage error: " + e.getMessage()); }
         return "otpauth://totp/SmartCare%3A" + username + "?secret=" + secret + "&issuer=SmartCare&algorithm=SHA1&digits=6&period=30";
     }
 
